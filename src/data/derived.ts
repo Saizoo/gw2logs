@@ -1,0 +1,43 @@
+// View-model helpers — mirrors the binding logic from the design doc's
+// Component.renderVals(), kept separate from the raw mock data.
+
+import type { UploadStatus } from './gw2-data';
+
+export function mechColor(n: number): string {
+  return n > 0 ? '#f55d4e' : 'rgba(242,237,226,.3)';
+}
+
+const EVENT_DOT_COLOR: Record<string, string> = {
+  info: 'rgba(242,237,226,.4)',
+  bad: '#f55d4e',
+  good: '#4caf6d',
+};
+
+export function eventDotColor(type: string): string {
+  return EVENT_DOT_COLOR[type] ?? EVENT_DOT_COLOR.info;
+}
+
+/** Low uptime -> dim gold, high uptime -> bright gold fill. */
+export function heat(v: number): string {
+  const alpha = 0.08 + (v / 100) * 0.85;
+  return `rgba(224,180,88,${alpha.toFixed(2)})`;
+}
+
+export const STATUS_META: Record<UploadStatus, { label: string; color: string }> = {
+  success: { label: 'Parsed', color: '#4caf6d' },
+  parsing: { label: 'Parsing', color: '#e0b458' },
+  queued: { label: 'Queued', color: 'rgba(242,237,226,.4)' },
+  failed: { label: 'Failed', color: '#f55d4e' },
+};
+
+export function rowBg(index: number): string {
+  return index % 2 === 0 ? '#1c1913' : '#181510';
+}
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = ['#f0c852', '#c7cdd6', '#c98a4d'];
+
+export function medalFor(index: number, rank: number): { medal: string; color: string } {
+  if (index < 3) return { medal: MEDALS[index], color: MEDAL_COLORS[index] };
+  return { medal: String(rank), color: 'rgba(242,237,226,.35)' };
+}
