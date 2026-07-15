@@ -68,7 +68,7 @@ export function NavHeader() {
       </div>
 
       <div style={{ flex: 1, maxWidth: 420, marginLeft: 8 }}>
-        <SearchBar width={9999} defaultValue="" />
+        <SearchBar width="100%" defaultValue="" />
       </div>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
