@@ -12,6 +12,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "ingest:test": "tsx src/scripts/testIngest.ts",
     "auth:test": "tsx src/scripts/testAuthFlow.ts",
+    "dpsreport:test": "tsx src/scripts/testDpsReportImport.ts",
     "seed:demo": "tsx src/scripts/seedDemoData.ts"
   },
   "dependencies": {

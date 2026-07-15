@@ -121,6 +121,20 @@ export interface GuildRoster {
   }[];
 }
 
+export interface DpsReportImportStart {
+  batchId: string | null;
+  total: number;
+}
+
+export interface DpsReportImportStatus {
+  total: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  done: boolean;
+  error?: string;
+}
+
 class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -174,6 +188,14 @@ export const api = {
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
   guilds: () => apiFetch<GuildSummary[]>('/guilds'),
   guildRoster: (tag: string) => apiFetch<GuildRoster>(`/guilds/${encodeURIComponent(tag)}`),
+  importDpsReport: (userToken: string) =>
+    apiFetch<DpsReportImportStart>('/account/import-dpsreport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userToken }),
+    }),
+  importDpsReportStatus: (batchId: string) =>
+    apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
 };
 
 export { ApiError };

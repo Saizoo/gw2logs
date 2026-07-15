@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, type DpsReportImportStatus } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge } from '../components/atoms';
@@ -12,6 +12,18 @@ export default function AccountPage() {
   const [unlinking, setUnlinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+
+  const [dpsToken, setDpsToken] = useState('');
+  const [dpsStarting, setDpsStarting] = useState(false);
+  const [dpsError, setDpsError] = useState<string | null>(null);
+  const [dpsStatus, setDpsStatus] = useState<DpsReportImportStatus | null>(null);
+  const dpsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (dpsPollRef.current) clearInterval(dpsPollRef.current);
+    };
+  }, []);
 
   if (loading) return <LoadingState label="Loading account…" />;
   if (!user) return <Navigate to="/login" replace />;
@@ -54,6 +66,41 @@ export default function AccountPage() {
   async function handleLogout() {
     await api.logout();
     window.location.href = '/';
+  }
+
+  async function handleImportDpsReport(e: React.FormEvent) {
+    e.preventDefault();
+    setDpsError(null);
+    setDpsStatus(null);
+    setDpsStarting(true);
+    try {
+      const start = await api.importDpsReport(dpsToken.trim());
+      if (!start.batchId) {
+        setDpsError('No uploads found for that token.');
+        return;
+      }
+      setDpsStatus({ total: start.total, processed: 0, succeeded: 0, failed: 0, done: false });
+      if (dpsPollRef.current) clearInterval(dpsPollRef.current);
+      dpsPollRef.current = setInterval(async () => {
+        try {
+          const status = await api.importDpsReportStatus(start.batchId!);
+          setDpsStatus(status);
+          if (status.done && dpsPollRef.current) {
+            clearInterval(dpsPollRef.current);
+            dpsPollRef.current = null;
+          }
+        } catch {
+          if (dpsPollRef.current) {
+            clearInterval(dpsPollRef.current);
+            dpsPollRef.current = null;
+          }
+        }
+      }, 1500);
+    } catch (err) {
+      setDpsError(err instanceof ApiError ? err.message : 'Failed to start import');
+    } finally {
+      setDpsStarting(false);
+    }
   }
 
   return (
@@ -140,6 +187,70 @@ export default function AccountPage() {
           </Link>
         </div>
       )}
+
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 22, marginTop: 16 }}>
+        <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>Import from dps.report</div>
+        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
+          Already have a history of logs on dps.report? Paste your user token below to import them here instead of
+          re-uploading each file. Find your token at{' '}
+          <a href="https://dps.report/" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
+            dps.report
+          </a>{' '}
+          — it's stored in your browser's cookies for that site, or shown on any log page you've uploaded. Treat it
+          like a password: anyone with it can see everything ever uploaded under it.
+        </div>
+        <form onSubmit={handleImportDpsReport}>
+          <input
+            type="text"
+            value={dpsToken}
+            onChange={(e) => setDpsToken(e.target.value)}
+            placeholder="dps.report user token"
+            disabled={Boolean(dpsStatus && !dpsStatus.done)}
+            style={{
+              width: '100%', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: 6, font: '400 12px var(--font-mono)', color: 'var(--text)',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done)}
+            style={{
+              marginTop: 12, padding: '10px 16px', background: 'var(--gold)', borderRadius: 6,
+              font: '700 12px var(--font-sans)', color: '#14120f',
+              opacity: dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done) ? 0.6 : 1,
+            }}
+          >
+            {dpsStarting ? 'Starting…' : 'Import logs'}
+          </button>
+        </form>
+
+        {dpsStatus && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ height: 6, background: 'rgba(255,255,255,.06)', borderRadius: 3 }}>
+              <div
+                style={{
+                  height: 6, borderRadius: 3, background: 'var(--gold)',
+                  width: `${dpsStatus.total ? Math.round((dpsStatus.processed / dpsStatus.total) * 100) : 100}%`,
+                }}
+              />
+            </div>
+            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 8 }}>
+              {dpsStatus.done ? (
+                <>
+                  Done — {dpsStatus.succeeded} imported, {dpsStatus.failed} skipped/failed of {dpsStatus.total}.
+                </>
+              ) : (
+                <>
+                  Importing… {dpsStatus.processed} / {dpsStatus.total} processed ({dpsStatus.succeeded} succeeded so
+                  far).
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {dpsError && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{dpsError}</div>}
+      </div>
     </div>
   );
 }
