@@ -29,6 +29,8 @@ export interface PlayerProfile {
   account: string;
   displayName: string;
   totalLogs: number;
+  overallScore: number | null;
+  consistencyScore: number | null;
   professionBreakdown: { profession: string; pct: number }[];
   bestParses: { boss: string; isCm: boolean; spec: string; dps: number; logId: string }[];
   recent: { boss: string; isCm: boolean; spec: string; dps: number; logId: string; uploadedAt: string }[];

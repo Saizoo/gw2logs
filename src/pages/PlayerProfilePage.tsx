@@ -36,10 +36,24 @@ export default function PlayerProfilePage() {
           <h1 style={{ font: '800 24px var(--font-sans)', color: 'var(--text)' }}>{player.displayName}</h1>
           <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 4 }}>{player.account}</div>
         </div>
-        <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
-          <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.totalLogs}</div>
-          <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
-            Logs uploaded
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
+            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.totalLogs}</div>
+            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
+              Logs uploaded
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
+            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.overallScore ?? '—'}</div>
+            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
+              Overall score
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
+            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.consistencyScore ?? '—'}</div>
+            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
+              Consistency
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,14 @@ const LINKS = [
   { label: 'Compare', to: '/compare' },
 ];
 
+const UPLOAD_LINK_STYLE = {
+  padding: '6px 14px',
+  background: 'var(--gold)',
+  borderRadius: 6,
+  font: '700 12px var(--font-sans)',
+  color: '#14120f',
+} as const;
+
 export function NavHeader() {
   const location = useLocation();
   const { user } = useCurrentUser();
@@ -40,6 +48,9 @@ export function NavHeader() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <SearchBar />
+        <Link to="/upload" style={UPLOAD_LINK_STYLE}>
+          Upload
+        </Link>
         <Avatar
           to={user ? '/account' : '/login'}
           name={user?.discordUsername}

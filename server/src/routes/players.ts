@@ -43,10 +43,52 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     .map(([profession, count]) => ({ profession, pct: Math.round((count / total) * 100) }))
     .sort((a, b) => b.pct - a.pct);
 
+  // Overall score: how this player's DPS ranks, on average, against every
+  // other parse of the same boss+CM combination (0-100, same percentile
+  // convention as the leaderboard's rank pill). Consistency score: how
+  // tightly clustered those percentiles are — always near the same
+  // percentile scores higher than swinging between top and bottom.
+  const percentiles = logPlayers.length
+    ? await prisma.$queryRaw<{ pct: number }[]>`
+        WITH mine AS (
+          SELECT lp.id, lp."totalDps", l."fightName", l."isCm"
+          FROM "LogPlayer" lp
+          JOIN "Log" l ON lp."logId" = l.id
+          WHERE lp."playerId" = ${player.id}
+        )
+        SELECT
+          CASE WHEN total <= 1 THEN 100.0
+               ELSE ((rank_from_bottom - 1)::float8 / (total - 1)) * 100
+          END AS pct
+        FROM (
+          SELECT
+            mine.id,
+            (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
+               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm") AS total,
+            (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
+               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm"
+                 AND lp2."totalDps" <= mine."totalDps") AS rank_from_bottom
+          FROM mine
+        ) sub
+      `
+    : [];
+
+  let overallScore: number | null = null;
+  let consistencyScore: number | null = null;
+  if (percentiles.length > 0) {
+    const values = percentiles.map((r) => Number(r.pct));
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    overallScore = Math.round(mean);
+    consistencyScore = Math.round(Math.max(0, 100 - Math.sqrt(variance)));
+  }
+
   res.json({
     account: player.account,
     displayName: player.displayName,
     totalLogs: logPlayers.length,
+    overallScore,
+    consistencyScore,
     professionBreakdown,
     bestParses: [...bestByBoss.values()]
       .sort((a, b) => b.totalDps - a.totalDps)
