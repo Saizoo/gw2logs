@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, ParseLegend, ProfDot } from '../components/atoms';
+import { Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 const RANK_COLORS = ['var(--gold)', 'oklch(0.7 0.03 85)', 'oklch(0.7 0.03 85)'];
@@ -98,7 +98,7 @@ export default function LeaderboardPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '56px 2fr 1fr 1fr 1.2fr',
+              gridTemplateColumns: '56px 2fr 1fr 1fr 0.7fr 1fr',
               gap: 8,
               padding: '12px 20px',
               font: '700 10.5px var(--font-sans)',
@@ -112,6 +112,7 @@ export default function LeaderboardPage() {
             <div>Player</div>
             <div>Role</div>
             <div>DPS</div>
+            <div>Parse</div>
             <div>Date</div>
           </div>
           {leaderboard.map((row, i) => (
@@ -121,7 +122,7 @@ export default function LeaderboardPage() {
               style={{
                 position: 'relative',
                 display: 'grid',
-                gridTemplateColumns: '56px 2fr 1fr 1fr 1.2fr',
+                gridTemplateColumns: '56px 2fr 1fr 1fr 0.7fr 1fr',
                 gap: 8,
                 alignItems: 'center',
                 padding: '12px 20px',
@@ -140,6 +141,7 @@ export default function LeaderboardPage() {
               </div>
               <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-70)' }}>{row.role === 'power' ? 'Power DPS' : 'Condition DPS'}</div>
               <div style={{ font: '700 13.5px var(--font-mono)', color: 'var(--gold)' }}>{row.dps.toLocaleString()}</div>
+              <div><ParseBadge pct={row.pct} /></div>
               <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{new Date(row.date).toLocaleDateString()}</div>
             </Link>
           ))}

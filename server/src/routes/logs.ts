@@ -32,10 +32,16 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
       success: true,
       durationMs: true,
       squadDps: true,
-      uploadedAt: true,
+      // Sorted and displayed by when the fight actually happened, not when
+      // it was uploaded to our server — same convention the leaderboard and
+      // log-detail routes already use. Sorting by uploadedAt instead breaks
+      // down badly for anyone using the dps.report bulk-import feature: a
+      // whole history of old logs all get uploadedAt ~= import time, so
+      // they'd all cluster at "today" regardless of when they were played.
+      encounterTime: true,
       _count: { select: { players: true } },
     },
-    orderBy: { uploadedAt: 'desc' },
+    orderBy: { encounterTime: 'desc' },
     take: limit,
     skip: offset,
   });
@@ -83,7 +89,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
       durationMs: l.durationMs,
       squadDps: l.squadDps,
       playerCount: l._count.players,
-      uploadedAt: l.uploadedAt,
+      date: l.encounterTime,
       parsePct: pctByLogId.get(l.id) ?? null,
     })),
   );

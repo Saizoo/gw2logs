@@ -85,7 +85,7 @@ export interface LogListItem {
   durationMs: number;
   squadDps: number;
   playerCount: number;
-  uploadedAt: string;
+  date: string;
   parsePct: number | null;
 }
 

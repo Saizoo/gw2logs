@@ -215,35 +215,43 @@ function SquadTab({ log }: { log: LogDetail }) {
 }
 
 function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
+  // Fixed column count, but still wrapped in its own scroll container for
+  // consistency with MechanicsTab and safety on narrow viewports — a data
+  // table like this should never be allowed to blow out the page's width.
+  const gridColumns = `28px 1fr 90px repeat(${BOON_COLUMNS.length}, 70px)`;
   return (
     <Card style={{ padding: '18px 20px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: `28px 1fr 90px repeat(${BOON_COLUMNS.length}, 70px)`, gap: 8, padding: '0 4px 10px', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center' }}>
-        <div style={{ textAlign: 'left' }}>Sub</div>
-        <div style={{ textAlign: 'left' }}>Player</div>
-        <div style={{ textAlign: 'left' }}>Prof</div>
-        {BOON_COLUMNS.map((c) => (
-          <div key={c.key}>{c.label}</div>
-        ))}
-      </div>
-      {players.map((p) => (
-        <div key={p.name} style={{ display: 'grid', gridTemplateColumns: `28px 1fr 90px repeat(${BOON_COLUMNS.length}, 70px)`, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
-          <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-          <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <ProfDot color={professionColor(p.profession)} />
-            <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 'fit-content' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, padding: '0 4px 10px', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center' }}>
+            <div style={{ textAlign: 'left' }}>Sub</div>
+            <div style={{ textAlign: 'left' }}>Player</div>
+            <div style={{ textAlign: 'left' }}>Prof</div>
+            {BOON_COLUMNS.map((c) => (
+              <div key={c.key}>{c.label}</div>
+            ))}
           </div>
-          {BOON_COLUMNS.map((c) => {
-            const raw = p.boons[c.key] ?? 0;
-            const heatValue = c.weight ? Math.min(raw * c.weight, 100) : raw;
-            return (
-              <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 4, background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
-                {raw}
+          {players.map((p) => (
+            <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+              <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
+              <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <ProfDot color={professionColor(p.profession)} />
+                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
               </div>
-            );
-          })}
+              {BOON_COLUMNS.map((c) => {
+                const raw = p.boons[c.key] ?? 0;
+                const heatValue = c.weight ? Math.min(raw * c.weight, 100) : raw;
+                return (
+                  <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 4, background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
+                    {raw}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
       <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 12 }}>
         Uptime % (Might shown as avg stacks). Darker gold = higher uptime.
       </div>
@@ -253,6 +261,10 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
 
 function MechanicsTab({ log }: { log: LogDetail }) {
   const mechanicNames = [...new Set(log.players.flatMap((p) => Object.keys(p.mechanics)))];
+  // A real raid boss log can log a dozen-plus distinct mechanic names —
+  // this grid's width scales with that count, so it must scroll within its
+  // own card rather than being left to blow out the whole page's layout.
+  const gridColumns = `28px 1fr 90px repeat(${mechanicNames.length}, 100px)`;
 
   return (
     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
@@ -264,31 +276,33 @@ function MechanicsTab({ log }: { log: LogDetail }) {
           <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No mechanics recorded for this encounter.</div>
         )}
         {mechanicNames.length > 0 && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: `28px 1fr 90px repeat(${mechanicNames.length}, 100px)`, gap: 8, padding: '0 4px 10px', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center' }}>
-              <div style={{ textAlign: 'left' }}>Sub</div>
-              <div style={{ textAlign: 'left' }}>Player</div>
-              <div style={{ textAlign: 'left' }}>Prof</div>
-              {mechanicNames.map((n) => (
-                <div key={n}>{n}</div>
-              ))}
-            </div>
-            {log.players.map((p) => (
-              <div key={p.name} style={{ display: 'grid', gridTemplateColumns: `28px 1fr 90px repeat(${mechanicNames.length}, 100px)`, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
-                <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-                <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <ProfDot color={professionColor(p.profession)} />
-                  <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
-                </div>
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 'fit-content' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, padding: '0 4px 10px', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center' }}>
+                <div style={{ textAlign: 'left' }}>Sub</div>
+                <div style={{ textAlign: 'left' }}>Player</div>
+                <div style={{ textAlign: 'left' }}>Prof</div>
                 {mechanicNames.map((n) => (
-                  <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: mechColor(p.mechanics[n] ?? 0) }}>
-                    {p.mechanics[n] ?? 0}
-                  </div>
+                  <div key={n}>{n}</div>
                 ))}
               </div>
-            ))}
-          </>
+              {log.players.map((p) => (
+                <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+                  <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
+                  <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <ProfDot color={professionColor(p.profession)} />
+                    <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
+                  </div>
+                  {mechanicNames.map((n) => (
+                    <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: mechColor(p.mechanics[n] ?? 0) }}>
+                      {p.mechanics[n] ?? 0}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
 

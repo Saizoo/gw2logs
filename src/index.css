@@ -71,6 +71,10 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* Safety net: any element that ends up wider than the viewport (a
+     hardcoded pixel width, a data-driven grid with too many columns) should
+     scroll within itself, not drag the whole page sideways. */
+  overflow-x: hidden;
 }
 
 body {

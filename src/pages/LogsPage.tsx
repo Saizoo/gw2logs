@@ -120,7 +120,7 @@ export default function LogsPage() {
               </div>
               <div style={{ font: '700 12.5px var(--font-mono)', color: 'var(--gold)' }}>{log.squadDps.toLocaleString()}</div>
               <div>{log.parsePct != null ? <ParseBadge pct={log.parsePct} /> : <span style={{ color: 'var(--text-50)' }}>—</span>}</div>
-              <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-55)' }}>{new Date(log.uploadedAt).toLocaleDateString()}</div>
+              <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-55)' }}>{new Date(log.date).toLocaleDateString()}</div>
             </Link>
           ))}
         </Card>
