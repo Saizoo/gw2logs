@@ -19,7 +19,6 @@ logsRouter.get('/:id', async (req, res) => {
 
   res.json({
     id: log.id,
-    permalink: log.permalink,
     boss: log.fightName,
     wing: log.wing,
     isCm: log.isCm,

@@ -3,20 +3,18 @@ import type { NormalizedLog } from './ingest.js';
 import { BOSS_WING } from './bossMeta.js';
 
 export async function persistLog(params: {
-  permalink: string;
-  dpsReportId: string;
+  contentHash: string;
   sourceFileName?: string;
   uploadedBy?: string;
   rawJson: unknown;
   normalized: NormalizedLog;
 }) {
-  const { permalink, dpsReportId, sourceFileName, uploadedBy, rawJson, normalized } = params;
+  const { contentHash, sourceFileName, uploadedBy, rawJson, normalized } = params;
 
   return prisma.$transaction(async (tx) => {
     const log = await tx.log.create({
       data: {
-        permalink,
-        dpsReportId,
+        contentHash,
         fightName: normalized.fightName,
         triggerId: normalized.triggerId,
         wing: BOSS_WING[normalized.fightName] ?? null,

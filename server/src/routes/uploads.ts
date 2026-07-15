@@ -1,7 +1,8 @@
+import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
 import { prisma } from '../db.js';
-import { uploadToDpsReport, fetchEiJson, withRetry } from '../lib/dpsReport.js';
+import { parseWithEliteInsights } from '../lib/eliteInsights.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 
@@ -21,11 +22,9 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
   });
 
   try {
-    const uploadResult = await withRetry(() => uploadToDpsReport(file.buffer, file.originalname));
+    const contentHash = createHash('sha256').update(file.buffer).digest('hex');
 
-    const alreadyIngested = await prisma.log.findUnique({
-      where: { permalink: uploadResult.permalink },
-    });
+    const alreadyIngested = await prisma.log.findUnique({ where: { contentHash } });
     if (alreadyIngested) {
       await prisma.uploadJob.update({
         where: { id: job.id },
@@ -35,12 +34,11 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       return;
     }
 
-    const rawJson = await withRetry(() => fetchEiJson(uploadResult.permalink), 6, 3000);
+    const { json: rawJson } = await parseWithEliteInsights(file.buffer, file.originalname);
     const normalized = normalizeEiJson(rawJson);
 
     const log = await persistLog({
-      permalink: uploadResult.permalink,
-      dpsReportId: uploadResult.id,
+      contentHash,
       sourceFileName: file.originalname,
       rawJson,
       normalized,

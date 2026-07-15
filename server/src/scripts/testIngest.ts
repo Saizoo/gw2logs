@@ -10,10 +10,8 @@ async function main() {
   console.log('--- normalized ---');
   console.log(JSON.stringify(normalized, null, 2));
 
-  const permalink = `test-permalink-${Date.now()}`;
   const log = await persistLog({
-    permalink,
-    dpsReportId: permalink,
+    contentHash: `test-hash-${Date.now()}`,
     sourceFileName: 'fixture.zevtc',
     rawJson: sampleEiJson,
     normalized,

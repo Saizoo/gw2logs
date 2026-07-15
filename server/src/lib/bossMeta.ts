@@ -1,6 +1,6 @@
 // Wing labels for the raid bosses the design doc already named — cosmetic
-// enrichment only. Any boss dps.report reports that isn't in this list still
-// ingests fine with wing left null.
+// enrichment only. Any boss Elite Insights reports that isn't in this list
+// still ingests fine with wing left null.
 export const BOSS_WING: Record<string, string> = {
   'Vale Guardian': 'Wing 1 — Spirit Vale',
   'Sabetha the Saboteur': 'Wing 1 — Spirit Vale',

@@ -1,4 +1,20 @@
-import type { RawEiJson } from './dpsReport.js';
+// Field names verified against Elite Insights source (GW2EIJSON project,
+// baaron4/GW2-Elite-Insights-Parser@master): JsonLog, JsonActor, JsonPlayer,
+// JsonStatistics (JsonDPS/JsonDefensesAll), JsonBuffsUptime, JsonMechanics.
+// EI serializes with the C# property names verbatim (PascalCase, no
+// camelCase naming policy found in the source) — camelCase fallbacks are
+// kept below anyway since that costs little and hedges against a version
+// difference. As before, the full raw JSON is always persisted so a wrong
+// guess here is correctable without re-parsing.
+
+export type RawEiJson = Record<string, any>;
+
+function field(obj: any, pascalKey: string): any {
+  if (obj == null) return undefined;
+  if (pascalKey in obj) return obj[pascalKey];
+  const camelKey = pascalKey.charAt(0).toLowerCase() + pascalKey.slice(1);
+  return obj[camelKey];
+}
 
 const BOON_IDS: Record<string, number> = {
   quickness: 1187,
@@ -56,40 +72,33 @@ export interface NormalizedLog {
   mechanicEvents: NormalizedMechanicEvent[];
 }
 
-function parseDurationMs(raw: RawEiJson): number {
-  if (typeof raw.durationMS === 'number') return raw.durationMS;
-  const str: string | undefined = raw.duration;
-  if (!str) return 0;
-  const m = /(?:(\d+)m)?\s*(?:(\d+(?:\.\d+)?)s)?/.exec(str);
-  const minutes = Number(m?.[1] ?? 0);
-  const seconds = Number(m?.[2] ?? 0);
-  return Math.round((minutes * 60 + seconds) * 1000);
-}
-
-function extractPlayerDps(raw: RawEiJson, index: number) {
-  const entry = raw.dpsAll?.[index]?.[0] ?? raw.dpsAll?.[index] ?? {};
+function extractPlayerDps(player: any) {
+  const dpsAll = field(player, 'DpsAll') ?? [];
+  const fullFight = dpsAll[0] ?? {};
   return {
-    total: Math.round(entry.dps ?? 0),
-    power: Math.round(entry.powerDps ?? 0),
-    condi: Math.round(entry.condiDps ?? 0),
+    total: Math.round(field(fullFight, 'Dps') ?? 0),
+    power: Math.round(field(fullFight, 'PowerDps') ?? 0),
+    condi: Math.round(field(fullFight, 'CondiDps') ?? 0),
   };
 }
 
-function extractPlayerDefenses(raw: RawEiJson, index: number) {
-  const entry = raw.defenses?.[index]?.[0] ?? raw.defenses?.[index] ?? {};
+function extractPlayerDefenses(player: any) {
+  const defenses = field(player, 'Defenses') ?? [];
+  const fullFight = defenses[0] ?? {};
   return {
-    damageTaken: Math.round(entry.damageTaken ?? 0),
-    downCount: Math.round(entry.downCount ?? 0),
-    deadCount: Math.round(entry.deadCount ?? 0),
+    damageTaken: Math.round(field(fullFight, 'DamageTaken') ?? 0),
+    downCount: Math.round(field(fullFight, 'DownCount') ?? 0),
+    deadCount: Math.round(field(fullFight, 'DeadCount') ?? 0),
   };
 }
 
-function extractPlayerBoons(raw: RawEiJson, index: number): Record<string, number> {
+function extractPlayerBoons(player: any): Record<string, number> {
+  const buffUptimes: any[] = field(player, 'BuffUptimes') ?? [];
   const boons: Record<string, number> = {};
-  const buffUptimes: any[] = raw.buffUptimes ?? [];
   for (const [key, id] of Object.entries(BOON_IDS)) {
-    const buff = buffUptimes.find((b) => b.id === id);
-    const uptime = buff?.buffData?.[index]?.uptime ?? buff?.states?.[index]?.uptime ?? 0;
+    const buff = buffUptimes.find((b) => field(b, 'Id') === id);
+    const buffData = field(buff, 'BuffData') ?? [];
+    const uptime = field(buffData[0], 'Uptime') ?? 0;
     boons[key] = Math.round(uptime);
   }
   return boons;
@@ -101,14 +110,14 @@ function extractMechanics(raw: RawEiJson): {
 } {
   const perPlayerCounts = new Map<string, Record<string, number>>();
   const events: NormalizedMechanicEvent[] = [];
-  const mechanics: any[] = raw.mechanics ?? [];
+  const mechanics: any[] = field(raw, 'Mechanics') ?? [];
 
   for (const mech of mechanics) {
-    const name: string = mech.name ?? mech.shortName ?? 'Mechanic';
-    const instances: any[] = mech.data ?? mech.mechanicsData ?? [];
+    const name: string = field(mech, 'Name') ?? field(mech, 'FullName') ?? 'Mechanic';
+    const instances: any[] = field(mech, 'MechanicsData') ?? [];
     for (const inst of instances) {
-      const actor: string | null = inst.actor ?? null;
-      events.push({ timeMs: Math.round(inst.time ?? 0), name, actor });
+      const actor: string | null = field(inst, 'Actor') ?? null;
+      events.push({ timeMs: Math.round(field(inst, 'Time') ?? 0), name, actor });
       if (actor) {
         const counts = perPlayerCounts.get(actor) ?? {};
         counts[name] = (counts[name] ?? 0) + 1;
@@ -121,41 +130,43 @@ function extractMechanics(raw: RawEiJson): {
 }
 
 export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
-  const players: any[] = raw.players ?? [];
+  const players: any[] = field(raw, 'Players') ?? [];
   const { perPlayerCounts, events } = extractMechanics(raw);
 
-  const normalizedPlayers: NormalizedPlayer[] = players.map((p, i) => {
-    const dps = extractPlayerDps(raw, i);
-    const def = extractPlayerDefenses(raw, i);
-    const specName: string = p.profession ?? 'Guardian';
+  const normalizedPlayers: NormalizedPlayer[] = players.map((p) => {
+    const dps = extractPlayerDps(p);
+    const def = extractPlayerDefenses(p);
+    const specName: string = field(p, 'Profession') ?? 'Guardian';
+    const name: string = field(p, 'Name') ?? 'Unknown';
     return {
-      characterName: p.name ?? 'Unknown',
-      account: (p.account ?? 'Unknown.0000').replace(/^:/, ''),
+      characterName: name,
+      account: (field(p, 'Account') ?? 'Unknown.0000').replace(/^:/, ''),
       profession: SPEC_TO_PROFESSION[specName] ?? specName,
       spec: specName,
-      subgroup: Number(p.group ?? 1),
+      subgroup: Number(field(p, 'Group') ?? 1),
       totalDps: dps.total,
       powerDps: dps.power,
       condiDps: dps.condi,
       damageTaken: def.damageTaken,
       downCount: def.downCount,
       deadCount: def.deadCount,
-      boons: extractPlayerBoons(raw, i),
-      mechanics: perPlayerCounts.get(p.name) ?? {},
+      boons: extractPlayerBoons(p),
+      mechanics: perPlayerCounts.get(name) ?? {},
     };
   });
 
-  const durationMs = parseDurationMs(raw);
+  const durationMs = Math.round(field(raw, 'DurationMS') ?? 0);
   const squadDps = normalizedPlayers.reduce((sum, p) => sum + p.totalDps, 0);
+  const timeStart = field(raw, 'TimeStart') ?? field(raw, 'TimeStartStd');
 
   return {
-    fightName: raw.fightName ?? 'Unknown Encounter',
-    triggerId: typeof raw.triggerID === 'number' ? raw.triggerID : null,
-    isCm: Boolean(raw.isCM ?? raw.isCm ?? false),
-    success: Boolean(raw.success),
+    fightName: field(raw, 'FightName') ?? 'Unknown Encounter',
+    triggerId: typeof field(raw, 'TriggerID') === 'number' ? field(raw, 'TriggerID') : null,
+    isCm: Boolean(field(raw, 'IsCM') ?? false),
+    success: Boolean(field(raw, 'Success')),
     durationMs,
     squadDps,
-    encounterTime: raw.timeStart ? new Date(raw.timeStart) : new Date(),
+    encounterTime: timeStart ? new Date(timeStart) : new Date(),
     players: normalizedPlayers,
     mechanicEvents: events,
   };

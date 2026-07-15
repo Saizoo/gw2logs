@@ -1,47 +1,60 @@
-// A hand-built sample shaped like Elite Insights' JSON output, used to
-// exercise normalizeEiJson()/persistLog() against a real database without
-// network access to dps.report. Field names follow the documented EI JSON
-// schema from memory — see the note in lib/dpsReport.ts about verifying
-// against one real upload once the server is deployed.
-import type { RawEiJson } from '../../lib/dpsReport.js';
+// Shaped to match Elite Insights' actual JSON output schema, verified
+// against the GW2EIJSON source (JsonLog/JsonActor/JsonPlayer/JsonStatistics/
+// JsonBuffsUptime/JsonMechanics in baaron4/GW2-Elite-Insights-Parser@master).
+import type { RawEiJson } from '../../lib/ingest.js';
 
 export const sampleEiJson: RawEiJson = {
-  fightName: 'Dhuum',
-  triggerID: 15429,
-  isCM: true,
-  success: true,
-  duration: '2m 31s',
-  durationMS: 151000,
-  timeStart: '2026-07-10 21:14:00 -00:00',
-  players: [
-    { name: 'Sai Zu', account: 'SaiZu.1234', profession: 'Chronomancer', group: 1 },
-    { name: 'Moira Ashfall', account: 'Moira.5678', profession: 'Firebrand', group: 2 },
-  ],
-  dpsAll: [
-    [{ dps: 26800, powerDps: 9380, condiDps: 17420 }],
-    [{ dps: 21200, powerDps: 14840, condiDps: 6360 }],
-  ],
-  defenses: [
-    [{ damageTaken: 4200, downCount: 0, deadCount: 0 }],
-    [{ damageTaken: 5720, downCount: 1, deadCount: 0 }],
-  ],
-  buffUptimes: [
-    { id: 1187, name: 'Quickness', buffData: [{ uptime: 95 }, { uptime: 91 }] },
-    { id: 30328, name: 'Alacrity', buffData: [{ uptime: 30 }, { uptime: 20 }] },
-    { id: 740, name: 'Might', buffData: [{ uptime: 25 }, { uptime: 25 }] },
-    { id: 725, name: 'Fury', buffData: [{ uptime: 100 }, { uptime: 95 }] },
-    { id: 717, name: 'Protection', buffData: [{ uptime: 70 }, { uptime: 60 }] },
-    { id: 743, name: 'Aegis', buffData: [{ uptime: 12 }, { uptime: 15 }] },
-    { id: 1122, name: 'Stability', buffData: [{ uptime: 8 }, { uptime: 6 }] },
-  ],
-  mechanics: [
+  FightName: 'Dhuum',
+  TriggerID: 15429,
+  IsCM: true,
+  Success: true,
+  Duration: '2m 31s',
+  DurationMS: 151000,
+  TimeStart: '2026-07-10 21:14:00 -00:00',
+  Players: [
     {
-      name: 'Green Hit',
-      data: [{ time: 78000, actor: 'Moira Ashfall' }],
+      Name: 'Sai Zu',
+      Account: 'SaiZu.1234',
+      Profession: 'Chronomancer',
+      Group: 1,
+      DpsAll: [{ Dps: 26800, PowerDps: 9380, CondiDps: 17420 }],
+      Defenses: [{ DamageTaken: 4200, DownCount: 0, DeadCount: 0 }],
+      BuffUptimes: [
+        { Id: 1187, BuffData: [{ Uptime: 95 }] },
+        { Id: 30328, BuffData: [{ Uptime: 30 }] },
+        { Id: 740, BuffData: [{ Uptime: 25 }] },
+        { Id: 725, BuffData: [{ Uptime: 100 }] },
+        { Id: 717, BuffData: [{ Uptime: 70 }] },
+        { Id: 743, BuffData: [{ Uptime: 12 }] },
+        { Id: 1122, BuffData: [{ Uptime: 8 }] },
+      ],
     },
     {
-      name: 'Shackled',
-      data: [{ time: 100000, actor: 'Sai Zu' }],
+      Name: 'Moira Ashfall',
+      Account: 'Moira.5678',
+      Profession: 'Firebrand',
+      Group: 2,
+      DpsAll: [{ Dps: 21200, PowerDps: 14840, CondiDps: 6360 }],
+      Defenses: [{ DamageTaken: 5720, DownCount: 1, DeadCount: 0 }],
+      BuffUptimes: [
+        { Id: 1187, BuffData: [{ Uptime: 91 }] },
+        { Id: 30328, BuffData: [{ Uptime: 20 }] },
+        { Id: 740, BuffData: [{ Uptime: 25 }] },
+        { Id: 725, BuffData: [{ Uptime: 95 }] },
+        { Id: 717, BuffData: [{ Uptime: 60 }] },
+        { Id: 743, BuffData: [{ Uptime: 15 }] },
+        { Id: 1122, BuffData: [{ Uptime: 6 }] },
+      ],
+    },
+  ],
+  Mechanics: [
+    {
+      Name: 'Green Hit',
+      MechanicsData: [{ Time: 78000, Actor: 'Moira Ashfall' }],
+    },
+    {
+      Name: 'Shackled',
+      MechanicsData: [{ Time: 100000, Actor: 'Sai Zu' }],
     },
   ],
 };

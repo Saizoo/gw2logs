@@ -86,7 +86,7 @@ export default function UploadPage() {
           </div>
           <div style={{ font: '700 15px var(--font-sans)', color: 'var(--text)' }}>Drag .zevtc or .zip files here</div>
           <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 6 }}>
-            or click to browse · multiple files supported · parsed via dps.report in the background
+            or click to browse · multiple files supported · parsed locally in the background
           </div>
           <input
             ref={fileInputRef}
@@ -133,7 +133,7 @@ export default function UploadPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-45)' }}>{sizeLabel}</div>
                 <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-40)' }}>
-                  {item.status === 'uploading' && 'Uploading & parsing via dps.report…'}
+                  {item.status === 'uploading' && 'Uploading & parsing…'}
                   {item.status === 'failed' && item.error}
                   {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)' }}>View log →</Link>}
                 </div>

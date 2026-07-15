@@ -1,4 +1,17 @@
-FROM node:22-alpine AS builder
+# Build Elite Insights (the open-source parser dps.report itself wraps)
+# from source, targeting linux-x64 as a self-contained single-file binary
+# so the final image needs no separately-installed .NET runtime.
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS ei-build
+WORKDIR /src
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 https://github.com/baaron4/GW2-Elite-Insights-Parser.git .
+RUN dotnet publish GW2EIParserCLI/GW2EIParserCLI.csproj \
+    -c Release -r linux-x64 --self-contained true \
+    -p:PublishSingleFile=true -p:PublishTrimmed=false \
+    -o /out
+
+FROM node:22-alpine AS node-build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -6,12 +19,22 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:22-alpine
+# Debian-based (not alpine): the self-contained linux-x64 .NET build above is
+# glibc-linked and needs libicu for globalization data — musl-based alpine
+# would not satisfy that.
+FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+RUN apt-get update && apt-get install -y --no-install-recommends libicu72 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ei-build /out /opt/ei
+COPY ei-settings.conf /opt/ei/settings.conf
+RUN chmod +x /opt/ei/GW2EIParserCLI
+
+COPY --from=node-build /app/node_modules ./node_modules
+COPY --from=node-build /app/dist ./dist
+COPY --from=node-build /app/prisma ./prisma
 COPY package*.json ./
 
 EXPOSE 4000

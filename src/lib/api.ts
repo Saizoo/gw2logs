@@ -53,7 +53,6 @@ export interface LogDetailPlayer {
 
 export interface LogDetail {
   id: string;
-  permalink: string;
   boss: string;
   wing: string | null;
   isCm: boolean;

@@ -17,8 +17,7 @@ model Player {
 
 model Log {
   id             String          @id @default(cuid())
-  permalink      String          @unique
-  dpsReportId    String          @unique
+  contentHash    String          @unique
   fightName      String
   triggerId      Int?
   wing           String?
