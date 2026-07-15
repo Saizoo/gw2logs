@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { api, ApiError, type DpsReportImportStatus } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
-import { Badge } from '../components/atoms';
+import { Badge, Card, GoldButton } from '../components/atoms';
 
 export default function AccountPage() {
   const { user, loading, refresh } = useCurrentUser();
@@ -104,24 +104,31 @@ export default function AccountPage() {
   }
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '40px 28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         {user.discordAvatar && (
           <img src={user.discordAvatar} alt="" style={{ width: 44, height: 44, borderRadius: '50%' }} />
         )}
         <div>
           <div style={{ font: '800 18px var(--font-sans)', color: 'var(--text)' }}>{user.discordUsername}</div>
-          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-40)' }}>Signed in with Discord</div>
+          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>Signed in with Discord</div>
         </div>
         <button
           onClick={handleLogout}
-          style={{ marginLeft: 'auto', font: '600 12px var(--font-sans)', color: 'var(--text-45)', padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 6 }}
+          style={{
+            marginLeft: 'auto',
+            font: '600 12px var(--font-sans)',
+            color: 'var(--text-70)',
+            padding: '8px 14px',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+          }}
         >
           Sign out
         </button>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 22 }}>
+      <Card style={{ padding: 22 }}>
         <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>Guild Wars 2 account</div>
 
         {user.gw2AccountName ? (
@@ -130,21 +137,29 @@ export default function AccountPage() {
               <span style={{ font: '700 14px var(--font-mono)', color: 'var(--gold)' }}>{user.gw2AccountName}</span>
               <Badge tone="good">Verified</Badge>
             </div>
-            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-40)', marginTop: 4 }}>
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 4, lineHeight: 1.6 }}>
               Linked {user.gw2LinkedAt ? new Date(user.gw2LinkedAt).toLocaleDateString() : ''}. Logs uploaded from any
               character on this account are now attributed to your profile, and your guild memberships stay in sync.
             </div>
             <button
               onClick={handleUnlink}
               disabled={unlinking}
-              style={{ marginTop: 14, font: '600 12px var(--font-sans)', color: 'var(--bad)', padding: '8px 14px', border: '1px solid rgba(245,93,78,.3)', borderRadius: 6 }}
+              style={{
+                marginTop: 14,
+                font: '600 12px var(--font-sans)',
+                color: 'var(--bad)',
+                padding: '9px 14px',
+                border: '1px solid var(--bad-dim)',
+                borderRadius: 8,
+                opacity: unlinking ? 0.6 : 1,
+              }}
             >
               {unlinking ? 'Unlinking…' : 'Unlink account'}
             </button>
           </div>
         ) : (
           <form onSubmit={handleLink}>
-            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
               Link your GW2 API key to verify account ownership, attribute uploaded logs to your account name across
               all your characters, and sync your guild roster. Create a key at{' '}
               <a href="https://account.arena.net/applications" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
@@ -159,26 +174,26 @@ export default function AccountPage() {
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
               style={{
-                width: '100%', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)',
-                borderRadius: 6, font: '400 12px var(--font-mono)', color: 'var(--text)',
+                width: '100%',
+                padding: '10px 12px',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                font: '400 12px var(--font-mono)',
+                color: 'var(--text)',
               }}
             />
-            <button
-              type="submit"
-              disabled={linking || !apiKey.trim()}
-              style={{
-                marginTop: 12, padding: '10px 16px', background: 'var(--gold)', borderRadius: 6,
-                font: '700 12px var(--font-sans)', color: '#14120f', opacity: linking || !apiKey.trim() ? 0.6 : 1,
-              }}
-            >
-              {linking ? 'Verifying…' : 'Link account'}
-            </button>
+            <div style={{ marginTop: 12 }}>
+              <GoldButton type="submit" disabled={linking || !apiKey.trim()}>
+                {linking ? 'Verifying…' : 'Link account'}
+              </GoldButton>
+            </div>
           </form>
         )}
 
         {result && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--good)' }}>{result}</div>}
         {error && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{error}</div>}
-      </div>
+      </Card>
 
       {user.gw2AccountName && (
         <div style={{ marginTop: 16, textAlign: 'center' }}>
@@ -188,9 +203,9 @@ export default function AccountPage() {
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 22, marginTop: 16 }}>
+      <Card style={{ padding: 22, marginTop: 16 }}>
         <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>Import from dps.report</div>
-        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
+        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
           Already have a history of logs on dps.report? Paste your user token below to import them here instead of
           re-uploading each file. Find your token at{' '}
           <a href="https://dps.report/" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
@@ -207,34 +222,35 @@ export default function AccountPage() {
             placeholder="dps.report user token"
             disabled={Boolean(dpsStatus && !dpsStatus.done)}
             style={{
-              width: '100%', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: 6, font: '400 12px var(--font-mono)', color: 'var(--text)',
+              width: '100%',
+              padding: '10px 12px',
+              background: 'var(--bg-input)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              font: '400 12px var(--font-mono)',
+              color: 'var(--text)',
             }}
           />
-          <button
-            type="submit"
-            disabled={dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done)}
-            style={{
-              marginTop: 12, padding: '10px 16px', background: 'var(--gold)', borderRadius: 6,
-              font: '700 12px var(--font-sans)', color: '#14120f',
-              opacity: dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done) ? 0.6 : 1,
-            }}
-          >
-            {dpsStarting ? 'Starting…' : 'Import logs'}
-          </button>
+          <div style={{ marginTop: 12 }}>
+            <GoldButton type="submit" disabled={dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done)}>
+              {dpsStarting ? 'Starting…' : 'Import logs'}
+            </GoldButton>
+          </div>
         </form>
 
         {dpsStatus && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ height: 6, background: 'rgba(255,255,255,.06)', borderRadius: 3 }}>
+            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 3 }}>
               <div
                 style={{
-                  height: 6, borderRadius: 3, background: 'var(--gold)',
+                  height: 6,
+                  borderRadius: 3,
+                  background: 'var(--gold)',
                   width: `${dpsStatus.total ? Math.round((dpsStatus.processed / dpsStatus.total) * 100) : 100}%`,
                 }}
               />
             </div>
-            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 8 }}>
+            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8 }}>
               {dpsStatus.done ? (
                 <>
                   Done — {dpsStatus.succeeded} imported, {dpsStatus.failed} skipped/failed of {dpsStatus.total}.
@@ -250,7 +266,7 @@ export default function AccountPage() {
         )}
 
         {dpsError && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{dpsError}</div>}
-      </div>
+      </Card>
     </div>
   );
 }

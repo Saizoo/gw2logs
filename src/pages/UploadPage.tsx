@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { STATUS_META, type UploadStatus } from '../data/derived';
+import { Card, SectionLabel } from '../components/atoms';
+import { EmptyState } from '../components/QueryStates';
 
 interface QueueItem {
   id: string;
@@ -62,24 +64,24 @@ export default function UploadPage() {
           }}
           onClick={() => fileInputRef.current?.click()}
           style={{
-            border: `2px dashed ${dragOver ? 'var(--gold)' : 'rgba(224,180,88,.35)'}`,
-            borderRadius: 12,
+            border: `2px dashed ${dragOver ? 'var(--gold)' : 'var(--gold-dim)'}`,
+            borderRadius: 18,
             padding: '40px 28px',
             textAlign: 'center',
-            background: dragOver ? 'rgba(224,180,88,.08)' : 'rgba(224,180,88,.04)',
+            background: dragOver ? 'oklch(0.7 0.15 85 / 8%)' : 'oklch(0.7 0.15 85 / 4%)',
             cursor: 'pointer',
           }}
         >
           <div
             style={{
-              width: 52, height: 52, borderRadius: 12, background: 'rgba(224,180,88,.15)',
+              width: 52, height: 52, borderRadius: 12, background: 'var(--gold-dim)',
               margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <div style={{ width: 20, height: 24, border: '2px solid var(--gold)', borderBottom: 'none', borderRadius: '3px 3px 0 0' }} />
           </div>
           <div style={{ font: '700 15px var(--font-sans)', color: 'var(--text)' }}>Drag .zevtc or .zip files here</div>
-          <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 6 }}>
+          <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 6 }}>
             or click to browse · multiple files supported · parsed locally in the background
           </div>
           <input
@@ -95,8 +97,8 @@ export default function UploadPage() {
           />
           <div
             style={{
-              display: 'inline-block', marginTop: 16, padding: '9px 20px', background: 'var(--gold)',
-              color: '#14120f', borderRadius: 6, font: '700 13px var(--font-sans)',
+              display: 'inline-block', marginTop: 16, padding: '9px 20px', background: 'var(--gold-grad)',
+              color: 'var(--gold-fg)', borderRadius: 10, font: '700 12.5px var(--font-sans)',
             }}
           >
             Choose files
@@ -105,36 +107,40 @@ export default function UploadPage() {
       </div>
 
       <div style={{ maxWidth: 960, marginTop: 24 }}>
-        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-          Processing queue
-        </div>
-        {queue.length === 0 && (
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>
-            Nothing uploaded yet this session.
-          </div>
-        )}
-        {queue.map((item) => {
-          const meta = STATUS_META[item.status];
-          const sizeLabel = `${(item.file.size / 1024).toFixed(0)} KB`;
-          return (
-            <div key={item.id} style={{ padding: '14px 16px', background: 'var(--bg-row)', border: '1px solid var(--border-soft)', borderRadius: 8, marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.file.name}</div>
-                <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 20, color: '#14120f', background: meta.color }}>
-                  {meta.label}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-45)' }}>{sizeLabel}</div>
-                <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-40)' }}>
-                  {item.status === 'uploading' && 'Uploading & parsing…'}
-                  {item.status === 'failed' && item.error}
-                  {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)' }}>View log →</Link>}
+        <SectionLabel>Processing queue</SectionLabel>
+        {queue.length === 0 && <EmptyState>Nothing uploaded yet this session.</EmptyState>}
+        {queue.length > 0 && (
+          <Card style={{ overflow: 'hidden' }}>
+            {queue.map((item, i) => {
+              const meta = STATUS_META[item.status];
+              const sizeLabel = `${(item.file.size / 1024).toFixed(0)} KB`;
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: '14px 20px',
+                    borderBottom: i === queue.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.file.name}</div>
+                    <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 20, color: '#14120f', background: meta.color }}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{sizeLabel}</div>
+                    <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-55)' }}>
+                      {item.status === 'uploading' && 'Uploading & parsing…'}
+                      {item.status === 'failed' && item.error}
+                      {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)' }}>View log →</Link>}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </Card>
+        )}
       </div>
     </div>
   );

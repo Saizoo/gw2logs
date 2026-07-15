@@ -254,15 +254,28 @@ export function Badge({ children, tone = 'gold' }: { children: ReactNode; tone?:
   );
 }
 
-export function GoldButton({ children, onClick, to }: { children: ReactNode; onClick?: () => void; to?: string }) {
+export function GoldButton({
+  children,
+  onClick,
+  to,
+  disabled,
+  type,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  to?: string;
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+}) {
   const style: CSSProperties = {
-    cursor: 'pointer',
+    cursor: disabled ? 'default' : 'pointer',
     display: 'inline-block',
     font: '600 12.5px var(--font-sans)',
     padding: '9px 16px',
     borderRadius: 10,
     background: 'var(--gold-grad)',
     color: 'var(--gold-fg)',
+    opacity: disabled ? 0.6 : 1,
   };
   if (to) {
     return (
@@ -272,7 +285,7 @@ export function GoldButton({ children, onClick, to }: { children: ReactNode; onC
     );
   }
   return (
-    <button onClick={onClick} style={style}>
+    <button type={type} onClick={onClick} disabled={disabled} style={style}>
       {children}
     </button>
   );
