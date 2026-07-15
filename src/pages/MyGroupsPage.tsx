@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Card, GoldButton } from '../components/atoms';
+import { Card, CountBadge, GoldButton } from '../components/atoms';
 import { LoadingState, EmptyState } from '../components/QueryStates';
 
 export default function MyGroupsPage() {
@@ -79,9 +79,13 @@ export default function MyGroupsPage() {
             {myGroups?.map((g) => (
               <Link key={g.id} to={`/groups/${g.id}`} style={{ display: 'block' }}>
                 <Card style={{ padding: 16 }}>
-                  <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
+                    <CountBadge count={g.pendingRequestCount ?? 0} />
+                  </div>
                   <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
                     {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
+                    {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending request${g.pendingRequestCount === 1 ? '' : 's'}` : ''}
                   </div>
                 </Card>
               </Link>

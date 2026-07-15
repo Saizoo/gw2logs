@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const logsRouter = Router();
 
@@ -13,12 +14,17 @@ export const logsRouter = Router();
 logsRouter.get('/', asyncHandler(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
   const killsOnly = req.query.killsOnly === 'true';
+  const mine = req.query.mine === 'true';
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
   const where = {
     ...(category === 'raid' ? { wing: { not: null } } : category === 'other' ? { wing: null } : {}),
     ...(killsOnly ? { success: true } : {}),
+    // req.user is undefined for a signed-out request — that's an empty
+    // result set for ?mine=true rather than every anonymous log, since
+    // there's no session to own them.
+    ...(mine ? { uploadedBy: req.user?.id ?? '__none__' } : {}),
   };
 
   const logs = await prisma.log.findMany({
@@ -106,6 +112,8 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       durationMs: true,
       squadDps: true,
       encounterTime: true,
+      uploadedBy: true,
+      uploader: { select: { discordUsername: true } },
       players: {
         orderBy: { totalDps: 'desc' },
         select: {
@@ -165,6 +173,13 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
   `;
   const pctByName = new Map(playerPercentiles.map((p) => [p.characterName, Number(p.pct)]));
 
+  // Claimable if nobody's attributed to the upload yet and the signed-in
+  // user's own linked GW2 account was actually a player in this log — i.e.
+  // they can prove they were there, not just anyone passing by.
+  const canClaim = Boolean(
+    !log.uploadedBy && req.user?.gw2AccountName && log.players.some((p) => p.player.account === req.user!.gw2AccountName),
+  );
+
   res.json({
     id: log.id,
     boss: log.fightName,
@@ -174,6 +189,8 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     durationMs: log.durationMs,
     squadDps: log.squadDps,
     date: log.encounterTime,
+    uploadedBy: log.uploader ? { username: log.uploader.discordUsername } : null,
+    canClaim,
     // The raw Elite Insights JSON this was ever derived from is no longer
     // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
     // extract a per-second breakdown from anymore.
@@ -214,4 +231,32 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       killedBy: e.killedBy,
     })),
   });
+}));
+
+// Attributes an anonymous log to the signed-in user, retroactively — for
+// logs uploaded before the uploader had linked (or even had) an account.
+// Only allowed if nobody's claimed it yet and the requester's own linked
+// GW2 account actually appears among the log's players (see canClaim above
+// for the same check surfaced ahead of time on GET /:id).
+logsRouter.post('/:id/claim', requireAuth, asyncHandler(async (req, res) => {
+  const log = await prisma.log.findUnique({
+    where: { id: req.params.id },
+    select: { uploadedBy: true, players: { select: { player: { select: { account: true } } } } },
+  });
+  if (!log) {
+    res.status(404).json({ error: 'Log not found' });
+    return;
+  }
+  if (log.uploadedBy) {
+    res.status(400).json({ error: 'This log is already attributed to an uploader' });
+    return;
+  }
+  const account = req.user!.gw2AccountName;
+  if (!account || !log.players.some((p) => p.player.account === account)) {
+    res.status(403).json({ error: 'Your linked GW2 account was not a player in this log' });
+    return;
+  }
+
+  await prisma.log.update({ where: { id: req.params.id }, data: { uploadedBy: req.user!.id } });
+  res.json({ ok: true });
 }));

@@ -101,23 +101,23 @@ export default function PlayerProfilePage() {
       {chart && (
         <Card style={{ padding: '20px 20px 8px', marginBottom: 20 }}>
           <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
-          <svg viewBox="0 0 720 150" style={{ width: '100%', height: 150, overflow: 'visible' }}>
+          <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible' }} preserveAspectRatio="none">
             <defs>
               <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
                 <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <g stroke="var(--border-soft)" strokeWidth={1}>
+            <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
               <line x1="0" y1="10" x2="720" y2="10" />
               <line x1="0" y1="56" x2="720" y2="56" />
               <line x1="0" y1="102" x2="720" y2="102" />
               <line x1="0" y1="148" x2="720" y2="148" />
             </g>
             <path d={chart.area} fill="url(#dpsFill2)" />
-            <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
             {chart.pts.map((pt, i) => (
-              <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} />
+              <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
             ))}
           </svg>
         </Card>

@@ -79,6 +79,8 @@ export interface LogDetail {
   squadDps: number;
   date: string;
   dpsChart: DpsChartPoint[] | null;
+  uploadedBy: { username: string } | null;
+  canClaim: boolean;
   players: LogDetailPlayer[];
   // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
   // EI itself didn't set one — never guessed client-side.
@@ -171,6 +173,7 @@ export interface GroupSummary {
   background?: string | null;
   memberCount: number;
   leader?: string;
+  pendingRequestCount?: number;
 }
 
 export interface GroupMemberData {
@@ -256,6 +259,7 @@ export interface CurrentUser {
   gw2LinkedAt: string | null;
   createdAt: string;
   isAdmin: boolean;
+  pendingGroupRequests: number;
 }
 
 export interface Build {
@@ -409,6 +413,7 @@ export const api = {
     apiFetch<EncounterStats>(`/encounters/${encodeURIComponent(fightName)}/stats?cm=${isCm}`),
   player: (account: string) => apiFetch<PlayerProfile>(`/players/${encodeURIComponent(account)}`),
   log: (id: string) => apiFetch<LogDetail>(`/logs/${encodeURIComponent(id)}`),
+  claimLog: (id: string) => apiFetch<{ ok: true }>(`/logs/${encodeURIComponent(id)}/claim`, { method: 'POST' }),
   search: (q: string) => apiFetch<SearchResults>(`/search?q=${encodeURIComponent(q)}`),
   compare: (logIdA: string, accountA: string, logIdB: string, accountB: string) =>
     apiFetch<CompareResult>(
@@ -443,10 +448,11 @@ export const api = {
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
   home: () => apiFetch<HomeSummary>('/home'),
   dashboard: () => apiFetch<DashboardSummary>('/dashboard'),
-  logs: (params: { category?: 'raid' | 'other'; killsOnly?: boolean; limit?: number; offset?: number } = {}) => {
+  logs: (params: { category?: 'raid' | 'other'; killsOnly?: boolean; mine?: boolean; limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     if (params.category) qs.set('category', params.category);
     if (params.killsOnly) qs.set('killsOnly', 'true');
+    if (params.mine) qs.set('mine', 'true');
     if (params.limit) qs.set('limit', String(params.limit));
     if (params.offset) qs.set('offset', String(params.offset));
     const query = qs.toString();

@@ -172,6 +172,32 @@ export function LoadMoreButton({ onClick, loading }: { onClick: () => void; load
   );
 }
 
+// Small numeric pip for "N things need your attention" — pending group
+// join requests today, potentially other counts later. Renders nothing at
+// zero rather than a badge reading "0", which reads as broken.
+export function CountBadge({ count, style }: { count: number; style?: CSSProperties }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 16,
+        height: 16,
+        padding: '0 4px',
+        borderRadius: 8,
+        font: '800 10px var(--font-mono)',
+        color: 'var(--gold-fg)',
+        background: 'var(--gold-grad)',
+        ...style,
+      }}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
 export function ResultPill({ success }: { success: boolean }) {
   return (
     <span

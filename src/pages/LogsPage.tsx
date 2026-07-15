@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type LogListItem } from '../lib/api';
 import { usePaginatedList } from '../hooks/usePaginatedList';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, LoadMoreButton, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
-type Filter = 'all' | 'raid' | 'other' | 'kills';
+type Filter = 'all' | 'raid' | 'other' | 'kills' | 'mine';
 
 const PAGE_SIZE = 50;
 
@@ -24,7 +25,9 @@ function formatDuration(ms: number): string {
 }
 
 export default function LogsPage() {
+  const { user } = useCurrentUser();
   const [filter, setFilter] = useState<Filter>('all');
+  const filters = user ? [...FILTERS, { key: 'mine' as const, label: 'Uploaded by me' }] : FILTERS;
 
   const { items: logs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<LogListItem>(
     (offset) =>
@@ -32,6 +35,7 @@ export default function LogsPage() {
         .logs({
           category: filter === 'raid' ? 'raid' : filter === 'other' ? 'other' : undefined,
           killsOnly: filter === 'kills',
+          mine: filter === 'mine',
           limit: PAGE_SIZE,
           offset,
         })
@@ -49,7 +53,7 @@ export default function LogsPage() {
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-        {FILTERS.map((f) => {
+        {filters.map((f) => {
           const active = filter === f.key;
           return (
             <button
@@ -77,7 +81,11 @@ export default function LogsPage() {
       {loading && <LoadingState label="Loading logs…" />}
       {error && <ErrorState message={error} />}
       {!loading && !error && logs?.length === 0 && (
-        <EmptyState>No logs match this filter yet. Upload a log to see it here.</EmptyState>
+        <EmptyState>
+          {filter === 'mine'
+            ? "No logs attributed to you yet — upload one while signed in, or claim one you're a player in from its Fight Report page."
+            : 'No logs match this filter yet. Upload a log to see it here.'}
+        </EmptyState>
       )}
 
       {logs && logs.length > 0 && (

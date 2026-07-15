@@ -70,14 +70,23 @@ authRouter.get('/discord/callback', async (req, res) => {
   }
 });
 
-authRouter.get('/me', (req, res) => {
+authRouter.get('/me', asyncHandler(async (req, res) => {
   if (!req.user) {
     res.status(401).json({ error: 'Not signed in' });
     return;
   }
   const { gw2ApiKeyEnc: _gw2ApiKeyEnc, ...safe } = req.user;
-  res.json(safe);
-});
+
+  // Aggregate pending join-request count across every group this user
+  // leads/subleads, so the nav badge doesn't need its own round trip.
+  const managed = await prisma.groupMember.findMany({
+    where: { userId: req.user.id, role: { in: ['leader', 'subleader'] } },
+    select: { group: { select: { _count: { select: { requests: true } } } } },
+  });
+  const pendingGroupRequests = managed.reduce((sum, m) => sum + m.group._count.requests, 0);
+
+  res.json({ ...safe, pendingGroupRequests });
+}));
 
 authRouter.post('/logout', asyncHandler(async (req, res) => {
   await destroySession(req);

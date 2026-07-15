@@ -128,6 +128,33 @@ p {
   margin: 0;
 }
 
+/* Responsive nav: the tab bar + inline search only fit comfortably above
+   ~960px. Below that, NavHeader swaps them for a hamburger toggle and a
+   dropdown panel (see .nav-mobile-panel) instead of letting 8 tabs and a
+   search box either overflow or squeeze unreadably thin. */
+.nav-hamburger-btn {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .nav-collapsible {
+    display: none !important;
+  }
+  .nav-hamburger-btn {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-user-text {
+    display: none !important;
+  }
+  main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
 ::selection {
   background: oklch(0.6 0.13 85 / 30%);
 }

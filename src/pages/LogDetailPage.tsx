@@ -3,11 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
-import { api, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
+import { api, ApiError, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+import { toast } from '../lib/toast';
 
 type Tab = 'Squad' | 'Boons' | 'Mechanics' | 'Timeline';
 const TABS: Tab[] = ['Squad', 'Boons', 'Mechanics', 'Timeline'];
@@ -32,11 +33,26 @@ function formatDuration(ms: number): string {
 export default function LogDetailPage() {
   const { id = '' } = useParams();
   const [tab, setTab] = useState<Tab>('Squad');
-  const { data: log, loading, error } = useApiQuery(() => api.log(id), [id]);
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const [claiming, setClaiming] = useState(false);
+  const { data: log, loading, error } = useApiQuery(() => api.log(id), [id, reloadNonce]);
 
   if (loading) return <LoadingState label="Loading log…" />;
   if (error) return <ErrorState message={error} />;
   if (!log) return null;
+
+  async function handleClaim() {
+    setClaiming(true);
+    try {
+      await api.claimLog(id);
+      toast.success('Claimed — this log is now attributed to you');
+      setReloadNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to claim this log');
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   return (
     <div>
@@ -76,6 +92,34 @@ export default function LogDetailPage() {
             </div>
             <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-60)' }}>squad dps</div>
           </div>
+        </div>
+        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
+            {log.uploadedBy ? (
+              <>
+                Uploaded by <span style={{ color: 'var(--text-80)', fontWeight: 600 }}>{log.uploadedBy.username}</span>
+              </>
+            ) : (
+              'Uploaded anonymously'
+            )}
+          </div>
+          {log.canClaim && (
+            <button
+              onClick={handleClaim}
+              disabled={claiming}
+              style={{
+                font: '600 11px var(--font-sans)',
+                padding: '4px 10px',
+                borderRadius: 6,
+                background: 'var(--gold-dim)',
+                color: 'var(--gold)',
+                border: '1px solid var(--gold-dim)',
+                opacity: claiming ? 0.6 : 1,
+              }}
+            >
+              {claiming ? 'Claiming…' : 'Claim this upload'}
+            </button>
+          )}
         </div>
       </Card>
 
@@ -145,21 +189,21 @@ function DpsOverTimeChart({ points, durationLabel }: { points: DpsChartPoint[]; 
         <div style={{ font: '700 13.5px var(--font-sans)' }}>Squad DPS Over Time</div>
         <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>0:00 – {durationLabel}</div>
       </div>
-      <svg viewBox="0 0 720 160" style={{ width: '100%', height: 160, overflow: 'visible' }}>
+      <svg viewBox="0 0 720 160" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 160', overflow: 'visible' }} preserveAspectRatio="none">
         <defs>
           <linearGradient id="dpsFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.35" />
             <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <g stroke="var(--border-soft)" strokeWidth={1}>
+        <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
           <line x1="0" y1="20" x2="720" y2="20" />
           <line x1="0" y1="66" x2="720" y2="66" />
           <line x1="0" y1="112" x2="720" y2="112" />
           <line x1="0" y1="158" x2="720" y2="158" />
         </g>
         <path d={areaPath} fill="url(#dpsFill)" />
-        <path d={linePath} fill="none" stroke="var(--gold)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="var(--gold)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
     </Card>
   );
@@ -502,11 +546,11 @@ function TimelineScrubber({ log }: { log: LogDetail }) {
           </span>
         </div>
       </div>
-      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: h, overflow: 'visible' }}>
-        <line x1={pad} y1={60} x2={w - pad} y2={60} stroke="var(--border-soft)" strokeWidth={1} />
+      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', aspectRatio: `${w} / ${h}`, overflow: 'visible' }} preserveAspectRatio="none">
+        <line x1={pad} y1={60} x2={w - pad} y2={60} stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
         {minuteMarks.map((ms) => (
           <g key={ms}>
-            <line x1={xFor(ms)} y1={20} x2={xFor(ms)} y2={70} stroke="var(--border-faint)" strokeWidth={1} />
+            <line x1={xFor(ms)} y1={20} x2={xFor(ms)} y2={70} stroke="var(--border-faint)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
             <text x={xFor(ms)} y={84} textAnchor="middle" fontSize={9} fill="var(--text-50)">
               {formatDuration(ms)}
             </text>
@@ -521,7 +565,7 @@ function TimelineScrubber({ log }: { log: LogDetail }) {
           </circle>
         ))}
         {log.deathEvents.map((e, i) => (
-          <rect key={`d${i}`} x={xFor(e.timeMs) - 4} y={16} width={8} height={8} transform={`rotate(45 ${xFor(e.timeMs)} 20)`} fill={eventDotColor('bad')} stroke="var(--bg)" strokeWidth={1}>
+          <rect key={`d${i}`} x={xFor(e.timeMs) - 4} y={16} width={8} height={8} transform={`rotate(45 ${xFor(e.timeMs)} 20)`} fill={eventDotColor('bad')} stroke="var(--bg)" strokeWidth={1} vectorEffect="non-scaling-stroke">
             <title>
               {formatDuration(e.timeMs)} — {e.actor} died{e.killedBy ? ` (killed by ${e.killedBy})` : ''}
             </title>

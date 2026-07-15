@@ -115,7 +115,7 @@ accountRouter.post('/import-dpsreport', asyncHandler(async (req, res) => {
   // blocking the response on it would hit the same request-timeout class of
   // bug already fixed elsewhere in this app (Nginx's proxy_read_timeout).
   // The client polls GET /import-dpsreport/:batchId for progress instead.
-  runDpsReportImport(userToken, batchId, total).catch((err) => {
+  runDpsReportImport(userToken, batchId, total, req.user!.id).catch((err) => {
     updateBatch(batchId, { done: true, error: err instanceof Error ? err.message : 'Import failed' });
   });
 
@@ -131,7 +131,7 @@ accountRouter.get('/import-dpsreport/:batchId', (req, res) => {
   res.json(batch);
 });
 
-async function runDpsReportImport(userToken: string, batchId: string, total: number): Promise<void> {
+async function runDpsReportImport(userToken: string, batchId: string, total: number, userId: string): Promise<void> {
   let processed = 0;
   let succeeded = 0;
   let failed = 0;
@@ -156,7 +156,7 @@ async function runDpsReportImport(userToken: string, batchId: string, total: num
         if (!alreadyImported) {
           const rawJson = await fetchDpsReportJson(upload.permalink);
           const normalized = normalizeEiJson(rawJson);
-          await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, normalized });
+          await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, uploadedBy: userId, normalized });
         }
         succeeded++;
       } catch {

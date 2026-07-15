@@ -46,7 +46,10 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
 
   const memberships = await prisma.groupMember.findMany({
     where: { userId: req.user.id },
-    select: { group: { select: { id: true, name: true, icon: true, background: true, _count: { select: { members: true } } } } },
+    select: {
+      role: true,
+      group: { select: { id: true, name: true, icon: true, background: true, _count: { select: { members: true, requests: true } } } },
+    },
   });
   res.json(
     memberships.map((m) => ({
@@ -55,6 +58,10 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
       icon: m.group.icon,
       background: m.group.background,
       memberCount: m.group._count.members,
+      // Only meaningful for a leader/subleader — pending join requests
+      // aren't visible to a plain member, matching the 403 the
+      // join-requests endpoint itself already enforces.
+      pendingRequestCount: m.role === 'leader' || m.role === 'subleader' ? m.group._count.requests : 0,
     })),
   );
 }));

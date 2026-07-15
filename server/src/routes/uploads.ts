@@ -48,6 +48,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
     const log = await persistLog({
       contentHash,
       sourceFileName: file.originalname,
+      uploadedBy: req.user?.id,
       normalized,
     });
 

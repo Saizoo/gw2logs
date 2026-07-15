@@ -62,6 +62,7 @@ model User {
   groupsLed        Group[]           @relation("GroupLeader")
   groupMemberships GroupMember[]
   groupRequests    GroupRequest[]
+  uploadedLogs     Log[]             @relation("LogUploader")
 }
 
 model Session {
@@ -107,7 +108,11 @@ model Log {
   squadDps       Int
   encounterTime  DateTime
   uploadedAt     DateTime        @default(now())
+  // Null means anonymous — either uploaded while signed out, or uploaded
+  // before this field existed. See routes/logs.ts POST /:id/claim for how
+  // an anonymous log can be retroactively attributed.
   uploadedBy     String?
+  uploader       User?           @relation("LogUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
   sourceFileName String?
   // The full Elite Insights JSON dump used to live here, but at ~100MB+ per
   // raid log it was the entire storage cost of the database (15GB for 120
@@ -120,6 +125,7 @@ model Log {
 
   @@index([fightName, isCm])
   @@index([uploadedAt])
+  @@index([uploadedBy])
 }
 
 model LogPlayer {
