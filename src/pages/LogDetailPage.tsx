@@ -102,6 +102,14 @@ export default function LogDetailPage() {
             ) : (
               'Uploaded anonymously'
             )}
+            {log.group && (
+              <>
+                {' · '}
+                <Link to={`/groups/${log.group.id}`} style={{ color: 'var(--gold)' }}>
+                  {log.group.name}
+                </Link>
+              </>
+            )}
           </div>
           {log.canClaim && (
             <button

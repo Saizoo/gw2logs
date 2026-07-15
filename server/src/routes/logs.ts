@@ -15,6 +15,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
   const killsOnly = req.query.killsOnly === 'true';
   const mine = req.query.mine === 'true';
+  const groupId = typeof req.query.groupId === 'string' ? req.query.groupId : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
@@ -25,6 +26,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     // result set for ?mine=true rather than every anonymous log, since
     // there's no session to own them.
     ...(mine ? { uploadedBy: req.user?.id ?? '__none__' } : {}),
+    ...(groupId ? { groupId } : {}),
   };
 
   const logs = await prisma.log.findMany({
@@ -114,6 +116,8 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       encounterTime: true,
       uploadedBy: true,
       uploader: { select: { discordUsername: true } },
+      groupId: true,
+      group: { select: { name: true } },
       players: {
         orderBy: { totalDps: 'desc' },
         select: {
@@ -191,6 +195,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     date: log.encounterTime,
     uploadedBy: log.uploader ? { username: log.uploader.discordUsername } : null,
     canClaim,
+    group: log.groupId && log.group ? { id: log.groupId, name: log.group.name } : null,
     // The raw Elite Insights JSON this was ever derived from is no longer
     // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
     // extract a per-second breakdown from anymore.

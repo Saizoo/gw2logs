@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
+import { useApiQuery } from '../hooks/useApiQuery';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { STATUS_META, type UploadStatus } from '../data/derived';
 import { Card, SectionLabel } from '../components/atoms';
 import { EmptyState } from '../components/QueryStates';
@@ -14,37 +16,44 @@ interface QueueItem {
 }
 
 export default function UploadPage() {
+  const { user } = useCurrentUser();
+  const { data: myGroups } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([])), [user]);
+  const [groupId, setGroupId] = useState('');
+
   const [dragOver, setDragOver] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const submitFiles = useCallback((files: FileList | File[]) => {
-    const items: QueueItem[] = Array.from(files).map((file) => ({
-      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
-      file,
-      status: 'uploading',
-    }));
-    setQueue((q) => [...items, ...q]);
+  const submitFiles = useCallback(
+    (files: FileList | File[]) => {
+      const items: QueueItem[] = Array.from(files).map((file) => ({
+        id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+        file,
+        status: 'uploading',
+      }));
+      setQueue((q) => [...items, ...q]);
 
-    for (const item of items) {
-      api
-        .upload(item.file)
-        .then((result) => {
-          setQueue((q) =>
-            q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)),
-          );
-        })
-        .catch((err: unknown) => {
-          setQueue((q) =>
-            q.map((qi) =>
-              qi.id === item.id
-                ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
-                : qi,
-            ),
-          );
-        });
-    }
-  }, []);
+      for (const item of items) {
+        api
+          .upload(item.file, groupId || undefined)
+          .then((result) => {
+            setQueue((q) =>
+              q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)),
+            );
+          })
+          .catch((err: unknown) => {
+            setQueue((q) =>
+              q.map((qi) =>
+                qi.id === item.id
+                  ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
+                  : qi,
+              ),
+            );
+          });
+      }
+    },
+    [groupId],
+  );
 
   return (
     <div>
@@ -52,6 +61,24 @@ export default function UploadPage() {
       <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
         Drag in .zevtc, .evtc, or .zip files — parsed in the background, no need to stay on this page.
       </div>
+
+      {user && myGroups && myGroups.length > 0 && (
+        <div style={{ maxWidth: 960, marginBottom: 16 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 5, maxWidth: 320 }}>
+            <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+              Attach to group (optional)
+            </span>
+            <select value={groupId} onChange={(e) => setGroupId(e.target.value)} style={selectStyle}>
+              <option value="">Don't attach to a group</option>
+              {myGroups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       <div style={{ maxWidth: 960 }}>
         <div
@@ -145,3 +172,13 @@ export default function UploadPage() {
     </div>
   );
 }
+
+const selectStyle = {
+  background: 'var(--bg-input)',
+  border: '1px solid var(--border)',
+  color: 'var(--text)',
+  fontSize: 12.5,
+  padding: '8px 12px',
+  borderRadius: 8,
+  fontFamily: 'var(--font-sans)',
+} as const;

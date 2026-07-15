@@ -114,6 +114,11 @@ model Log {
   uploadedBy     String?
   uploader       User?           @relation("LogUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
   sourceFileName String?
+  // Set by the uploader at upload time if they're a member of the group —
+  // see routes/uploads.ts. Null means "not attached to any group", not
+  // "unknown"; a log can only ever belong to one group.
+  groupId        String?
+  group          Group?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
   // The full Elite Insights JSON dump used to live here, but at ~100MB+ per
   // raid log it was the entire storage cost of the database (15GB for 120
   // logs). Everything the app actually reads is extracted into LogPlayer/
@@ -126,6 +131,7 @@ model Log {
   @@index([fightName, isCm])
   @@index([uploadedAt])
   @@index([uploadedBy])
+  @@index([groupId])
 }
 
 model LogPlayer {
@@ -226,6 +232,7 @@ model Group {
   raidStartTime    String?
   raidDurationMins Int?
   raidTimezone     String?
+  logs             Log[]
 }
 
 model GroupMember {

@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError, type GroupDetail } from '../lib/api';
+import { api, ApiError, type GroupDetail, type LogListItem } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
-import { Avatar, Card, GoldButton } from '../components/atoms';
-import { LoadingState, ErrorState } from '../components/QueryStates';
+import { Avatar, Card, GoldButton, LoadMoreButton, ParseBadge, ResultPill } from '../components/atoms';
+import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 import { DURATION_OPTIONS_MINS, WEEKDAYS, formatDurationMins, formatSchedule } from '../data/schedule';
+
+const LOGS_PAGE_SIZE = 20;
+
+function formatLogDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
 
 export default function GroupDetailPage() {
   const { id = '' } = useParams();
@@ -18,6 +28,19 @@ export default function GroupDetailPage() {
   const { data: requests } = useApiQuery(
     () => (group?.canManage ? api.groupJoinRequests(id) : Promise.resolve([])),
     [id, group?.canManage, reloadNonce],
+  );
+  const {
+    items: groupLogs,
+    loading: logsLoading,
+    loadingMore: logsLoadingMore,
+    hasMore: logsHasMore,
+    loadMore: loadMoreLogs,
+  } = usePaginatedList<LogListItem>(
+    (offset) =>
+      api
+        .logs({ groupId: id, limit: LOGS_PAGE_SIZE, offset })
+        .then((items) => ({ items, hasMore: items.length === LOGS_PAGE_SIZE })),
+    [id],
   );
 
   const [inviteName, setInviteName] = useState('');
@@ -188,6 +211,68 @@ export default function GroupDetailPage() {
             </Card>
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 12 }}>Group Logs</div>
+        {logsLoading && <LoadingState label="Loading logs…" />}
+        {!logsLoading && groupLogs?.length === 0 && (
+          <EmptyState>
+            No logs attached to this group yet — pick "{group.name}" from the group dropdown on the Upload page next
+            time someone uploads a log.
+          </EmptyState>
+        )}
+        {groupLogs && groupLogs.length > 0 && (
+          <Card style={{ overflow: 'hidden' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '2.2fr 0.7fr 0.8fr 0.9fr 0.7fr 0.9fr',
+                gap: 8,
+                padding: '12px 20px',
+                font: '700 10.5px var(--font-sans)',
+                textTransform: 'uppercase',
+                letterSpacing: '.5px',
+                color: 'var(--text-55)',
+                borderBottom: '1px solid var(--border-soft)',
+              }}
+            >
+              <div>Encounter</div>
+              <div>Duration</div>
+              <div>Result</div>
+              <div>Squad DPS</div>
+              <div>Parse</div>
+              <div>Date</div>
+            </div>
+            {groupLogs.map((log, i) => (
+              <Link
+                key={log.id}
+                to={`/logs/${log.id}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2.2fr 0.7fr 0.8fr 0.9fr 0.7fr 0.9fr',
+                  gap: 8,
+                  alignItems: 'center',
+                  padding: '12px 20px',
+                  borderBottom: i === groupLogs.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                }}
+              >
+                <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {log.boss}
+                  {log.isCm ? ' CM' : ''}
+                </div>
+                <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-70)' }}>{formatLogDuration(log.durationMs)}</div>
+                <div>
+                  <ResultPill success={log.success} />
+                </div>
+                <div style={{ font: '700 12.5px var(--font-mono)', color: 'var(--gold)' }}>{log.squadDps.toLocaleString()}</div>
+                <div>{log.parsePct != null ? <ParseBadge pct={log.parsePct} /> : <span style={{ color: 'var(--text-50)' }}>—</span>}</div>
+                <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-55)' }}>{new Date(log.date).toLocaleDateString()}</div>
+              </Link>
+            ))}
+          </Card>
+        )}
+        {logsHasMore && <LoadMoreButton onClick={loadMoreLogs} loading={logsLoadingMore} />}
       </div>
     </div>
   );

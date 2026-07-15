@@ -5,6 +5,7 @@ import { prisma } from '../db.js';
 import { parseWithEliteInsights } from '../lib/eliteInsights.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
+import { getGroupRole } from '../lib/groupAccess.js';
 
 // Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — this needs
 // real headroom above that, not just above today's average. Must stay in
@@ -21,6 +22,26 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
     return;
   }
 
+  // Attaching to a group is opt-in and requires actually being a member of
+  // it — not gated to leader/subleader, any member can bring a log in.
+  // Rejected outright rather than silently dropped: the frontend only ever
+  // offers groups from the signed-in user's own membership list, so a
+  // mismatch here means something bypassed that UI.
+  const requestedGroupId = typeof req.body?.groupId === 'string' && req.body.groupId ? req.body.groupId : undefined;
+  let groupId: string | undefined;
+  if (requestedGroupId) {
+    if (!req.user) {
+      res.status(401).json({ error: 'Sign in to attach an upload to a group' });
+      return;
+    }
+    const role = await getGroupRole(requestedGroupId, req.user.id);
+    if (!role) {
+      res.status(403).json({ error: 'You must be a member of that group to attach a log to it' });
+      return;
+    }
+    groupId = requestedGroupId;
+  }
+
   const job = await prisma.uploadJob.create({
     data: { status: 'parsing', fileName: file.originalname, fileSizeByte: file.size },
   });
@@ -30,6 +51,13 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
 
     const alreadyIngested = await prisma.log.findUnique({ where: { contentHash } });
     if (alreadyIngested) {
+      // Same bytes uploaded again — no re-parse, but if this uploader is
+      // attaching to a group and nobody's claimed that slot yet, still
+      // honor it rather than silently no-op'ing (the log itself doesn't
+      // change, only who it's attributed/attached to).
+      if (groupId && !alreadyIngested.groupId) {
+        await prisma.log.update({ where: { id: alreadyIngested.id }, data: { groupId } });
+      }
       await prisma.uploadJob.update({
         where: { id: job.id },
         data: { status: 'success', logId: alreadyIngested.id },
@@ -49,6 +77,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       contentHash,
       sourceFileName: file.originalname,
       uploadedBy: req.user?.id,
+      groupId,
       normalized,
     });
 

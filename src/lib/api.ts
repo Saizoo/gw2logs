@@ -81,6 +81,7 @@ export interface LogDetail {
   dpsChart: DpsChartPoint[] | null;
   uploadedBy: { username: string } | null;
   canClaim: boolean;
+  group: { id: string; name: string } | null;
   players: LogDetailPlayer[];
   // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
   // EI itself didn't set one — never guessed client-side.
@@ -427,9 +428,10 @@ export const api = {
     apiFetch<CompareResult>(
       `/compare?logIdA=${encodeURIComponent(logIdA)}&accountA=${encodeURIComponent(accountA)}&logIdB=${encodeURIComponent(logIdB)}&accountB=${encodeURIComponent(accountB)}`,
     ),
-  upload: async (file: File): Promise<UploadResult> => {
+  upload: async (file: File, groupId?: string): Promise<UploadResult> => {
     const form = new FormData();
     form.append('file', file);
+    if (groupId) form.append('groupId', groupId);
     const res = await fetch('/api/uploads', { method: 'POST', body: form });
     const body = await res.json();
     if (!res.ok) throw new ApiError(body.error ?? `Upload failed (${res.status})`, res.status);
@@ -456,11 +458,21 @@ export const api = {
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
   home: () => apiFetch<HomeSummary>('/home'),
   dashboard: () => apiFetch<DashboardSummary>('/dashboard'),
-  logs: (params: { category?: 'raid' | 'other'; killsOnly?: boolean; mine?: boolean; limit?: number; offset?: number } = {}) => {
+  logs: (
+    params: {
+      category?: 'raid' | 'other';
+      killsOnly?: boolean;
+      mine?: boolean;
+      groupId?: string;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) => {
     const qs = new URLSearchParams();
     if (params.category) qs.set('category', params.category);
     if (params.killsOnly) qs.set('killsOnly', 'true');
     if (params.mine) qs.set('mine', 'true');
+    if (params.groupId) qs.set('groupId', params.groupId);
     if (params.limit) qs.set('limit', String(params.limit));
     if (params.offset) qs.set('offset', String(params.offset));
     const query = qs.toString();
