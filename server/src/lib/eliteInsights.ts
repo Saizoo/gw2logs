@@ -9,7 +9,10 @@ import path from 'node:path';
 const EI_COMMAND = process.env.EI_COMMAND ?? '/opt/ei/ei-cli';
 const EI_DLL = process.env.EI_DLL_PATH;
 const EI_CONFIG = process.env.EI_CONFIG_PATH ?? '/opt/ei/settings.conf';
-const EI_TIMEOUT_MS = 120_000;
+// A 160MB raid log takes meaningfully longer to parse than the small
+// fixtures this was originally tuned against — keep in lockstep with
+// nginx's proxy_read_timeout in deploy/nginx.conf.template.
+const EI_TIMEOUT_MS = 300_000;
 const MAX_CONCURRENT_PARSES = 2;
 
 // A modest VPS can't usefully run more than a couple of EI processes (each

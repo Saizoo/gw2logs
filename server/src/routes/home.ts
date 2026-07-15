@@ -32,8 +32,8 @@ homeRouter.get('/', asyncHandler(async (_req, res) => {
     prisma.log.findMany({
       orderBy: { uploadedAt: 'desc' },
       take: 5,
-      // Excludes rawJson (the full Elite Insights dump) — see the fix in
-      // encounters/players/logs/compare/guilds routes for why that matters.
+      // Explicit select, not a blanket include — see the encounters/
+      // players/logs/compare/guilds routes for the history of why.
       select: {
         id: true,
         fightName: true,

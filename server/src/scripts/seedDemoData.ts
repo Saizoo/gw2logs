@@ -48,7 +48,6 @@ for (const [i, raw] of [variantA, variantB, variantC].entries()) {
   const log = await persistLog({
     contentHash: `seed-demo-${i}-${Date.now()}`,
     sourceFileName: `seed-${i}.zevtc`,
-    rawJson: raw,
     normalized,
   });
   console.log(`seeded log ${i}:`, log.id, normalized.fightName);

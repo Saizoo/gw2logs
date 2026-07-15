@@ -85,7 +85,11 @@ model Log {
   uploadedAt     DateTime        @default(now())
   uploadedBy     String?
   sourceFileName String?
-  rawJson        Json
+  // The full Elite Insights JSON dump used to live here, but at ~100MB+ per
+  // raid log it was the entire storage cost of the database (15GB for 120
+  // logs). Everything the app actually reads is extracted into LogPlayer/
+  // MechanicEvent at ingest time — the raw dump itself is now discarded
+  // right after normalizeEiJson() runs, never written to the DB.
   players        LogPlayer[]
   mechanicEvents MechanicEvent[]
 

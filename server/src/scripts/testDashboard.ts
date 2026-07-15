@@ -39,7 +39,7 @@ async function makeLog(hash: string, squadDps: number, success: boolean, playerI
     data: {
       fightName: 'Dashboard Test Boss', isCm: false, wing: null, success,
       durationMs: 90000, squadDps, encounterTime: uploadedAt, uploadedAt,
-      contentHash: hash, rawJson: {},
+      contentHash: hash,
     },
   });
   await prisma.logPlayer.create({

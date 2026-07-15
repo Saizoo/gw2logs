@@ -13,7 +13,6 @@ async function main() {
   const log = await persistLog({
     contentHash: `test-hash-${Date.now()}`,
     sourceFileName: 'fixture.zevtc',
-    rawJson: sampleEiJson,
     normalized,
   });
 

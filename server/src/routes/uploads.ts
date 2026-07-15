@@ -6,7 +6,11 @@ import { parseWithEliteInsights } from '../lib/eliteInsights.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 64 * 1024 * 1024 } });
+// Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — this needs
+// real headroom above that, not just above today's average. Must stay in
+// lockstep with nginx's client_max_body_size (deploy/nginx.conf.template),
+// which rejects oversized request bodies before they ever reach this limit.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
 
 export const uploadsRouter = Router();
 
@@ -34,13 +38,16 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       return;
     }
 
+    // The parsed JSON only lives in this local variable — normalizeEiJson()
+    // extracts everything the app needs into `normalized`, and the raw dump
+    // itself is never persisted (see the comment above Log.rawJson's old
+    // spot in schema.prisma for why).
     const { json: rawJson } = await parseWithEliteInsights(file.buffer, file.originalname);
     const normalized = normalizeEiJson(rawJson);
 
     const log = await persistLog({
       contentHash,
       sourceFileName: file.originalname,
-      rawJson,
       normalized,
     });
 

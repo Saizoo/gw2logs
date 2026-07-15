@@ -156,7 +156,7 @@ async function runDpsReportImport(userToken: string, batchId: string, total: num
         if (!alreadyImported) {
           const rawJson = await fetchDpsReportJson(upload.permalink);
           const normalized = normalizeEiJson(rawJson);
-          await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, rawJson, normalized });
+          await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, normalized });
         }
         succeeded++;
       } catch {

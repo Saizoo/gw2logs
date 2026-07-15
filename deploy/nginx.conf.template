@@ -11,8 +11,9 @@ server {
     root /var/www/gw2logs;
     index index.html;
 
-    # Uploaded logs can be tens of MB
-    client_max_body_size 64m;
+    # Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — keep in
+    # lockstep with the multer fileSize limit in server/src/routes/uploads.ts.
+    client_max_body_size 200m;
 
     gzip on;
     gzip_vary on;
@@ -27,7 +28,10 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
+        # Matches EI_TIMEOUT_MS in eliteInsights.ts — a 160MB raid log takes
+        # meaningfully longer to parse than the small fixtures this was
+        # originally tuned against.
+        proxy_read_timeout 300s;
     }
 
     location / {

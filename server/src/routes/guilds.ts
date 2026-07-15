@@ -21,9 +21,10 @@ guildsRouter.get('/', asyncHandler(async (_req, res) => {
 guildsRouter.get('/:tag', asyncHandler(async (req, res) => {
   const guild = await prisma.guild.findFirst({
     where: { tag: req.params.tag },
-    // `rawJson` on Log (the full Elite Insights dump, can be many MB) was
-    // getting pulled in for every LogPlayer of every member here via
-    // `include: { log: true }` — select only the two fields actually used.
+    // Explicit select (not `include: { log: true }`) on every nested Log
+    // below — `include` used to also drag in `rawJson` (the full Elite
+    // Insights dump, which no longer exists as a column, but the lesson
+    // stands: only select the fields actually used).
     include: {
       memberships: {
         include: {

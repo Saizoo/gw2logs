@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
-import { extractDpsOverTime } from '../lib/dpsChart.js';
 
 export const logsRouter = Router();
 
@@ -96,48 +95,41 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
 }));
 
 logsRouter.get('/:id', asyncHandler(async (req, res) => {
-  // rawJson fetched separately from the main select, and only for this one
-  // log — fine for a single-row detail view, unlike the list/leaderboard
-  // routes where pulling it per-row was the actual cause of the earlier
-  // site-wide slowness (see encounters/players/guilds routes for that fix).
-  const [log, rawJsonRow] = await Promise.all([
-    prisma.log.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        fightName: true,
-        wing: true,
-        isCm: true,
-        success: true,
-        durationMs: true,
-        squadDps: true,
-        encounterTime: true,
-        players: {
-          orderBy: { totalDps: 'desc' },
-          select: {
-            characterName: true,
-            profession: true,
-            spec: true,
-            subgroup: true,
-            totalDps: true,
-            powerDps: true,
-            condiDps: true,
-            damageTaken: true,
-            downCount: true,
-            deadCount: true,
-            boons: true,
-            mechanics: true,
-            squadRole: true,
-          },
-        },
-        mechanicEvents: {
-          orderBy: { timeMs: 'asc' },
-          select: { timeMs: true, name: true, actor: true },
+  const log = await prisma.log.findUnique({
+    where: { id: req.params.id },
+    select: {
+      id: true,
+      fightName: true,
+      wing: true,
+      isCm: true,
+      success: true,
+      durationMs: true,
+      squadDps: true,
+      encounterTime: true,
+      players: {
+        orderBy: { totalDps: 'desc' },
+        select: {
+          characterName: true,
+          profession: true,
+          spec: true,
+          subgroup: true,
+          totalDps: true,
+          powerDps: true,
+          condiDps: true,
+          damageTaken: true,
+          downCount: true,
+          deadCount: true,
+          boons: true,
+          mechanics: true,
+          squadRole: true,
         },
       },
-    }),
-    prisma.log.findUnique({ where: { id: req.params.id }, select: { rawJson: true } }),
-  ]);
+      mechanicEvents: {
+        orderBy: { timeMs: 'asc' },
+        select: { timeMs: true, name: true, actor: true },
+      },
+    },
+  });
 
   if (!log) {
     res.status(404).json({ error: 'Log not found' });
@@ -177,9 +169,10 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     durationMs: log.durationMs,
     squadDps: log.squadDps,
     date: log.encounterTime,
-    // Best-effort — see extractDpsOverTime for why this is null more often
-    // than not right now, rather than a guess dressed up as real data.
-    dpsChart: rawJsonRow ? extractDpsOverTime(rawJsonRow.rawJson as Record<string, any>) : null,
+    // The raw Elite Insights JSON this was ever derived from is no longer
+    // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
+    // extract a per-second breakdown from anymore.
+    dpsChart: null,
     players: log.players.map((p) => ({
       name: p.characterName,
       profession: p.profession,

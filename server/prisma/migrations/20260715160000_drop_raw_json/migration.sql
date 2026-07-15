@@ -1,0 +1,16 @@
+-- DropColumn: the full Elite Insights JSON dump is no longer persisted —
+-- see the comment on Log.rawJson's former location in schema.prisma. This
+-- was the entire storage cost of the database (15GB across ~120 logs,
+-- ~100MB+/log average), and nothing reads it anymore now that the ingest
+-- pipeline extracts everything it needs into LogPlayer/MechanicEvent up
+-- front and discards the raw dump.
+--
+-- IMPORTANT — this does not shrink the table file on disk by itself.
+-- DROP COLUMN only marks the data inaccessible; Postgres reclaims the
+-- underlying (TOASTed) storage lazily via autovacuum. To reclaim the ~15GB
+-- immediately, run VACUUM FULL "Log"; afterwards during a maintenance
+-- window — it takes an ACCESS EXCLUSIVE lock on the table for the
+-- duration, so reads/writes to Log are blocked while it runs. Take a
+-- database backup before running this migration in production: the
+-- dropped data is not recoverable from Postgres afterward.
+ALTER TABLE "Log" DROP COLUMN "rawJson";

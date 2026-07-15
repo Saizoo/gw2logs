@@ -6,10 +6,9 @@ export async function persistLog(params: {
   contentHash: string;
   sourceFileName?: string;
   uploadedBy?: string;
-  rawJson: unknown;
   normalized: NormalizedLog;
 }) {
-  const { contentHash, sourceFileName, uploadedBy, rawJson, normalized } = params;
+  const { contentHash, sourceFileName, uploadedBy, normalized } = params;
 
   return prisma.$transaction(
     async (tx) => {
@@ -26,7 +25,6 @@ export async function persistLog(params: {
           encounterTime: normalized.encounterTime,
           uploadedBy,
           sourceFileName,
-          rawJson: rawJson as any,
         },
       });
 

@@ -28,7 +28,7 @@ async function makeLog(
     data: {
       fightName, isCm: false, wing: null, success: true,
       durationMs: 90000, squadDps, encounterTime: new Date(), uploadedAt: new Date(),
-      contentHash: hash, rawJson: {},
+      contentHash: hash,
     },
   });
   for (const p of players) {
@@ -81,7 +81,7 @@ check('high performer has parsePct 100 (top of 3 for this boss)', highRow?.parse
 check('low performer has parsePct 50 (middle of 3 for this boss)', lowRow?.parsePct === 50);
 check('high performer role is power (15000 >= 5000)', highRow?.role === 'power');
 check('low performer role is condi (2000 < 8000)', lowRow?.role === 'condi');
-check('dpsChart is null (no combat-replay data in fixture rawJson)', detail.dpsChart === null);
+check('dpsChart is null (raw Elite Insights JSON is no longer persisted)', detail.dpsChart === null);
 
 const notFoundRes = await fetch(`${base}/api/logs/does-not-exist`);
 check('unknown log id returns 404', notFoundRes.status === 404);
