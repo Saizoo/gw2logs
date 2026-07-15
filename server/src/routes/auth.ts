@@ -3,6 +3,7 @@ import { Router, type Request } from 'express';
 import { prisma } from '../db.js';
 import { discordAuthorizeUrl, discordAvatarUrl, exchangeCodeForToken, fetchDiscordUser } from '../lib/discord.js';
 import { clearSessionCookie, createSession, destroySession, setSessionCookie } from '../lib/session.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const authRouter = Router();
 
@@ -60,8 +61,8 @@ authRouter.get('/me', (req, res) => {
   res.json(safe);
 });
 
-authRouter.post('/logout', async (req, res) => {
+authRouter.post('/logout', asyncHandler(async (req, res) => {
   await destroySession(req);
   clearSessionCookie(res);
   res.json({ ok: true });
-});
+}));

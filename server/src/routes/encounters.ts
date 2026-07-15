@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const encountersRouter = Router();
 
@@ -13,7 +14,7 @@ function withPercentile<T extends { totalDps: number }>(rows: T[]) {
   }));
 }
 
-encountersRouter.get('/', async (_req, res) => {
+encountersRouter.get('/', asyncHandler(async (_req, res) => {
   const bosses = await prisma.log.groupBy({
     by: ['fightName', 'isCm', 'wing'],
     _count: { _all: true },
@@ -29,9 +30,9 @@ encountersRouter.get('/', async (_req, res) => {
         logCount: b._count._all,
       })),
   );
-});
+}));
 
-encountersRouter.get('/:fightName/leaderboard', async (req, res) => {
+encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) => {
   const { fightName } = req.params;
   const isCm = req.query.cm === 'true';
   const profession = typeof req.query.profession === 'string' ? req.query.profession : undefined;
@@ -62,9 +63,9 @@ encountersRouter.get('/:fightName/leaderboard', async (req, res) => {
       date: r.log.encounterTime,
     })),
   );
-});
+}));
 
-encountersRouter.get('/:fightName/stats', async (req, res) => {
+encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
   const { fightName } = req.params;
   const isCm = req.query.cm === 'true';
 
@@ -93,4 +94,4 @@ encountersRouter.get('/:fightName/stats', async (req, res) => {
     clearRate: Math.round((successes.length / logs.length) * 100),
     totalLogs: logs.length,
   });
-});
+}));

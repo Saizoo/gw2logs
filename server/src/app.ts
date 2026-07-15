@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import { attachUser } from './middleware/auth.js';
+import { asyncHandler } from './lib/asyncHandler.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { encountersRouter } from './routes/encounters.js';
 import { playersRouter } from './routes/players.js';
@@ -23,13 +24,13 @@ export function createApp() {
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-  app.get('/api/stats', async (_req, res) => {
+  app.get('/api/stats', asyncHandler(async (_req, res) => {
     const [totalLogs, totalPlayers] = await Promise.all([
       prisma.log.count(),
       prisma.player.count(),
     ]);
     res.json({ totalLogs, totalPlayers });
-  });
+  }));
 
   app.use('/api/uploads', uploadsRouter);
   app.use('/api/encounters', encountersRouter);
@@ -40,6 +41,16 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/guilds', guildsRouter);
+
+  // Last-resort safety net: without this, any error thrown by an async
+  // route handler that isn't individually try/caught (e.g. a Prisma error
+  // on malformed data) propagates as an unhandled rejection and crashes
+  // the whole process, taking down every other in-flight request too.
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    if (res.headersSent) return;
+    res.status(500).json({ error: 'Internal server error' });
+  });
 
   return app;
 }

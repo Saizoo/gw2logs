@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const guildsRouter = Router();
 
-guildsRouter.get('/', async (_req, res) => {
+guildsRouter.get('/', asyncHandler(async (_req, res) => {
   const guilds = await prisma.guild.findMany({
     include: { _count: { select: { memberships: true } } },
     orderBy: { name: 'asc' },
@@ -15,9 +16,9 @@ guildsRouter.get('/', async (_req, res) => {
       memberCount: g._count.memberships,
     })),
   );
-});
+}));
 
-guildsRouter.get('/:tag', async (req, res) => {
+guildsRouter.get('/:tag', asyncHandler(async (req, res) => {
   const guild = await prisma.guild.findFirst({
     where: { tag: req.params.tag },
     include: {
@@ -58,4 +59,4 @@ guildsRouter.get('/:tag', async (req, res) => {
     memberCount: roster.length,
     roster: roster.sort((a, b) => b.totalLogs - a.totalLogs),
   });
-});
+}));

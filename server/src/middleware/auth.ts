@@ -12,9 +12,13 @@ declare global {
   }
 }
 
-export async function attachUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
-  req.user = await getSessionUser(req);
-  next();
+export function attachUser(req: Request, _res: Response, next: NextFunction): void {
+  getSessionUser(req)
+    .then((user) => {
+      req.user = user;
+      next();
+    })
+    .catch(next);
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {

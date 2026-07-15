@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const compareRouter = Router();
 
@@ -10,7 +11,7 @@ async function loadPlayerRow(logId: string, account: string) {
   });
 }
 
-compareRouter.get('/', async (req, res) => {
+compareRouter.get('/', asyncHandler(async (req, res) => {
   const logIdA = String(req.query.logIdA ?? '');
   const accountA = String(req.query.accountA ?? '');
   const logIdB = String(req.query.logIdB ?? '');
@@ -49,4 +50,4 @@ compareRouter.get('/', async (req, res) => {
     playerB: { name: b.characterName, spec: b.spec, boss: b.log.fightName },
     rows,
   });
-});
+}));

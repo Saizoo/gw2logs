@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const searchRouter = Router();
 
-searchRouter.get('/', async (req, res) => {
+searchRouter.get('/', asyncHandler(async (req, res) => {
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   if (!q) {
     res.json({ query: q, players: [], bosses: [] });
@@ -31,4 +32,4 @@ searchRouter.get('/', async (req, res) => {
     players: players.map((p) => ({ account: p.account, displayName: p.displayName })),
     bosses: bosses.map((b) => ({ fightName: b.fightName, isCm: b.isCm, wing: b.wing, logCount: b._count._all })),
   });
-});
+}));

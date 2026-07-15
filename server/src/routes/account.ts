@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { encrypt } from '../lib/crypto.js';
 import { fetchAccount, fetchTokenInfo } from '../lib/gw2Api.js';
 import { syncGuildsForUser } from '../lib/guildSync.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const accountRouter = Router();
 
@@ -62,7 +63,7 @@ accountRouter.post('/link-gw2', async (req, res) => {
   }
 });
 
-accountRouter.post('/unlink-gw2', async (req, res) => {
+accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
   const userId = req.user!.id;
 
   await prisma.$transaction([
@@ -75,4 +76,4 @@ accountRouter.post('/unlink-gw2', async (req, res) => {
   ]);
 
   res.json({ ok: true });
-});
+}));

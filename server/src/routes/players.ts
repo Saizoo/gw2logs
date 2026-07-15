@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const playersRouter = Router();
 
-playersRouter.get('/:account', async (req, res) => {
+playersRouter.get('/:account', asyncHandler(async (req, res) => {
   const { account } = req.params;
   const player = await prisma.player.findUnique({ where: { account } });
   if (!player) {
@@ -57,4 +58,4 @@ playersRouter.get('/:account', async (req, res) => {
       uploadedAt: lp.log.uploadedAt,
     })),
   });
-});
+}));

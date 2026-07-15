@@ -6,6 +6,14 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-gw2logs}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-gw2logs}
+      # Without an explicit locale, Alpine's initdb has no locale data to
+      # work from and falls back to SQL_ASCII, which stores strings without
+      # validating them as UTF-8. Character/guild names with accents or
+      # other non-ASCII text then get written as raw invalid bytes that
+      # Postgres itself accepts, but that the Prisma query engine cannot
+      # decode back into a string on read. Force real UTF-8 so the database
+      # rejects invalid text on write instead of failing later on read.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C.UTF-8'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

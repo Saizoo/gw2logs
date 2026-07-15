@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const logsRouter = Router();
 
-logsRouter.get('/:id', async (req, res) => {
+logsRouter.get('/:id', asyncHandler(async (req, res) => {
   const log = await prisma.log.findUnique({
     where: { id: req.params.id },
     include: {
@@ -48,4 +49,4 @@ logsRouter.get('/:id', async (req, res) => {
       actor: e.actor,
     })),
   });
-});
+}));
