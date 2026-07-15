@@ -18,21 +18,15 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     // `include: { log: true }` pulled that in for every row here, which is
     // what made this endpoint take 6+ seconds. Select only what's used.
     select: {
+      id: true,
       logId: true,
       profession: true,
       spec: true,
       totalDps: true,
-      log: { select: { fightName: true, isCm: true, uploadedAt: true } },
+      log: { select: { fightName: true, isCm: true, uploadedAt: true, success: true } },
     },
     orderBy: { log: { uploadedAt: 'desc' } },
   });
-
-  const bestByBoss = new Map<string, (typeof logPlayers)[number]>();
-  for (const lp of logPlayers) {
-    const key = `${lp.log.fightName}::${lp.log.isCm}`;
-    const current = bestByBoss.get(key);
-    if (!current || lp.totalDps > current.totalDps) bestByBoss.set(key, lp);
-  }
 
   const professionCounts = new Map<string, number>();
   for (const lp of logPlayers) {
@@ -47,9 +41,14 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
   // other parse of the same boss+CM combination (0-100, same percentile
   // convention as the leaderboard's rank pill). Consistency score: how
   // tightly clustered those percentiles are — always near the same
-  // percentile scores higher than swinging between top and bottom.
+  // percentile scores higher than swinging between top and bottom. Per-row
+  // `id` is carried through so the same percentiles can pick each fight's
+  // best *parse* (highest percentile) below, rather than just its highest
+  // raw DPS number — DPS alone isn't comparable across specs/builds, which
+  // is exactly what the percentile already normalizes for everywhere else
+  // in the app (ParseBadge, leaderboard rank).
   const percentiles = logPlayers.length
-    ? await prisma.$queryRaw<{ pct: number }[]>`
+    ? await prisma.$queryRaw<{ id: string; pct: number }[]>`
         WITH mine AS (
           SELECT lp.id, lp."totalDps", l."fightName", l."isCm"
           FROM "LogPlayer" lp
@@ -57,6 +56,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
           WHERE lp."playerId" = ${player.id}
         )
         SELECT
+          id,
           CASE WHEN total <= 1 THEN 100.0
                ELSE ((rank_from_bottom - 1)::float8 / (total - 1)) * 100
           END AS pct
@@ -72,6 +72,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
         ) sub
       `
     : [];
+  const pctByLogPlayerId = new Map(percentiles.map((r) => [r.id, Number(r.pct)]));
 
   let overallScore: number | null = null;
   let consistencyScore: number | null = null;
@@ -83,6 +84,21 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     consistencyScore = Math.round(Math.max(0, 100 - Math.sqrt(variance)));
   }
 
+  // Best parse per fight: the kill with the highest percentile rank against
+  // everyone else's parses of that same boss+CM, not just the kill with the
+  // biggest raw DPS number — a condi build's ceiling and a power build's
+  // ceiling aren't the same number, so "highest DPS" quietly favored
+  // whichever spec has the higher raw scale. Restricted to actual kills
+  // (wipes aren't parses), matching the leaderboard's own success filter.
+  const bestByBoss = new Map<string, { lp: (typeof logPlayers)[number]; pct: number }>();
+  for (const lp of logPlayers) {
+    if (!lp.log.success) continue;
+    const pct = pctByLogPlayerId.get(lp.id) ?? 0;
+    const key = `${lp.log.fightName}::${lp.log.isCm}`;
+    const current = bestByBoss.get(key);
+    if (!current || pct > current.pct) bestByBoss.set(key, { lp, pct });
+  }
+
   res.json({
     account: player.account,
     displayName: player.displayName,
@@ -91,13 +107,14 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     consistencyScore,
     professionBreakdown,
     bestParses: [...bestByBoss.values()]
-      .sort((a, b) => b.totalDps - a.totalDps)
+      .sort((a, b) => b.pct - a.pct)
       .slice(0, 6)
-      .map((lp) => ({
+      .map(({ lp, pct }) => ({
         boss: lp.log.fightName,
         isCm: lp.log.isCm,
         spec: lp.spec,
         dps: lp.totalDps,
+        pct: Math.round(pct),
         logId: lp.logId,
       })),
     recent: logPlayers.slice(0, 10).map((lp) => ({
@@ -105,6 +122,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
       isCm: lp.log.isCm,
       spec: lp.spec,
       dps: lp.totalDps,
+      success: lp.log.success,
       logId: lp.logId,
       uploadedAt: lp.log.uploadedAt,
     })),

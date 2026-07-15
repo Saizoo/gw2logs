@@ -3,21 +3,26 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionColorAlpha, professionForSpec, professionIconPath } from '../data/gw2-data';
-import { Card, ProfDot } from '../components/atoms';
+import { Card, ParseBadge, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
   const { data: player, loading, error } = useApiQuery(() => api.player(name), [name]);
 
+  // Wipes don't have a meaningful "final" DPS — the fight never finished,
+  // so a low number there just means it ended early, not that the parse was
+  // bad. Both the trend line and its average are kills-only for that reason.
+  const recentKills = useMemo(() => player?.recent.filter((r) => r.success) ?? [], [player]);
+
   const avgRecentDps = useMemo(() => {
-    if (!player || player.recent.length === 0) return null;
-    return Math.round(player.recent.reduce((s, r) => s + r.dps, 0) / player.recent.length);
-  }, [player]);
+    if (recentKills.length === 0) return null;
+    return Math.round(recentKills.reduce((s, r) => s + r.dps, 0) / recentKills.length);
+  }, [recentKills]);
 
   const chart = useMemo(() => {
-    if (!player || player.recent.length < 2) return null;
-    const values = [...player.recent].reverse().map((r) => r.dps);
+    if (recentKills.length < 2) return null;
+    const values = [...recentKills].reverse().map((r) => r.dps);
     const w = 720;
     const h = 150;
     const pad = 14;
@@ -29,7 +34,7 @@ export default function PlayerProfilePage() {
     const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
     const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
     return { line, area, pts };
-  }, [player]);
+  }, [recentKills]);
 
   if (loading) return <LoadingState label="Loading profile…" />;
   if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
@@ -95,7 +100,7 @@ export default function PlayerProfilePage() {
 
       {chart && (
         <Card style={{ padding: '20px 20px 8px', marginBottom: 20 }}>
-          <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {player.recent.length} Logs</div>
+          <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
           <svg viewBox="0 0 720 150" style={{ width: '100%', height: 150, overflow: 'visible' }}>
             <defs>
               <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
@@ -137,7 +142,10 @@ export default function PlayerProfilePage() {
                   </div>
                 </div>
                 <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 10 }}>{bp.spec}</div>
-                <span style={{ font: '700 16px var(--font-mono)', color: 'var(--gold)' }}>{bp.dps.toLocaleString()}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <ParseBadge pct={bp.pct} style={{ height: 24, minWidth: 32, font: '800 13px var(--font-mono)' }} />
+                  <span style={{ font: '600 13px var(--font-mono)', color: 'var(--text-65)' }}>{bp.dps.toLocaleString()} dps</span>
+                </div>
               </Link>
             </Card>
           ))}

@@ -39,8 +39,8 @@ export interface PlayerProfile {
   overallScore: number | null;
   consistencyScore: number | null;
   professionBreakdown: { profession: string; pct: number }[];
-  bestParses: { boss: string; isCm: boolean; spec: string; dps: number; logId: string }[];
-  recent: { boss: string; isCm: boolean; spec: string; dps: number; logId: string; uploadedAt: string }[];
+  bestParses: { boss: string; isCm: boolean; spec: string; dps: number; pct: number; logId: string }[];
+  recent: { boss: string; isCm: boolean; spec: string; dps: number; success: boolean; logId: string; uploadedAt: string }[];
 }
 
 export interface LogDetailPlayer {
