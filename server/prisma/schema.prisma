@@ -1,5 +1,9 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Bundle engines for both OpenSSL versions seen across Debian-based node
+  // images in practice (native alone proved unreliable — the exact version
+  // the build stage detects doesn't always match the runtime stage's).
+  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
