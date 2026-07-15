@@ -4,16 +4,6 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 
 export const encountersRouter = Router();
 
-function withPercentile<T extends { totalDps: number }>(rows: T[]) {
-  const sorted = [...rows].sort((a, b) => b.totalDps - a.totalDps);
-  const n = sorted.length;
-  return sorted.map((row, i) => ({
-    ...row,
-    rank: i + 1,
-    pct: n <= 1 ? 100 : Math.round(((n - 1 - i) / (n - 1)) * 100),
-  }));
-}
-
 encountersRouter.get('/', asyncHandler(async (_req, res) => {
   const bosses = await prisma.log.groupBy({
     by: ['fightName', 'isCm', 'wing'],
@@ -38,21 +28,29 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
   const profession = typeof req.query.profession === 'string' ? req.query.profession : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
 
-  const rows = await prisma.logPlayer.findMany({
-    where: {
-      log: { fightName, isCm },
-      ...(profession ? { profession } : {}),
-    },
-    include: { log: true, player: true },
-    orderBy: { totalDps: 'desc' },
-  });
+  const where = {
+    log: { fightName, isCm },
+    ...(profession ? { profession } : {}),
+  };
 
-  const ranked = withPercentile(rows);
+  // Pull the total count separately so percentile rank stays correct against
+  // the whole population — the row fetch itself is capped at `limit` so a
+  // popular boss with thousands of parses doesn't pull every row (and every
+  // row's nested log + player) into memory just to keep the top 50.
+  const [total, rows] = await Promise.all([
+    prisma.logPlayer.count({ where }),
+    prisma.logPlayer.findMany({
+      where,
+      include: { log: true, player: true },
+      orderBy: { totalDps: 'desc' },
+      take: limit,
+    }),
+  ]);
 
   res.json(
-    ranked.slice(0, limit).map((r) => ({
-      rank: r.rank,
-      pct: r.pct,
+    rows.map((r, i) => ({
+      rank: i + 1,
+      pct: total <= 1 ? 100 : Math.round(((total - 1 - i) / (total - 1)) * 100),
       logId: r.logId,
       name: r.characterName,
       account: r.player.account,
