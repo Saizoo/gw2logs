@@ -80,9 +80,9 @@ export default function LoginPage() {
           to="/upload"
           style={{ padding: '12px 16px', border: '1px solid rgba(224,180,88,.3)', borderRadius: 8, textAlign: 'center', display: 'block' }}
         >
-          <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload anonymously</span>
+          <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload without an account</span>
           <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-40)', marginTop: 3 }}>
-            Claim these logs later by signing in
+            Every player in the log still shows up in search and leaderboards under their GW2 account name
           </div>
         </Link>
 

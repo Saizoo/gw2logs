@@ -1,6 +1,4 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { Logo, Avatar } from '../components/atoms';
-import { SearchBar } from '../components/SearchBar';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
@@ -11,25 +9,13 @@ export default function SearchResultsPage() {
   const { data: results, loading, error } = useApiQuery(() => api.search(query), [query]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <header
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 28px', background: 'var(--bg-header)', borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <Logo />
-        <SearchBar width={340} defaultValue={query} />
-        <Avatar />
-      </header>
-
-      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '22px 28px 0' }}>
-        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginBottom: 14 }}>
+    <div>
+      <div style={{ maxWidth: 1040 }}>
+        <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Search</div>
+        <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
           Results for "<span style={{ color: 'var(--gold)' }}>{query}</span>" across players and bosses
         </div>
-      </div>
 
-      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '0 28px 40px' }}>
         {loading && <LoadingState label="Searching…" />}
         {error && <ErrorState message={error} />}
         {results && results.players.length === 0 && results.bosses.length === 0 && (

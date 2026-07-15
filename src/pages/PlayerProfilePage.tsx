@@ -77,7 +77,7 @@ export default function PlayerProfilePage() {
             border: '1px solid var(--border)',
           }}
         >
-          {mainProfession && <img src={professionIconPath(mainProfession)} style={{ width: 56, height: 56, objectFit: 'contain' }} />}
+          {mainProfession && <img src={professionIconPath(mainProfession)} alt={mainProfession} style={{ width: 56, height: 56, objectFit: 'contain' }} />}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.displayName}</div>
@@ -171,7 +171,7 @@ export default function PlayerProfilePage() {
               borderBottom: i === player.recent.length - 1 ? 'none' : '1px solid var(--border-faint)',
             }}
           >
-            <img src={professionIconPath(professionForSpec(r.spec), r.spec)} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
+            <img src={professionIconPath(professionForSpec(r.spec), r.spec)} alt={r.spec} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ font: '600 13px var(--font-sans)' }}>
                 {r.boss}

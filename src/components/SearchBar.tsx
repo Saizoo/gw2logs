@@ -35,7 +35,6 @@ export function SearchBar({ width = '100%', defaultValue = '' }: { width?: numbe
           color: 'var(--text)',
           fontSize: 13,
           fontFamily: 'var(--font-sans)',
-          outline: 'none',
         }}
       />
     </form>

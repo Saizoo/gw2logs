@@ -135,7 +135,7 @@ function CharacterCard({
   return (
     <Card style={{ overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: '1px solid var(--border-soft)' }}>
-        <img src={professionIconPath(character.profession)} style={{ width: 32, height: 32, objectFit: 'contain', flex: 'none' }} />
+        <img src={professionIconPath(character.profession)} alt={character.profession} style={{ width: 32, height: 32, objectFit: 'contain', flex: 'none' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ font: '700 14px var(--font-sans)' }}>{character.name}</div>

@@ -22,8 +22,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/upload" element={<UploadPage />} />
-      <Route path="/search" element={<SearchResultsPage />} />
 
       <Route element={<Layout />}>
         <Route path="/" element={<DashboardPage />} />
@@ -40,6 +38,8 @@ export default function App() {
         <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/upload" element={<UploadPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

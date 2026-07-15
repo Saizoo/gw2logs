@@ -237,7 +237,7 @@ function SignedInDashboard() {
                   justifyContent: 'center',
                 }}
               >
-                <img src={professionIconPath(log.profession)} style={{ width: 28, height: 28, objectFit: 'contain' }} />
+                <img src={professionIconPath(log.profession)} alt={log.profession} style={{ width: 28, height: 28, objectFit: 'contain' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

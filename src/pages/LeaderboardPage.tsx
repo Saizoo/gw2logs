@@ -131,7 +131,7 @@ export default function LeaderboardPage() {
             >
               <div style={{ font: '800 15px var(--font-sans)', color: i < 3 ? RANK_COLORS[i] : 'var(--text-55)' }}>#{row.rank}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <img src={professionIconPath(row.profession, row.spec)} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
+                <img src={professionIconPath(row.profession, row.spec)} alt={row.spec} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>

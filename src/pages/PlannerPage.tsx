@@ -542,7 +542,7 @@ function SlotRow({
                     background: 'var(--bg-chip)', border: '1px solid var(--border)', textAlign: 'left',
                   }}
                 >
-                  <img src={professionIconPath(c.profession, t.spec)} style={{ width: 24, height: 24, objectFit: 'contain', flex: 'none' }} />
+                  <img src={professionIconPath(c.profession, t.spec)} alt={t.spec ?? c.profession} style={{ width: 24, height: 24, objectFit: 'contain', flex: 'none' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ font: '600 12px var(--font-sans)' }}>
                       {c.name} <span style={{ color: 'var(--text-55)', fontWeight: 400 }}>({c.owner})</span>
@@ -570,7 +570,7 @@ function SlotRow({
     return (
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(slot.profession)} 0%, transparent 55%)`, opacity: 0.16 }} />
-        <img src={professionIconPath(slot.profession, slot.spec)} style={{ position: 'relative', width: 34, height: 34, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }} />
+        <img src={professionIconPath(slot.profession, slot.spec)} alt={slot.spec ?? slot.profession} style={{ position: 'relative', width: 34, height: 34, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }} />
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(slot.profession) }}>
             <ProfDot color={professionColor(slot.profession)} size={6} />

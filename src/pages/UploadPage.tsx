@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Logo } from '../components/atoms';
 import { api } from '../lib/api';
 import { STATUS_META, type UploadStatus } from '../data/derived';
 
@@ -46,18 +45,13 @@ export default function UploadPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <header
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 28px', background: 'var(--bg-header)', borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <Logo />
-        <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-50)' }}>Upload logs</div>
-      </header>
+    <div>
+      <div style={{ font: '800 22px var(--font-sans)', marginBottom: 4 }}>Upload logs</div>
+      <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
+        Drag in .zevtc, .evtc, or .zip files — parsed in the background, no need to stay on this page.
+      </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '28px 28px 0' }}>
+      <div style={{ maxWidth: 960 }}>
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -110,7 +104,7 @@ export default function UploadPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 28px 40px' }}>
+      <div style={{ maxWidth: 960, marginTop: 24 }}>
         <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
           Processing queue
         </div>

@@ -189,6 +189,7 @@ function SquadTab({ log }: { log: LogDetail }) {
                 <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                 <img
                   src={professionIconPath(p.profession, p.spec)}
+                  alt={p.spec}
                   style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }}
                 />
                 <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
