@@ -7,9 +7,38 @@ export const logsRouter = Router();
 logsRouter.get('/:id', asyncHandler(async (req, res) => {
   const log = await prisma.log.findUnique({
     where: { id: req.params.id },
-    include: {
-      players: { orderBy: { totalDps: 'desc' } },
-      mechanicEvents: { orderBy: { timeMs: 'asc' } },
+    // Excludes `rawJson` (the full Elite Insights dump, can be many MB) —
+    // nothing below reads it, so there's no reason to pull it off disk.
+    select: {
+      id: true,
+      fightName: true,
+      wing: true,
+      isCm: true,
+      success: true,
+      durationMs: true,
+      squadDps: true,
+      encounterTime: true,
+      players: {
+        orderBy: { totalDps: 'desc' },
+        select: {
+          characterName: true,
+          profession: true,
+          spec: true,
+          subgroup: true,
+          totalDps: true,
+          powerDps: true,
+          condiDps: true,
+          damageTaken: true,
+          downCount: true,
+          deadCount: true,
+          boons: true,
+          mechanics: true,
+        },
+      },
+      mechanicEvents: {
+        orderBy: { timeMs: 'asc' },
+        select: { timeMs: true, name: true, actor: true },
+      },
     },
   });
 

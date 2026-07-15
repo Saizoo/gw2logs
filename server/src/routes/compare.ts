@@ -7,7 +7,14 @@ export const compareRouter = Router();
 async function loadPlayerRow(logId: string, account: string) {
   return prisma.logPlayer.findFirst({
     where: { logId, player: { account } },
-    include: { log: true },
+    select: {
+      characterName: true,
+      spec: true,
+      totalDps: true,
+      downCount: true,
+      damageTaken: true,
+      log: { select: { durationMs: true, fightName: true } },
+    },
   });
 }
 

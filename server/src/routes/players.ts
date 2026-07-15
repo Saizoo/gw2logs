@@ -14,7 +14,16 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
 
   const logPlayers = await prisma.logPlayer.findMany({
     where: { playerId: player.id },
-    include: { log: true },
+    // `rawJson` on Log holds the full Elite Insights dump (can be many MB) —
+    // `include: { log: true }` pulled that in for every row here, which is
+    // what made this endpoint take 6+ seconds. Select only what's used.
+    select: {
+      logId: true,
+      profession: true,
+      spec: true,
+      totalDps: true,
+      log: { select: { fightName: true, isCm: true, uploadedAt: true } },
+    },
     orderBy: { log: { uploadedAt: 'desc' } },
   });
 

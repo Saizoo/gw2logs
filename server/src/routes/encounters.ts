@@ -41,7 +41,18 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
     prisma.logPlayer.count({ where }),
     prisma.logPlayer.findMany({
       where,
-      include: { log: true, player: true },
+      // `rawJson` holds the full Elite Insights dump for the log (can be
+      // many MB) — `include: { log: true }` pulls that in for every row.
+      // Select only the couple of fields actually used below instead.
+      select: {
+        logId: true,
+        characterName: true,
+        profession: true,
+        spec: true,
+        totalDps: true,
+        player: { select: { account: true } },
+        log: { select: { durationMs: true, encounterTime: true } },
+      },
       orderBy: { totalDps: 'desc' },
       take: limit,
     }),
@@ -69,7 +80,16 @@ encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
 
   const logs = await prisma.log.findMany({
     where: { fightName, isCm },
-    include: { players: { orderBy: { totalDps: 'desc' }, take: 1 } },
+    select: {
+      success: true,
+      durationMs: true,
+      encounterTime: true,
+      players: {
+        select: { totalDps: true, characterName: true },
+        orderBy: { totalDps: 'desc' },
+        take: 1,
+      },
+    },
     orderBy: { durationMs: 'asc' },
   });
 
