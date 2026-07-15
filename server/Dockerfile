@@ -39,8 +39,14 @@ RUN npm run build
 FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
+# Elite Insights shares startup code with the WinForms UI app that calls
+# ApplicationSettingsBase.Upgrade(), which needs HOME resolvable to compute
+# a local-app-data folder — unset in a minimal container, it throws
+# ArgumentNullException before parsing even starts.
+ENV HOME=/root
 RUN apt-get update && apt-get install -y --no-install-recommends libicu72 ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /root/.local/share /root/.config
 
 COPY --from=ei-build /out /opt/ei
 COPY ei-settings.conf /opt/ei/settings.conf

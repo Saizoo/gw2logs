@@ -59,7 +59,11 @@ export async function parseWithEliteInsights(fileBuffer: Buffer, originalFileNam
 
 function runProcess(cmd: string, args: string[], timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    // Elite Insights needs HOME resolvable (see Dockerfile) to compute a
+    // local-app-data folder during startup; fall back defensively in case
+    // the process environment ever lacks it despite the container setting.
+    const env = { ...process.env, HOME: process.env.HOME || '/root' };
+    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], env });
     let stderr = '';
     child.stderr.on('data', (d) => {
       stderr += d.toString();
