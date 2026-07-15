@@ -62,6 +62,9 @@ export async function persistLog(params: {
             deadCount: p.deadCount,
             boons: p.boons as any,
             mechanics: p.mechanics as any,
+            squadRole: p.squadRole,
+            groupBoons: p.groupBoons as any,
+            healingOutput: p.healingOutput,
           })),
         });
       }

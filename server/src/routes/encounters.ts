@@ -31,6 +31,7 @@ interface LeaderboardRawRow {
   totalDps: number;
   powerDps: number;
   condiDps: number;
+  squadRole: string;
   account: string;
   durationMs: number;
   encounterTime: Date;
@@ -71,7 +72,7 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
     `,
     prisma.$queryRaw<LeaderboardRawRow[]>`
       SELECT lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
-             p.account, l."durationMs", l."encounterTime"
+             lp."squadRole", p.account, l."durationMs", l."encounterTime"
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id
       JOIN "Player" p ON lp."playerId" = p.id
@@ -94,6 +95,7 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       spec: r.spec,
       dps: r.totalDps,
       role: r.powerDps >= r.condiDps ? 'power' : 'condi',
+      squadRole: r.squadRole,
       durationMs: r.durationMs,
       date: r.encounterTime,
     })),

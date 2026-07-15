@@ -119,6 +119,37 @@ export function ParseLegend() {
   );
 }
 
+const SQUAD_ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  boon_heal: { label: 'Healer', color: 'var(--good)', bg: 'var(--good-dim)' },
+  boon_dps: { label: 'Boon DPS', color: 'var(--gold)', bg: 'oklch(0.7 0.15 85 / 15%)' },
+};
+
+// Only rendered for boon-support roles — plain 'dps' is the unmarked
+// default and doesn't need a badge cluttering every other row.
+export function SquadRoleBadge({ squadRole, style }: { squadRole: string; style?: CSSProperties }) {
+  const meta = SQUAD_ROLE_LABELS[squadRole];
+  if (!meta) return null;
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: 18,
+        padding: '0 6px',
+        borderRadius: 5,
+        font: '700 9.5px var(--font-sans)',
+        letterSpacing: '.3px',
+        textTransform: 'uppercase',
+        color: meta.color,
+        background: meta.bg,
+        ...style,
+      }}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
 export function ResultPill({ success }: { success: boolean }) {
   return (
     <span

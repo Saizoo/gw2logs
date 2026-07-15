@@ -28,6 +28,12 @@ export const sampleEiJson: RawEiJson = {
         { Id: 743, BuffData: [{ Uptime: 12 }] },
         { Id: 1122, BuffData: [{ Uptime: 8 }] },
       ],
+      // Chronomancer generating alacrity for its own subgroup, with no
+      // healing addon data captured — should classify as boon_dps.
+      GroupBuffs: [
+        { Id: 1187, BuffData: [{ Uptime: 4 }] },
+        { Id: 30328, BuffData: [{ Uptime: 88 }] },
+      ],
     },
     {
       Name: 'Moira Ashfall',
@@ -45,6 +51,16 @@ export const sampleEiJson: RawEiJson = {
         { Id: 743, BuffData: [{ Uptime: 15 }] },
         { Id: 1122, BuffData: [{ Uptime: 6 }] },
       ],
+      // Heal Firebrand generating quickness for its own subgroup, with
+      // healing-addon data captured showing sustained high outgoing
+      // healing — should classify as boon_heal.
+      GroupBuffs: [
+        { Id: 1187, BuffData: [{ Uptime: 92 }] },
+        { Id: 30328, BuffData: [{ Uptime: 2 }] },
+      ],
+      EXTHealingStats: {
+        OutgoingHealing: [{ Hps: 3400, Healing: 513400 }],
+      },
     },
   ],
   Mechanics: [

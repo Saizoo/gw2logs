@@ -57,6 +57,9 @@ export interface NormalizedPlayer {
   deadCount: number;
   boons: Record<string, number>;
   mechanics: Record<string, number>;
+  squadRole: SquadRole;
+  groupBoons: Record<string, number>;
+  healingOutput: number | null;
 }
 
 export interface NormalizedMechanicEvent {
@@ -109,6 +112,89 @@ function extractPlayerBoons(player: any): Record<string, number> {
   return boons;
 }
 
+// GroupBuffs mirrors BuffUptimes' shape (both are JsonBuffsUptimeData under
+// the hood) but is scoped to what this player *generated* for their 5-person
+// subgroup, rather than what they personally have up. That's the correct
+// signal for "who is the alac/quick provider" — personal uptime doesn't
+// distinguish a support who generates the boon from a squadmate who merely
+// receives it.
+function extractGroupBoons(player: any): Record<string, number> {
+  const groupBuffs: any[] = field(player, 'GroupBuffs') ?? [];
+  const boons: Record<string, number> = {};
+  for (const key of ['quickness', 'alacrity'] as const) {
+    const id = BOON_IDS[key];
+    const buff = groupBuffs.find((b) => field(b, 'Id') === id);
+    const buffData = field(buff, 'BuffData') ?? [];
+    const uptime = field(buffData[0], 'Uptime') ?? 0;
+    boons[key] = Math.round(uptime);
+  }
+  return boons;
+}
+
+// Only present when the log was captured with arcdps' healing addon
+// enabled — most WvW/roaming logs and any raid group not running it won't
+// have this. Null (not 0) signals "unknown", since 0 would misread as
+// "provided no healing" for a player we simply have no data on.
+function extractHealingOutput(player: any): number | null {
+  const healingStats = field(player, 'EXTHealingStats');
+  if (!healingStats) return null;
+  const outgoing = field(healingStats, 'OutgoingHealing') ?? [];
+  const fullFight = outgoing[0];
+  if (!fullFight) return null;
+  const hps = field(fullFight, 'Hps');
+  return typeof hps === 'number' ? Math.round(hps) : null;
+}
+
+// A player generating a meaningful share of their subgroup's alacrity or
+// quickness uptime is that subgroup's boon support for that boon. Noise
+// floor of 15% filters out incidental generation (e.g. a trait proc) from
+// players who aren't actually running a support build.
+const GROUP_BOON_SUPPORT_THRESHOLD = 15;
+
+// Dedicated healer builds sustain outgoing healing far above what any
+// DPS/support hybrid puts out incidentally (self-heals, on-heal traits).
+// This floor only ever applies to players already flagged as boon support
+// by real generation data above — it's used to split that group into
+// "boon support DPS" vs "boon support healer", never to invent a healer
+// label from damage numbers.
+const HEALER_HPS_THRESHOLD = 1500;
+
+export type SquadRole = 'dps' | 'boon_dps' | 'boon_heal';
+
+function computeSquadRoles(
+  players: { characterName: string; subgroup: number; groupBoons: Record<string, number>; healingOutput: number | null }[],
+): Map<string, SquadRole> {
+  const roles = new Map<string, SquadRole>();
+  const subgroups = new Set(players.map((p) => p.subgroup));
+
+  for (const sg of subgroups) {
+    const inGroup = players.filter((p) => p.subgroup === sg);
+
+    const supportCharacters = new Set<string>();
+    for (const boonKey of ['quickness', 'alacrity'] as const) {
+      let best: (typeof inGroup)[number] | null = null;
+      for (const p of inGroup) {
+        if (p.groupBoons[boonKey] >= GROUP_BOON_SUPPORT_THRESHOLD && (!best || p.groupBoons[boonKey] > best.groupBoons[boonKey])) {
+          best = p;
+        }
+      }
+      if (best) supportCharacters.add(best.characterName);
+    }
+
+    for (const p of inGroup) {
+      if (!supportCharacters.has(p.characterName)) {
+        roles.set(p.characterName, 'dps');
+      } else if (p.healingOutput != null && p.healingOutput >= HEALER_HPS_THRESHOLD) {
+        roles.set(p.characterName, 'boon_heal');
+      } else {
+        roles.set(p.characterName, 'boon_dps');
+      }
+    }
+  }
+
+  return roles;
+}
+
 function extractMechanics(raw: RawEiJson): {
   perPlayerCounts: Map<string, Record<string, number>>;
   events: NormalizedMechanicEvent[];
@@ -157,8 +243,16 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
       deadCount: def.deadCount,
       boons: extractPlayerBoons(p),
       mechanics: perPlayerCounts.get(name) ?? {},
+      squadRole: 'dps' as SquadRole,
+      groupBoons: extractGroupBoons(p),
+      healingOutput: extractHealingOutput(p),
     };
   });
+
+  const squadRoles = computeSquadRoles(normalizedPlayers);
+  for (const p of normalizedPlayers) {
+    p.squadRole = squadRoles.get(p.characterName) ?? 'dps';
+  }
 
   const durationMs = Math.round(field(raw, 'DurationMS') ?? 0);
   const squadDps = normalizedPlayers.reduce((sum, p) => sum + p.totalDps, 0);

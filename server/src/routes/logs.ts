@@ -127,6 +127,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
             deadCount: true,
             boons: true,
             mechanics: true,
+            squadRole: true,
           },
         },
         mechanicEvents: {
@@ -185,6 +186,11 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       spec: p.spec,
       subgroup: p.subgroup,
       role: p.powerDps >= p.condiDps ? 'power' : 'condi',
+      // Boon-support/healer classification, distinct from the power/condi
+      // damage-type split above — see LogPlayer.squadRole in the schema for
+      // how this is computed (subgroup boon generation + real healing
+      // output, never DPS magnitude).
+      squadRole: p.squadRole,
       parsePct: pctByName.get(p.characterName) ?? null,
       total: p.totalDps,
       power: p.powerDps,

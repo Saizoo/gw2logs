@@ -111,6 +111,22 @@ model LogPlayer {
   deadCount     Int
   boons         Json
   mechanics     Json
+  // Per-log squad function, computed at ingest time from real EI signals —
+  // subgroup boon *generation* (GroupBuffs) for alac/quick, plus outgoing
+  // healing (EXTHealingStats) when the log was recorded with the healing
+  // addon. Never derived from DPS magnitude: a boon-support DPS build and a
+  // pure DPS both look like "not the top parse", and a low-DPS reading is
+  // not evidence of a healer build on its own.
+  squadRole     String @default("dps")
+  // Subgroup boon generation %, same shape as `boons` but scoped to
+  // GroupBuffs (what this player generated for their 5-person subgroup)
+  // rather than BuffUptimes (personal uptime) — the signal squadRole is
+  // computed from.
+  groupBoons    Json?
+  // Outgoing healing (HPS to allies), only present when the log's arcdps
+  // capture included the healing addon. Null, not 0, when unavailable —
+  // 0 would wrongly read as "healed for nothing" instead of "unknown".
+  healingOutput Int?
 
   @@index([logId])
   @@index([playerId])

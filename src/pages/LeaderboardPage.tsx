@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';
+import { Card, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 const RANK_COLORS = ['var(--gold)', 'oklch(0.7 0.03 85)', 'oklch(0.7 0.03 85)'];
@@ -133,7 +133,10 @@ export default function LeaderboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                 <img src={professionIconPath(row.profession, row.spec)} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
+                    <SquadRoleBadge squadRole={row.squadRole} />
+                  </div>
                   <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>
                     <ProfDot color={professionColor(row.profession)} size={6} /> {row.spec}
                   </div>

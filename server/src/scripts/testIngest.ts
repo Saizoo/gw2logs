@@ -33,6 +33,8 @@ async function main() {
     ['2 players persisted', reloaded?.players.length === 2],
     ['Sai Zu profession resolved to Mesmer', reloaded?.players.find((p) => p.characterName === 'Sai Zu')?.profession === 'Mesmer'],
     ['Sai Zu quickness uptime is 95', (reloaded?.players.find((p) => p.characterName === 'Sai Zu')?.boons as any)?.quickness === 95],
+    ['Sai Zu (alac gen, no healing data) classified boon_dps', reloaded?.players.find((p) => p.characterName === 'Sai Zu')?.squadRole === 'boon_dps'],
+    ['Moira (quick gen, high healing) classified boon_heal', reloaded?.players.find((p) => p.characterName === 'Moira Ashfall')?.squadRole === 'boon_heal'],
     ['2 mechanic events persisted', reloaded?.mechanicEvents.length === 2],
   ];
 

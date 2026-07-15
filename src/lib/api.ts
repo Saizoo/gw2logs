@@ -22,9 +22,15 @@ export interface LeaderboardRow {
   spec: string;
   dps: number;
   role: 'power' | 'condi';
+  squadRole: SquadRole;
   durationMs: number;
   date: string;
 }
+
+// Boon-support/healer classification, distinct from the power/condi
+// damage-type split — computed server-side from subgroup boon generation
+// and (when available) real healing output, never from DPS magnitude.
+export type SquadRole = 'dps' | 'boon_dps' | 'boon_heal';
 
 export interface PlayerProfile {
   account: string;
@@ -43,6 +49,7 @@ export interface LogDetailPlayer {
   spec: string;
   subgroup: number;
   role: 'power' | 'condi';
+  squadRole: SquadRole;
   parsePct: number | null;
   total: number;
   power: number;

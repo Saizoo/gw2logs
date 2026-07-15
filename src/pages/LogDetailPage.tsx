@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { heat, mechColor, eventDotColor } from '../data/derived';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill } from '../components/atoms';
+import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
 import { api, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { LoadingState, ErrorState } from '../components/QueryStates';
@@ -196,7 +196,10 @@ function SquadTab({ log }: { log: LogDetail }) {
                     <ProfDot color={professionColor(p.profession)} size={6} />
                     {p.role === 'power' ? 'Power DPS' : 'Condition DPS'} · {p.spec}
                   </div>
-                  <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    <SquadRoleBadge squadRole={p.squadRole} />
+                  </div>
                 </div>
                 <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div>
