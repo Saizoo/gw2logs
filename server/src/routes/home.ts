@@ -18,12 +18,15 @@ homeRouter.get('/', asyncHandler(async (_req, res) => {
   const [topByProfession, recentLogs] = await Promise.all([
     // DISTINCT ON picks the single highest-DPS row per profession in one
     // pass — far cheaper than fetching everything and grouping in JS.
+    // Wipes are excluded, same as the leaderboard: a "record" from a fight
+    // the squad didn't actually win isn't a real record.
     prisma.$queryRaw<TopByProfessionRow[]>`
       SELECT DISTINCT ON (lp.profession)
         lp.profession, lp."characterName", lp.spec, lp."totalDps", lp."logId", l."fightName", p.account
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id
       JOIN "Player" p ON lp."playerId" = p.id
+      WHERE l.success = true
       ORDER BY lp.profession, lp."totalDps" DESC
     `,
     prisma.log.findMany({

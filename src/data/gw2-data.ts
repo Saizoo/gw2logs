@@ -14,19 +14,19 @@ export const RANK_COLORS = {
 
 export interface ProfessionInfo {
   color: string;
-  specs: [string, string, string];
+  specs: [string, string, string, string];
 }
 
 export const PROFESSIONS: Record<string, ProfessionInfo> = {
-  Guardian: { color: '#72c1d9', specs: ['Dragonhunter', 'Firebrand', 'Willbender'] },
-  Warrior: { color: '#ffd166', specs: ['Berserker', 'Spellbreaker', 'Bladesworn'] },
-  Revenant: { color: '#d16e5a', specs: ['Herald', 'Renegade', 'Vindicator'] },
-  Engineer: { color: '#d09c59', specs: ['Scrapper', 'Holosmith', 'Mechanist'] },
-  Ranger: { color: '#8cdc82', specs: ['Druid', 'Soulbeast', 'Untamed'] },
-  Thief: { color: '#c08f95', specs: ['Daredevil', 'Deadeye', 'Specter'] },
-  Elementalist: { color: '#f55d4e', specs: ['Tempest', 'Weaver', 'Catalyst'] },
-  Mesmer: { color: '#d6708b', specs: ['Chronomancer', 'Mirage', 'Virtuoso'] },
-  Necromancer: { color: '#52a76f', specs: ['Reaper', 'Scourge', 'Harbinger'] },
+  Guardian: { color: '#72c1d9', specs: ['Dragonhunter', 'Firebrand', 'Willbender', 'Luminary'] },
+  Warrior: { color: '#ffd166', specs: ['Berserker', 'Spellbreaker', 'Bladesworn', 'Paragon'] },
+  Revenant: { color: '#d16e5a', specs: ['Herald', 'Renegade', 'Vindicator', 'Conduit'] },
+  Engineer: { color: '#d09c59', specs: ['Scrapper', 'Holosmith', 'Mechanist', 'Amalgam'] },
+  Ranger: { color: '#8cdc82', specs: ['Druid', 'Soulbeast', 'Untamed', 'Galeshot'] },
+  Thief: { color: '#c08f95', specs: ['Daredevil', 'Deadeye', 'Specter', 'Antiquary'] },
+  Elementalist: { color: '#f55d4e', specs: ['Tempest', 'Weaver', 'Catalyst', 'Evoker'] },
+  Mesmer: { color: '#d6708b', specs: ['Chronomancer', 'Mirage', 'Virtuoso', 'Troubadour'] },
+  Necromancer: { color: '#52a76f', specs: ['Reaper', 'Scourge', 'Harbinger', 'Ritualist'] },
 };
 
 export const PROFESSION_CHIPS = Object.keys(PROFESSIONS).map((k) => ({
