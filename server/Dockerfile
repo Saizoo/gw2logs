@@ -22,7 +22,10 @@ RUN set -eux; \
     cp "$candidate" /out/ei-cli; \
     chmod +x /out/ei-cli
 
-FROM node:22-alpine AS node-build
+# Same base (Debian, not alpine) as the final runtime stage below — `prisma
+# generate` bakes in a query-engine binary matched to the platform it runs
+# on, so a mismatched build stage here fails at container startup.
+FROM node:22-bookworm-slim AS node-build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
