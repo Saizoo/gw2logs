@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id          String      @id @default(cuid())
+  account     String      @unique
+  displayName String
+  createdAt   DateTime    @default(now())
+  logPlayers  LogPlayer[]
+}
+
+model Log {
+  id             String          @id @default(cuid())
+  permalink      String          @unique
+  dpsReportId    String          @unique
+  fightName      String
+  triggerId      Int?
+  wing           String?
+  isCm           Boolean         @default(false)
+  success        Boolean
+  durationMs     Int
+  squadDps       Int
+  encounterTime  DateTime
+  uploadedAt     DateTime        @default(now())
+  uploadedBy     String?
+  sourceFileName String?
+  rawJson        Json
+  players        LogPlayer[]
+  mechanicEvents MechanicEvent[]
+
+  @@index([fightName, isCm])
+  @@index([uploadedAt])
+}
+
+model LogPlayer {
+  id            String   @id @default(cuid())
+  logId         String
+  log           Log      @relation(fields: [logId], references: [id], onDelete: Cascade)
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id])
+  characterName String
+  profession    String
+  spec          String
+  subgroup      Int
+  totalDps      Int
+  powerDps      Int
+  condiDps      Int
+  damageTaken   Int
+  downCount     Int
+  deadCount     Int
+  boons         Json
+  mechanics     Json
+
+  @@index([logId])
+  @@index([playerId])
+  @@index([profession])
+}
+
+model MechanicEvent {
+  id     String @id @default(cuid())
+  logId  String
+  log    Log    @relation(fields: [logId], references: [id], onDelete: Cascade)
+  timeMs Int
+  name   String
+  actor  String?
+
+  @@index([logId])
+}
+
+model UploadJob {
+  id           String   @id @default(cuid())
+  status       String // queued | parsing | success | failed
+  fileName     String
+  fileSizeByte Int
+  errorMessage String?
+  logId        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

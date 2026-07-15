@@ -1,8 +1,15 @@
-import { PLAYER_PROFILE } from '../data/gw2-data';
-import { ProfDot, RankPill } from '../components/atoms';
+import { Link, useParams } from 'react-router-dom';
+import { api } from '../lib/api';
+import { useApiQuery } from '../hooks/useApiQuery';
+import { LoadingState, ErrorState } from '../components/QueryStates';
 
 export default function PlayerProfilePage() {
-  const player = PLAYER_PROFILE;
+  const { name = '' } = useParams();
+  const { data: player, loading, error } = useApiQuery(() => api.player(name), [name]);
+
+  if (loading) return <LoadingState label="Loading profile…" />;
+  if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
+  if (!player) return null;
 
   return (
     <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 0 40px' }}>
@@ -26,47 +33,43 @@ export default function PlayerProfilePage() {
           }}
         />
         <div style={{ flex: 1 }}>
-          <h1 style={{ font: '800 24px var(--font-sans)', color: 'var(--text)' }}>{player.name}</h1>
-          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 4 }}>
-            {player.guild} · {player.region}
-          </div>
+          <h1 style={{ font: '800 24px var(--font-sans)', color: 'var(--text)' }}>{player.displayName}</h1>
+          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 4 }}>{player.account}</div>
         </div>
         <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
-          <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.rating}</div>
+          <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.totalLogs}</div>
           <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
-            Overall rating
+            Logs uploaded
           </div>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 24, padding: '24px 28px 0', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 480px', minWidth: 0 }}>
-          <div
-            style={{
-              font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase',
-              letterSpacing: '.04em', marginBottom: 12,
-            }}
-          >
+          <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
             Best parses
           </div>
+          {player.bestParses.length === 0 && (
+            <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>No logs yet.</div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
             {player.bestParses.map((bp) => (
-              <div key={bp.boss} style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
-                <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>{bp.boss}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                  <ProfDot color={bp.color} size={7} />
-                  <span style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)' }}>{bp.spec}</span>
+              <Link
+                key={bp.logId}
+                to={`/logs/${bp.logId}`}
+                style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}
+              >
+                <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>
+                  {bp.boss}{bp.isCm ? ' CM' : ''}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ font: '700 16px var(--font-mono)', color: 'var(--text)' }}>{bp.dps.toLocaleString()}</span>
-                  <RankPill pct={bp.pct} color={bp.rankColor} />
-                </div>
-              </div>
+                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)', marginBottom: 10 }}>{bp.spec}</div>
+                <span style={{ font: '700 16px var(--font-mono)', color: 'var(--text)' }}>{bp.dps.toLocaleString()}</span>
+              </Link>
             ))}
           </div>
         </div>
 
-        <div style={{ width: 260, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ width: 260, flex: 'none' }}>
           <div style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
             <div style={{ font: '600 11px var(--font-sans)', color: 'var(--text-40)', textTransform: 'uppercase', marginBottom: 12 }}>
               Profession breakdown
@@ -83,36 +86,32 @@ export default function PlayerProfilePage() {
               </div>
             ))}
           </div>
-          <div style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, textAlign: 'center' }}>
-            <div style={{ font: '800 28px var(--font-mono)', color: 'var(--gold)' }}>{player.consistency}</div>
-            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', marginTop: 4 }}>
-              Consistency score
-            </div>
-          </div>
         </div>
       </div>
 
       <div style={{ padding: '24px 28px 0' }}>
-        <div
-          style={{
-            font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase',
-            letterSpacing: '.04em', marginBottom: 12,
-          }}
-        >
+        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
           Recent uploads
         </div>
-        {player.recent.map((r, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border-soft)' }}>
-            <div style={{ width: 4, height: 34, background: r.rankColor, borderRadius: 2 }} />
+        {player.recent.length === 0 && (
+          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>Nothing uploaded yet.</div>
+        )}
+        {player.recent.map((r) => (
+          <Link
+            key={r.logId}
+            to={`/logs/${r.logId}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border-soft)' }}
+          >
             <div style={{ flex: 1 }}>
-              <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)' }}>{r.boss}</div>
+              <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)' }}>
+                {r.boss}{r.isCm ? ' CM' : ''}
+              </div>
               <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>
-                {r.spec} · {r.uploadedAgo}
+                {r.spec} · {new Date(r.uploadedAt).toLocaleString()}
               </div>
             </div>
             <div style={{ font: '700 13px var(--font-mono)', color: 'var(--text)' }}>{r.dps.toLocaleString()} dps</div>
-            <RankPill pct={r.pct} color={r.rankColor} />
-          </div>
+          </Link>
         ))}
       </div>
     </div>

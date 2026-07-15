@@ -1,10 +1,49 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Logo } from '../components/atoms';
-import { UPLOAD_QUEUE } from '../data/gw2-data';
-import { STATUS_META } from '../data/derived';
+import { api } from '../lib/api';
+import { STATUS_META, type UploadStatus } from '../data/derived';
+
+interface QueueItem {
+  id: string;
+  file: File;
+  status: UploadStatus;
+  logId?: string;
+  error?: string;
+}
 
 export default function UploadPage() {
   const [dragOver, setDragOver] = useState(false);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const submitFiles = useCallback((files: FileList | File[]) => {
+    const items: QueueItem[] = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      file,
+      status: 'uploading',
+    }));
+    setQueue((q) => [...items, ...q]);
+
+    for (const item of items) {
+      api
+        .upload(item.file)
+        .then((result) => {
+          setQueue((q) =>
+            q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)),
+          );
+        })
+        .catch((err: unknown) => {
+          setQueue((q) =>
+            q.map((qi) =>
+              qi.id === item.id
+                ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
+                : qi,
+            ),
+          );
+        });
+    }
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -22,13 +61,19 @@ export default function UploadPage() {
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (e.dataTransfer.files.length) submitFiles(e.dataTransfer.files);
+          }}
+          onClick={() => fileInputRef.current?.click()}
           style={{
             border: `2px dashed ${dragOver ? 'var(--gold)' : 'rgba(224,180,88,.35)'}`,
             borderRadius: 12,
             padding: '40px 28px',
             textAlign: 'center',
             background: dragOver ? 'rgba(224,180,88,.08)' : 'rgba(224,180,88,.04)',
+            cursor: 'pointer',
           }}
         >
           <div
@@ -41,19 +86,27 @@ export default function UploadPage() {
           </div>
           <div style={{ font: '700 15px var(--font-sans)', color: 'var(--text)' }}>Drag .zevtc or .zip files here</div>
           <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 6 }}>
-            or click to browse · multiple files supported · processed automatically in the background
+            or click to browse · multiple files supported · parsed via dps.report in the background
           </div>
-          <label>
-            <input type="file" multiple accept=".zevtc,.zip" style={{ display: 'none' }} />
-            <div
-              style={{
-                display: 'inline-block', marginTop: 16, padding: '9px 20px', background: 'var(--gold)',
-                color: '#14120f', borderRadius: 6, font: '700 13px var(--font-sans)', cursor: 'pointer',
-              }}
-            >
-              Choose files
-            </div>
-          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".zevtc,.zip,.evtc"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files?.length) submitFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <div
+            style={{
+              display: 'inline-block', marginTop: 16, padding: '9px 20px', background: 'var(--gold)',
+              color: '#14120f', borderRadius: 6, font: '700 13px var(--font-sans)',
+            }}
+          >
+            Choose files
+          </div>
         </div>
       </div>
 
@@ -61,27 +114,30 @@ export default function UploadPage() {
         <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
           Processing queue
         </div>
-        {UPLOAD_QUEUE.map((u) => {
-          const meta = STATUS_META[u.status];
+        {queue.length === 0 && (
+          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>
+            Nothing uploaded yet this session.
+          </div>
+        )}
+        {queue.map((item) => {
+          const meta = STATUS_META[item.status];
+          const sizeLabel = `${(item.file.size / 1024).toFixed(0)} KB`;
           return (
-            <div key={u.file} style={{ padding: '14px 16px', background: 'var(--bg-row)', border: '1px solid var(--border-soft)', borderRadius: 8, marginBottom: 8 }}>
+            <div key={item.id} style={{ padding: '14px 16px', background: 'var(--bg-row)', border: '1px solid var(--border-soft)', borderRadius: 8, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{u.file}</div>
+                <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.file.name}</div>
                 <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 20, color: '#14120f', background: meta.color }}>
                   {meta.label}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-45)' }}>
-                  {u.boss} · {u.size}
+                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-45)' }}>{sizeLabel}</div>
+                <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-40)' }}>
+                  {item.status === 'uploading' && 'Uploading & parsing via dps.report…'}
+                  {item.status === 'failed' && item.error}
+                  {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)' }}>View log →</Link>}
                 </div>
-                <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-40)' }}>{u.detail}</div>
               </div>
-              {u.progress != null && (
-                <div style={{ height: 5, background: 'rgba(255,255,255,.06)', borderRadius: 3, marginTop: 8 }}>
-                  <div style={{ height: 5, width: `${u.progress}%`, background: 'var(--gold)', borderRadius: 3 }} />
-                </div>
-              )}
             </div>
           );
         })}

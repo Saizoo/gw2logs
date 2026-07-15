@@ -3,9 +3,9 @@ import { Logo, Avatar } from './atoms';
 import { SearchBar } from './SearchBar';
 
 const LINKS = [
-  { label: 'Encounters', to: '/encounters/Qadim the Peerless' },
+  { label: 'Encounters', to: '/encounters' },
   { label: 'Leaderboards', to: '/leaderboards' },
-  { label: 'Guilds', to: '/guilds/Vigil of Shadows' },
+  { label: 'Guilds', to: '/guilds' },
   { label: 'Compare', to: '/compare' },
 ];
 

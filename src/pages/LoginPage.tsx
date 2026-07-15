@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/atoms';
+import { api } from '../lib/api';
+import { useApiQuery } from '../hooks/useApiQuery';
 
 export default function LoginPage() {
+  const { data: stats } = useApiQuery(() => api.stats(), []);
+
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.1fr 1fr' }}>
       <div
@@ -36,11 +40,11 @@ export default function LoginPage() {
           </div>
           <div style={{ display: 'flex', gap: 20, marginTop: 26 }}>
             <div>
-              <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>1.2M</div>
+              <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalLogs ?? '—'}</div>
               <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>logs parsed</div>
             </div>
             <div>
-              <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>94K</div>
+              <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalPlayers ?? '—'}</div>
               <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>players ranked</div>
             </div>
           </div>
@@ -55,13 +59,15 @@ export default function LoginPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
+            disabled
+            title="Discord login isn't wired up yet — uploads work without an account for now."
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
-              background: '#5865F2', borderRadius: 8,
+              background: '#5865F2', borderRadius: 8, opacity: 0.5, cursor: 'not-allowed',
             }}
           >
             <div style={{ width: 18, height: 18, borderRadius: 5, background: 'rgba(255,255,255,.9)' }} />
-            <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord</span>
+            <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord (coming soon)</span>
           </button>
         </div>
 

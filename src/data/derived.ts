@@ -1,7 +1,6 @@
-// View-model helpers — mirrors the binding logic from the design doc's
-// Component.renderVals(), kept separate from the raw mock data.
+// Pure display helpers shared across pages (colors, zebra striping, medals).
 
-import type { UploadStatus } from './gw2-data';
+export type UploadStatus = 'uploading' | 'success' | 'failed';
 
 export function mechColor(n: number): string {
   return n > 0 ? '#f55d4e' : 'rgba(242,237,226,.3)';
@@ -24,9 +23,8 @@ export function heat(v: number): string {
 }
 
 export const STATUS_META: Record<UploadStatus, { label: string; color: string }> = {
+  uploading: { label: 'Uploading', color: '#e0b458' },
   success: { label: 'Parsed', color: '#4caf6d' },
-  parsing: { label: 'Parsing', color: '#e0b458' },
-  queued: { label: 'Queued', color: 'rgba(242,237,226,.4)' },
   failed: { label: 'Failed', color: '#f55d4e' },
 };
 

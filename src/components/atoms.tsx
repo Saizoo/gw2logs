@@ -15,8 +15,8 @@ export function Logo() {
 export function Avatar({ size = 30, name }: { size?: number; name?: string }) {
   return (
     <Link
-      to="/players/Sai Zu"
-      title={name ?? 'Sai Zu'}
+      to="/login"
+      title={name ?? 'Sign in'}
       style={{
         width: size,
         height: size,
@@ -32,7 +32,7 @@ export function Avatar({ size = 30, name }: { size?: number; name?: string }) {
         color: '#14120f',
       }}
     >
-      {(name ?? 'Sai Zu').charAt(0)}
+      {(name ?? '?').charAt(0)}
     </Link>
   );
 }

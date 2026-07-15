@@ -1,16 +1,39 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { BOSSES, ENCOUNTER_LEADERBOARD, HERO_STATS, PROFESSION_CHIPS } from '../data/gw2-data';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { BOSSES, PROFESSION_CHIPS, rankColorForPct } from '../data/gw2-data';
 import { ProfDot, RankPill } from '../components/atoms';
+import { api } from '../lib/api';
+import { useApiQuery } from '../hooks/useApiQuery';
+import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+}
 
 export default function EncounterPage() {
-  const { bossName } = useParams();
-  const boss = BOSSES.find((b) => b.name === bossName) ?? BOSSES.find((b) => b.name === 'Qadim the Peerless')!;
+  const { bossName = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const isCm = searchParams.get('cm') !== 'false';
   const [activeProf, setActiveProf] = useState<string | null>(null);
 
-  const rows = useMemo(
-    () => (activeProf ? ENCOUNTER_LEADERBOARD.filter((r) => r.profession === activeProf) : ENCOUNTER_LEADERBOARD),
-    [activeProf],
+  const bossMeta = BOSSES.find((b) => b.name === bossName);
+
+  const { data: leaderboard, loading, error } = useApiQuery(
+    () => api.leaderboard(bossName, isCm, activeProf ?? undefined),
+    [bossName, isCm, activeProf],
+  );
+  const { data: stats } = useApiQuery(() => api.encounterStats(bossName, isCm), [bossName, isCm]);
+
+  const heroStats = useMemo(
+    () => [
+      { label: 'Fastest kill', value: stats?.fastestKill ? formatDuration(stats.fastestKill.durationMs) : '—', sub: '' },
+      { label: 'Top DPS', value: stats?.topDps ? stats.topDps.dps.toLocaleString() : '—', sub: stats?.topDps?.name ?? '' },
+      { label: 'Clear rate', value: stats?.clearRate != null ? `${stats.clearRate}%` : '—', sub: `${stats?.totalLogs ?? 0} pulls logged` },
+    ],
+    [stats],
   );
 
   return (
@@ -51,18 +74,18 @@ export default function EncounterPage() {
             position: 'relative',
           }}
         >
-          {boss.cm ? 'CHALLENGE MODE' : 'NORMAL MODE'}
+          {isCm ? 'CHALLENGE MODE' : 'NORMAL MODE'}
         </span>
         <h1 style={{ font: '800 40px var(--font-sans)', color: 'var(--text)', position: 'relative' }}>
-          {boss.name}
+          {bossName}
         </h1>
         <div style={{ font: '500 13px var(--font-mono)', color: 'var(--text-50)', marginTop: 6, position: 'relative' }}>
-          {boss.wing}
+          {bossMeta?.wing ?? ''}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'var(--border)' }}>
-        {HERO_STATS.map((hs) => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--border)' }}>
+        {heroStats.map((hs) => (
           <div key={hs.label} style={{ background: 'var(--bg-card)', padding: '18px 24px' }}>
             <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-40)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
               {hs.label}
@@ -105,10 +128,15 @@ export default function EncounterPage() {
       </div>
 
       <div style={{ padding: '20px 32px 40px' }}>
-        {rows.map((row) => (
+        {loading && <LoadingState label="Loading leaderboard…" />}
+        {error && <ErrorState message={error} />}
+        {!loading && !error && leaderboard?.length === 0 && (
+          <EmptyState>No logs uploaded for this encounter yet. Be the first — upload a log to see it here.</EmptyState>
+        )}
+        {leaderboard?.map((row) => (
           <Link
-            key={row.rank}
-            to={`/logs/${row.rank}`}
+            key={row.logId + row.account}
+            to={`/logs/${row.logId}`}
             style={{
               display: 'grid',
               gridTemplateColumns: '36px 1fr 120px 110px 90px 100px',
@@ -117,26 +145,24 @@ export default function EncounterPage() {
               padding: '12px 16px',
               marginBottom: 6,
               background: 'var(--bg-card)',
-              borderLeft: `3px solid ${row.color}`,
+              borderLeft: `3px solid var(--gold)`,
               borderRadius: 6,
             }}
           >
             <div style={{ font: '700 14px var(--font-mono)', color: 'var(--text-35)' }}>{row.rank}</div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ font: '700 14px var(--font-sans)', color: 'var(--text)' }}>{row.name}</span>
-              <span style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>
-                {row.spec} · {row.guild}
-              </span>
+              <span style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>{row.spec}</span>
             </div>
             <div style={{ font: '700 14px var(--font-mono)', color: 'var(--text)' }}>
               {row.dps.toLocaleString()} <span style={{ font: '500 10px var(--font-sans)', color: 'var(--text-40)' }}>dps</span>
             </div>
-            <div style={{ font: '500 13px var(--font-mono)', color: 'var(--text-55)' }}>{row.duration}</div>
+            <div style={{ font: '500 13px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(row.durationMs)}</div>
             <div>
-              <RankPill pct={row.pct} color={row.rankColor} />
+              <RankPill pct={row.pct} color={rankColorForPct(row.pct)} />
             </div>
             <div style={{ font: '400 11px var(--font-mono)', color: 'var(--text-35)', textAlign: 'right' }}>
-              {row.date}
+              {new Date(row.date).toLocaleDateString()}
             </div>
           </Link>
         ))}
