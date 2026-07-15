@@ -10,6 +10,17 @@ RUN dotnet publish GW2EIParserCLI/GW2EIParserCLI.csproj \
     -c Release -r linux-x64 --self-contained true \
     -p:PublishSingleFile=true -p:PublishTrimmed=false \
     -o /out
+# The published executable's name depends on the project's AssemblyName,
+# which isn't guaranteed to match the .csproj filename — detect it instead
+# of hardcoding a guess. A self-contained PublishSingleFile output is one
+# large extensionless executable file; nothing else in /out matches that.
+RUN set -eux; \
+    ls -la /out; \
+    candidate=$(find /out -maxdepth 1 -type f ! -name '*.*' | head -n1); \
+    if [ -z "$candidate" ]; then echo "No extensionless file found in /out (see listing above)"; exit 1; fi; \
+    echo "Detected Elite Insights binary: $candidate"; \
+    cp "$candidate" /out/ei-cli; \
+    chmod +x /out/ei-cli
 
 FROM node:22-alpine AS node-build
 WORKDIR /app
@@ -30,7 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libicu72 ca-cer
 
 COPY --from=ei-build /out /opt/ei
 COPY ei-settings.conf /opt/ei/settings.conf
-RUN chmod +x /opt/ei/GW2EIParserCLI
+RUN chmod +x /opt/ei/ei-cli
 
 COPY --from=node-build /app/node_modules ./node_modules
 COPY --from=node-build /app/dist ./dist

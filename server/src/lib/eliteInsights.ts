@@ -6,7 +6,7 @@ import path from 'node:path';
 // Self-contained single-file publish -> run the executable directly
 // (EI_DLL_PATH unset). Framework-dependent publish -> EI_COMMAND=dotnet,
 // EI_DLL_PATH=path/to/GW2EIParserCLI.dll.
-const EI_COMMAND = process.env.EI_COMMAND ?? '/opt/ei/GW2EIParserCLI';
+const EI_COMMAND = process.env.EI_COMMAND ?? '/opt/ei/ei-cli';
 const EI_DLL = process.env.EI_DLL_PATH;
 const EI_CONFIG = process.env.EI_CONFIG_PATH ?? '/opt/ei/settings.conf';
 const EI_TIMEOUT_MS = 120_000;
