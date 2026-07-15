@@ -174,6 +174,10 @@ export interface GroupSummary {
   memberCount: number;
   leader?: string;
   pendingRequestCount?: number;
+  raidDays?: string[];
+  raidStartTime?: string | null;
+  raidDurationMins?: number | null;
+  raidTimezone?: string | null;
 }
 
 export interface GroupMemberData {
@@ -191,6 +195,10 @@ export interface GroupDetail {
   background: string | null;
   leader: string;
   members: GroupMemberData[];
+  raidDays: string[];
+  raidStartTime: string | null;
+  raidDurationMins: number | null;
+  raidTimezone: string | null;
   myRole: 'leader' | 'subleader' | 'member' | null;
   canManage: boolean;
 }
@@ -492,8 +500,14 @@ export const api = {
     apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}/slots/${subgroup}/${slotIndex}`, { method: 'DELETE' }),
 
   // --- Groups ---
-  myGroups: () => apiFetch<GroupSummary[]>('/groups'),
-  searchGroups: (search: string) => apiFetch<GroupSummary[]>(`/groups?search=${encodeURIComponent(search)}`),
+  myGroups: () => apiFetch<GroupSummary[]>('/groups?mine=true'),
+  searchGroups: (search: string, opts: { days?: string[]; sort?: 'members' | 'newest' | 'name' } = {}) => {
+    const qs = new URLSearchParams();
+    if (search) qs.set('search', search);
+    if (opts.days?.length) qs.set('day', opts.days.join(','));
+    if (opts.sort) qs.set('sort', opts.sort);
+    return apiFetch<GroupSummary[]>(`/groups?${qs}`);
+  },
   group: (id: string) => apiFetch<GroupDetail>(`/groups/${encodeURIComponent(id)}`),
   createGroup: (name: string) =>
     apiFetch<{ id: string }>('/groups', {
@@ -501,7 +515,18 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     }),
-  updateGroup: (id: string, data: { name?: string; icon?: string | null; background?: string | null }) =>
+  updateGroup: (
+    id: string,
+    data: {
+      name?: string;
+      icon?: string | null;
+      background?: string | null;
+      raidDays?: string[];
+      raidStartTime?: string | null;
+      raidDurationMins?: number | null;
+      raidTimezone?: string | null;
+    },
+  ) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

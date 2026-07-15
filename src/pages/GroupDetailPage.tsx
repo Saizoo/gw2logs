@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, type GroupDetail } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
 import { Avatar, Card, GoldButton } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+import { DURATION_OPTIONS_MINS, WEEKDAYS, formatDurationMins, formatSchedule } from '../data/schedule';
 
 export default function GroupDetailPage() {
   const { id = '' } = useParams();
@@ -85,6 +86,10 @@ export default function GroupDetailPage() {
       </Card>
 
       {actionError && <div style={{ marginBottom: 16, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{actionError}</div>}
+
+      <div style={{ marginBottom: 20 }}>
+        <RaidScheduleCard group={group} groupId={id} canManage={group.canManage} onSaved={refetch} />
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: group.canManage ? '1.4fr 1fr' : '1fr', gap: 20, alignItems: 'start' }}>
         <Card style={{ overflow: 'hidden' }}>
@@ -185,6 +190,124 @@ export default function GroupDetailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function RaidScheduleCard({
+  group,
+  groupId,
+  canManage,
+  onSaved,
+}: {
+  group: GroupDetail;
+  groupId: string;
+  canManage: boolean;
+  onSaved: () => void;
+}) {
+  const [days, setDays] = useState<string[]>(group.raidDays);
+  const [startTime, setStartTime] = useState(group.raidStartTime ?? '');
+  const [durationMins, setDurationMins] = useState<number | ''>(group.raidDurationMins ?? '');
+  const [timezone, setTimezone] = useState(group.raidTimezone ?? '');
+  const [saving, setSaving] = useState(false);
+
+  if (!canManage) {
+    const summary = formatSchedule(group);
+    return (
+      <Card style={{ padding: '16px 20px' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>Raid Schedule</div>
+        <div style={{ font: '400 13px var(--font-sans)', color: summary ? 'var(--text-80)' : 'var(--text-55)' }}>
+          {summary ?? 'No schedule set yet.'}
+        </div>
+      </Card>
+    );
+  }
+
+  function toggleDay(d: string) {
+    setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await api.updateGroup(groupId, {
+        raidDays: days,
+        raidStartTime: startTime || null,
+        raidDurationMins: durationMins === '' ? null : durationMins,
+        raidTimezone: timezone.trim() || null,
+      });
+      toast.success('Raid schedule updated');
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update schedule');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card style={{ padding: '16px 20px' }}>
+      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 12 }}>Raid Schedule</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        {WEEKDAYS.map((d) => {
+          const active = days.includes(d);
+          return (
+            <button
+              key={d}
+              onClick={() => toggleDay(d)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                font: '600 12px var(--font-sans)',
+                background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
+                color: active ? 'var(--gold-fg)' : 'var(--text-65)',
+                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+              }}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Start time
+          </span>
+          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Duration
+          </span>
+          <select
+            value={durationMins}
+            onChange={(e) => setDurationMins(e.target.value ? Number(e.target.value) : '')}
+            style={inputStyle}
+          >
+            <option value="">—</option>
+            {DURATION_OPTIONS_MINS.map((m) => (
+              <option key={m} value={m}>
+                {formatDurationMins(m)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Timezone
+          </span>
+          <input
+            placeholder="e.g. EST, UTC"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            style={{ ...inputStyle, width: 110 }}
+          />
+        </label>
+      </div>
+      <GoldButton onClick={handleSave} disabled={saving}>
+        {saving ? 'Saving…' : 'Save schedule'}
+      </GoldButton>
+    </Card>
   );
 }
 

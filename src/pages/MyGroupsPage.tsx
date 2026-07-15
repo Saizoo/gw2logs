@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CountBadge, GoldButton } from '../components/atoms';
 import { LoadingState, EmptyState } from '../components/QueryStates';
+import { WEEKDAYS, formatSchedule } from '../data/schedule';
+
+type SortOption = 'members' | 'newest' | 'name';
+
+const SORT_LABELS: Record<SortOption, string> = {
+  members: 'Most members',
+  newest: 'Newest',
+  name: 'Name (A–Z)',
+};
 
 export default function MyGroupsPage() {
   const { user } = useCurrentUser();
@@ -14,6 +23,8 @@ export default function MyGroupsPage() {
   const { data: myGroups, loading: myLoading } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([])), [user, reloadNonce]);
 
   const [search, setSearch] = useState('');
+  const [dayFilter, setDayFilter] = useState<string[]>([]);
+  const [sort, setSort] = useState<SortOption>('members');
   const [searchResults, setSearchResults] = useState<Awaited<ReturnType<typeof api.searchGroups>> | null>(null);
   const [searching, setSearching] = useState(false);
 
@@ -22,13 +33,24 @@ export default function MyGroupsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   async function handleSearch() {
-    if (!search.trim()) return;
     setSearching(true);
     try {
-      setSearchResults(await api.searchGroups(search.trim()));
+      setSearchResults(await api.searchGroups(search.trim(), { days: dayFilter, sort }));
     } finally {
       setSearching(false);
     }
+  }
+
+  // Browse-all-groups is a real mode now (empty search + filters/sort), so
+  // this runs once on load and again whenever a filter/sort changes —
+  // typed search text still only re-runs on Enter/click, same as before.
+  useEffect(() => {
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayFilter, sort]);
+
+  function toggleDay(d: string) {
+    setDayFilter((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
   }
 
   async function handleCreate() {
@@ -87,6 +109,9 @@ export default function MyGroupsPage() {
                     {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
                     {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending request${g.pendingRequestCount === 1 ? '' : 's'}` : ''}
                   </div>
+                  {formatSchedule(g) && (
+                    <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
+                  )}
                 </Card>
               </Link>
             ))}
@@ -98,7 +123,7 @@ export default function MyGroupsPage() {
         <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
           Find a group
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <input
             placeholder="Search group name…"
             value={search}
@@ -106,9 +131,45 @@ export default function MyGroupsPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             style={{ ...inputStyle, flex: 1 }}
           />
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)} style={inputStyle}>
+            {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
           <GoldButton onClick={handleSearch}>{searching ? 'Searching…' : 'Search'}</GoldButton>
         </div>
-        {searchResults && searchResults.length === 0 && <EmptyState>No groups match "{search}".</EmptyState>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+          <span style={{ font: '600 11px var(--font-sans)', color: 'var(--text-55)', marginRight: 2 }}>Raids on:</span>
+          {WEEKDAYS.map((d) => {
+            const active = dayFilter.includes(d);
+            return (
+              <button
+                key={d}
+                onClick={() => toggleDay(d)}
+                style={{
+                  padding: '5px 11px',
+                  borderRadius: 20,
+                  font: '600 11.5px var(--font-sans)',
+                  background: active ? 'var(--gold-dim)' : 'var(--bg-chip)',
+                  color: active ? 'var(--gold)' : 'var(--text-65)',
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                }}
+              >
+                {d}
+              </button>
+            );
+          })}
+          {dayFilter.length > 0 && (
+            <button onClick={() => setDayFilter([])} style={{ font: '600 11px var(--font-sans)', color: 'var(--text-55)', padding: '4px 8px' }}>
+              Clear
+            </button>
+          )}
+        </div>
+        {searchResults && searchResults.length === 0 && (
+          <EmptyState>{search.trim() ? `No groups match "${search}".` : 'No groups match those filters.'}</EmptyState>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
           {searchResults?.map((g) => (
             <Card key={g.id} style={{ padding: 16 }}>
@@ -117,6 +178,9 @@ export default function MyGroupsPage() {
                 <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
                   Led by {g.leader} · {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
                 </div>
+                {formatSchedule(g) && (
+                  <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
+                )}
               </Link>
               {user && (
                 <button onClick={() => handleRequestJoin(g.id)} style={{ ...ghostBtnStyle, marginTop: 10 }}>

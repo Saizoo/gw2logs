@@ -12,56 +12,87 @@ const MEMBER_SELECT = {
   user: { select: { id: true, discordUsername: true, discordAvatar: true } },
 } as const;
 
-groupsRouter.get('/', asyncHandler(async (req, res) => {
-  const search = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
+export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
-  if (search) {
-    const groups = await prisma.group.findMany({
-      where: { name: { contains: search, mode: 'insensitive' } },
-      take: 30,
+const SCHEDULE_SELECT = {
+  raidDays: true,
+  raidStartTime: true,
+  raidDurationMins: true,
+  raidTimezone: true,
+} as const;
+
+groupsRouter.get('/', asyncHandler(async (req, res) => {
+  // ?mine=true is the only thing that switches this into "groups I've
+  // joined" mode (requires auth) — everything else is the public
+  // browse/search mode, search text and filters both optional so leaving
+  // the search box empty and just picking a day still returns results.
+  if (req.query.mine === 'true') {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not signed in' });
+      return;
+    }
+
+    const memberships = await prisma.groupMember.findMany({
+      where: { userId: req.user.id },
       select: {
-        id: true,
-        name: true,
-        icon: true,
-        leader: { select: { discordUsername: true } },
-        _count: { select: { members: true } },
+        role: true,
+        group: { select: { id: true, name: true, icon: true, background: true, ...SCHEDULE_SELECT, _count: { select: { members: true, requests: true } } } },
       },
     });
     res.json(
-      groups.map((g) => ({
-        id: g.id,
-        name: g.name,
-        icon: g.icon,
-        leader: g.leader.discordUsername,
-        memberCount: g._count.members,
+      memberships.map((m) => ({
+        id: m.group.id,
+        name: m.group.name,
+        icon: m.group.icon,
+        background: m.group.background,
+        memberCount: m.group._count.members,
+        raidDays: m.group.raidDays,
+        raidStartTime: m.group.raidStartTime,
+        raidDurationMins: m.group.raidDurationMins,
+        raidTimezone: m.group.raidTimezone,
+        // Only meaningful for a leader/subleader — pending join requests
+        // aren't visible to a plain member, matching the 403 the
+        // join-requests endpoint itself already enforces.
+        pendingRequestCount: m.role === 'leader' || m.role === 'subleader' ? m.group._count.requests : 0,
       })),
     );
     return;
   }
 
-  if (!req.user) {
-    res.status(401).json({ error: 'Not signed in' });
-    return;
-  }
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
+  const days = (typeof req.query.day === 'string' ? req.query.day.split(',') : [])
+    .map((d) => d.trim())
+    .filter((d): d is (typeof WEEKDAYS)[number] => (WEEKDAYS as readonly string[]).includes(d));
+  const sort = req.query.sort === 'newest' ? 'newest' : req.query.sort === 'name' ? 'name' : 'members';
 
-  const memberships = await prisma.groupMember.findMany({
-    where: { userId: req.user.id },
+  const groups = await prisma.group.findMany({
+    where: {
+      ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}),
+      ...(days.length ? { raidDays: { hasSome: days } } : {}),
+    },
+    take: 30,
+    orderBy:
+      sort === 'newest' ? { createdAt: 'desc' } : sort === 'name' ? { name: 'asc' } : { members: { _count: 'desc' } },
     select: {
-      role: true,
-      group: { select: { id: true, name: true, icon: true, background: true, _count: { select: { members: true, requests: true } } } },
+      id: true,
+      name: true,
+      icon: true,
+      leader: { select: { discordUsername: true } },
+      ...SCHEDULE_SELECT,
+      _count: { select: { members: true } },
     },
   });
   res.json(
-    memberships.map((m) => ({
-      id: m.group.id,
-      name: m.group.name,
-      icon: m.group.icon,
-      background: m.group.background,
-      memberCount: m.group._count.members,
-      // Only meaningful for a leader/subleader — pending join requests
-      // aren't visible to a plain member, matching the 403 the
-      // join-requests endpoint itself already enforces.
-      pendingRequestCount: m.role === 'leader' || m.role === 'subleader' ? m.group._count.requests : 0,
+    groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      icon: g.icon,
+      leader: g.leader.discordUsername,
+      memberCount: g._count.members,
+      raidDays: g.raidDays,
+      raidStartTime: g.raidStartTime,
+      raidDurationMins: g.raidDurationMins,
+      raidTimezone: g.raidTimezone,
     })),
   );
 }));
@@ -94,6 +125,7 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       background: true,
       leader: { select: { discordUsername: true } },
       members: { select: MEMBER_SELECT, orderBy: { joinedAt: 'asc' } },
+      ...SCHEDULE_SELECT,
     },
   });
   if (!group) {
@@ -116,6 +148,10 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       role: m.role,
       joinedAt: m.joinedAt,
     })),
+    raidDays: group.raidDays,
+    raidStartTime: group.raidStartTime,
+    raidDurationMins: group.raidDurationMins,
+    raidTimezone: group.raidTimezone,
     myRole,
     canManage: canManage(myRole),
   });
@@ -134,9 +170,56 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
   const icon = typeof req.body?.icon === 'string' ? req.body.icon.toLowerCase().replace(/[^a-z0-9]/g, '') || null : undefined;
   const background = typeof req.body?.background === 'string' ? req.body.background.toLowerCase().replace(/[^a-z0-9]/g, '') || null : undefined;
 
+  let raidDays: (typeof WEEKDAYS)[number][] | undefined;
+  if (Array.isArray(req.body?.raidDays)) {
+    const invalid = req.body.raidDays.filter((d: unknown) => !(WEEKDAYS as readonly string[]).includes(d as string));
+    if (invalid.length) {
+      res.status(400).json({ error: `Invalid day(s): ${invalid.join(', ')}. Expected one of ${WEEKDAYS.join(', ')}.` });
+      return;
+    }
+    raidDays = [...new Set(req.body.raidDays as (typeof WEEKDAYS)[number][])];
+  }
+
+  let raidStartTime: string | null | undefined;
+  if (req.body?.raidStartTime === null) {
+    raidStartTime = null;
+  } else if (typeof req.body?.raidStartTime === 'string') {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(req.body.raidStartTime)) {
+      res.status(400).json({ error: 'raidStartTime must be 24-hour HH:MM' });
+      return;
+    }
+    raidStartTime = req.body.raidStartTime;
+  }
+
+  let raidDurationMins: number | null | undefined;
+  if (req.body?.raidDurationMins === null) {
+    raidDurationMins = null;
+  } else if (typeof req.body?.raidDurationMins === 'number') {
+    if (!Number.isInteger(req.body.raidDurationMins) || req.body.raidDurationMins <= 0 || req.body.raidDurationMins > 1440) {
+      res.status(400).json({ error: 'raidDurationMins must be a positive integer (minutes, max 1440)' });
+      return;
+    }
+    raidDurationMins = req.body.raidDurationMins;
+  }
+
+  let raidTimezone: string | null | undefined;
+  if (req.body?.raidTimezone === null) {
+    raidTimezone = null;
+  } else if (typeof req.body?.raidTimezone === 'string') {
+    raidTimezone = req.body.raidTimezone.trim().slice(0, 40) || null;
+  }
+
   await prisma.group.update({
     where: { id: req.params.id },
-    data: { ...(name ? { name } : {}), ...(icon !== undefined ? { icon } : {}), ...(background !== undefined ? { background } : {}) },
+    data: {
+      ...(name ? { name } : {}),
+      ...(icon !== undefined ? { icon } : {}),
+      ...(background !== undefined ? { background } : {}),
+      ...(raidDays !== undefined ? { raidDays } : {}),
+      ...(raidStartTime !== undefined ? { raidStartTime } : {}),
+      ...(raidDurationMins !== undefined ? { raidDurationMins } : {}),
+      ...(raidTimezone !== undefined ? { raidTimezone } : {}),
+    },
   });
 
   res.json({ ok: true });

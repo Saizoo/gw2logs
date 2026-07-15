@@ -169,12 +169,12 @@ model LogPlayer {
 }
 
 model MechanicEvent {
-  id     String  @id @default(cuid())
-  logId  String
-  log    Log     @relation(fields: [logId], references: [id], onDelete: Cascade)
-  timeMs Int
-  name   String
-  actor  String?
+  id       String  @id @default(cuid())
+  logId    String
+  log      Log     @relation(fields: [logId], references: [id], onDelete: Cascade)
+  timeMs   Int
+  name     String
+  actor    String?
   // "Sev0".."Sev4" from Elite Insights' own Mechanics[].Severity — the only
   // classification EI provides for a mechanic (no icon/color-hex field
   // exists upstream). Denormalized onto every event row (rather than a
@@ -208,16 +208,24 @@ model DeathEvent {
 // joined by request/invite, and managed independently of in-game guild
 // membership — it's the unit that owns saved squad compositions.
 model Group {
-  id           String         @id @default(cuid())
-  name         String
-  leaderId     String
-  leader       User           @relation("GroupLeader", fields: [leaderId], references: [id])
-  icon         String?
-  background   String?
-  createdAt    DateTime       @default(now())
-  members      GroupMember[]
-  requests     GroupRequest[]
-  compositions Composition[]
+  id               String         @id @default(cuid())
+  name             String
+  leaderId         String
+  leader           User           @relation("GroupLeader", fields: [leaderId], references: [id])
+  icon             String?
+  background       String?
+  createdAt        DateTime       @default(now())
+  members          GroupMember[]
+  requests         GroupRequest[]
+  compositions     Composition[]
+  // Recurring raid schedule, set by a leader/subleader from the group page
+  // and surfaced on group search so prospective members can filter for a
+  // day that works for them. All optional/empty by default — a brand new
+  // group has no schedule until someone sets one.
+  raidDays         String[]       @default([])
+  raidStartTime    String?
+  raidDurationMins Int?
+  raidTimezone     String?
 }
 
 model GroupMember {

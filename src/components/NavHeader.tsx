@@ -4,11 +4,15 @@ import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
+// Raid Planner is deliberately not here — it's only meaningful in the
+// context of a specific group's roster/compositions, so it's reached via
+// the "Open Raid Planner" button on that group's page instead of a global
+// tab. The /planner route itself still works standalone (falls back to a
+// group picker) for anyone with an old bookmark.
 const TABS = [
   { label: 'Dashboard', to: '/' },
   { label: 'Logs', to: '/logs' },
   { label: 'Leaderboards', to: '/leaderboards' },
-  { label: 'Raid Planner', to: '/planner' },
   { label: 'Groups', to: '/groups' },
   { label: 'Characters', to: '/characters' },
   { label: 'Guilds', to: '/guilds' },
