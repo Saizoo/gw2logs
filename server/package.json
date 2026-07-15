@@ -16,6 +16,8 @@
     "compositions:test": "tsx src/scripts/testCompositions.ts",
     "dashboard:test": "tsx src/scripts/testDashboard.ts",
     "logs-route:test": "tsx src/scripts/testLogsRoute.ts",
+    "groups:test": "tsx src/scripts/testGroups.ts",
+    "characters:test": "tsx src/scripts/testCharacters.ts",
     "seed:demo": "tsx src/scripts/seedDemoData.ts",
     "backfill:professions": "tsx src/scripts/backfillProfessions.ts",
     "backfill:professions:prod": "node dist/scripts/backfillProfessions.js"

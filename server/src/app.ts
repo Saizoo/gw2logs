@@ -16,6 +16,8 @@ import { guildsRouter } from './routes/guilds.js';
 import { homeRouter } from './routes/home.js';
 import { compositionsRouter } from './routes/compositions.js';
 import { dashboardRouter } from './routes/dashboard.js';
+import { groupsRouter } from './routes/groups.js';
+import { charactersRouter } from './routes/characters.js';
 
 export function createApp() {
   const app = express();
@@ -47,6 +49,8 @@ export function createApp() {
   app.use('/api/home', homeRouter);
   app.use('/api/compositions', compositionsRouter);
   app.use('/api/dashboard', dashboardRouter);
+  app.use('/api/groups', groupsRouter);
+  app.use('/api/characters', charactersRouter);
 
   // Last-resort safety net: without this, any error thrown by an async
   // route handler that isn't individually try/caught (e.g. a Prisma error

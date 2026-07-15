@@ -13,6 +13,9 @@ import UploadPage from './pages/UploadPage';
 import LoginPage from './pages/LoginPage';
 import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
+import CharactersPage from './pages/CharactersPage';
+import MyGroupsPage from './pages/MyGroupsPage';
+import GroupDetailPage from './pages/GroupDetailPage';
 
 export default function App() {
   return (
@@ -29,6 +32,9 @@ export default function App() {
         <Route path="/players/:name" element={<PlayerProfilePage />} />
         <Route path="/guilds" element={<GuildsIndexPage />} />
         <Route path="/guilds/:tag" element={<GuildPage />} />
+        <Route path="/groups" element={<MyGroupsPage />} />
+        <Route path="/groups/:id" element={<GroupDetailPage />} />
+        <Route path="/characters" element={<CharactersPage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/account" element={<AccountPage />} />

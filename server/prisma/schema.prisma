@@ -22,18 +22,22 @@ model Player {
 }
 
 model User {
-  id              String            @id @default(cuid())
-  discordId       String            @unique
-  discordUsername String
-  discordAvatar   String?
-  gw2AccountName  String?           @unique
-  gw2ApiKeyEnc    String?
-  gw2LinkedAt     DateTime?
-  createdAt       DateTime          @default(now())
-  sessions        Session[]
+  id               String            @id @default(cuid())
+  discordId        String            @unique
+  discordUsername  String
+  discordAvatar    String?
+  gw2AccountName   String?           @unique
+  gw2ApiKeyEnc     String?
+  gw2LinkedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  sessions         Session[]
   guildMemberships GuildMembership[]
-  player          Player?
-  compositions    Composition[]
+  player           Player?
+  compositions     Composition[]
+  characters       Character[]
+  groupsLed        Group[]           @relation("GroupLeader")
+  groupMemberships GroupMember[]
+  groupRequests    GroupRequest[]
 }
 
 model Session {
@@ -53,7 +57,6 @@ model Guild {
   tag          String
   lastSyncedAt DateTime          @default(now())
   memberships  GuildMembership[]
-  compositions Composition[]
 }
 
 model GuildMembership {
@@ -91,11 +94,11 @@ model Log {
 }
 
 model LogPlayer {
-  id            String   @id @default(cuid())
+  id            String @id @default(cuid())
   logId         String
-  log           Log      @relation(fields: [logId], references: [id], onDelete: Cascade)
+  log           Log    @relation(fields: [logId], references: [id], onDelete: Cascade)
   playerId      String
-  player        Player   @relation(fields: [playerId], references: [id])
+  player        Player @relation(fields: [playerId], references: [id])
   characterName String
   profession    String
   spec          String
@@ -115,9 +118,9 @@ model LogPlayer {
 }
 
 model MechanicEvent {
-  id     String @id @default(cuid())
+  id     String  @id @default(cuid())
   logId  String
-  log    Log    @relation(fields: [logId], references: [id], onDelete: Cascade)
+  log    Log     @relation(fields: [logId], references: [id], onDelete: Cascade)
   timeMs Int
   name   String
   actor  String?
@@ -125,10 +128,92 @@ model MechanicEvent {
   @@index([logId])
 }
 
+// Ad-hoc raid-planning team, distinct from Guild (which is read-mostly and
+// synced wholesale from a member's GW2 API key). A Group is created,
+// joined by request/invite, and managed independently of in-game guild
+// membership — it's the unit that owns saved squad compositions.
+model Group {
+  id           String         @id @default(cuid())
+  name         String
+  leaderId     String
+  leader       User           @relation("GroupLeader", fields: [leaderId], references: [id])
+  icon         String?
+  background   String?
+  createdAt    DateTime       @default(now())
+  members      GroupMember[]
+  requests     GroupRequest[]
+  compositions Composition[]
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "leader" | "subleader" | "member" — at most one leader (kept in sync
+  // with Group.leaderId) and at most one subleader, enforced in the route
+  // layer, not the DB.
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model GroupRequest {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+// One GW2 character, either imported from the GW2 API (source="gw2",
+// wholesale-replaced on every sync) or added manually (source="manual",
+// survives syncs untouched).
+model Character {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  profession String
+  race       String?
+  source     String              @default("manual")
+  // GW2 character name, stable across syncs when source="gw2".
+  extId      String?
+  activeTab  Int                 @default(1)
+  createdAt  DateTime            @default(now())
+  templates  CharacterTemplate[]
+  slots      CompositionSlot[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// One GW2 build-storage tab (up to 9 per character). `assignedBuildId` is
+// the player's own mapping of this loadout to a catalog build — GW2's API
+// has no concept of the site's build catalog, so this is set manually.
+model CharacterTemplate {
+  id              String            @id @default(cuid())
+  characterId     String
+  character       Character         @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  tab             Int
+  name            String?
+  spec            String?
+  isActive        Boolean           @default(false)
+  assignedBuildId String?
+  slots           CompositionSlot[]
+
+  @@unique([characterId, tab])
+}
+
 model Composition {
   id          String            @id @default(cuid())
-  guildId     String
-  guild       Guild             @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  groupId     String
+  group       Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
   name        String
   fightName   String?
   createdById String
@@ -137,20 +222,28 @@ model Composition {
   updatedAt   DateTime          @updatedAt
   slots       CompositionSlot[]
 
-  @@index([guildId])
+  @@index([groupId])
 }
 
 model CompositionSlot {
-  id            String      @id @default(cuid())
-  compositionId String
-  composition   Composition @relation(fields: [compositionId], references: [id], onDelete: Cascade)
-  subgroup      Int
-  slotIndex     Int
-  role          String
-  profession    String
-  spec          String?
-  buildName     String?
-  buildDetails  String?
+  id                  String             @id @default(cuid())
+  compositionId       String
+  composition         Composition        @relation(fields: [compositionId], references: [id], onDelete: Cascade)
+  subgroup            Int
+  slotIndex           Int
+  role                String
+  profession          String
+  spec                String?
+  buildName           String?
+  buildDetails        String?
+  // Structured fields, preferred over the free-text ones above when the
+  // slot was filled by picking a real catalog build / character rather
+  // than typing a description by hand.
+  buildId             String?
+  characterId         String?
+  character           Character?         @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  characterTemplateId String?
+  characterTemplate   CharacterTemplate? @relation(fields: [characterTemplateId], references: [id], onDelete: SetNull)
 
   @@unique([compositionId, subgroup, slotIndex])
 }

@@ -8,6 +8,8 @@ const TABS = [
   { label: 'Logs', to: '/logs' },
   { label: 'Leaderboards', to: '/leaderboards' },
   { label: 'Raid Planner', to: '/planner' },
+  { label: 'Groups', to: '/groups' },
+  { label: 'Characters', to: '/characters' },
   { label: 'Guilds', to: '/guilds' },
   { label: 'Compare', to: '/compare' },
 ];

@@ -2,31 +2,39 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { getGroupRole, canManageGroup } from '../lib/groupAccess.js';
 
 export const compositionsRouter = Router();
 
-async function requireGuildMember(userId: string, guildId: string): Promise<boolean> {
-  const membership = await prisma.guildMembership.findUnique({
-    where: { userId_guildId: { userId, guildId } },
-  });
-  return Boolean(membership);
-}
+const SLOT_SELECT = {
+  subgroup: true,
+  slotIndex: true,
+  role: true,
+  profession: true,
+  spec: true,
+  buildName: true,
+  buildDetails: true,
+  buildId: true,
+  characterId: true,
+  characterTemplateId: true,
+  character: { select: { name: true } },
+} as const;
 
 compositionsRouter.get('/', asyncHandler(async (req, res) => {
-  const guildTag = typeof req.query.guildTag === 'string' ? req.query.guildTag : undefined;
-  if (!guildTag) {
-    res.status(400).json({ error: 'guildTag query param is required' });
+  const groupId = typeof req.query.groupId === 'string' ? req.query.groupId : undefined;
+  if (!groupId) {
+    res.status(400).json({ error: 'groupId query param is required' });
     return;
   }
 
-  const guild = await prisma.guild.findFirst({ where: { tag: guildTag } });
-  if (!guild) {
-    res.status(404).json({ error: 'Guild not found' });
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) {
+    res.status(404).json({ error: 'Group not found' });
     return;
   }
 
   const compositions = await prisma.composition.findMany({
-    where: { guildId: guild.id },
+    where: { groupId },
     select: { id: true, name: true, fightName: true, updatedAt: true, createdBy: { select: { discordUsername: true } } },
     orderBy: { updatedAt: 'desc' },
   });
@@ -49,12 +57,12 @@ compositionsRouter.get('/:id', asyncHandler(async (req, res) => {
       id: true,
       name: true,
       fightName: true,
-      guildId: true,
-      guild: { select: { tag: true, name: true } },
+      groupId: true,
+      group: { select: { name: true } },
       createdBy: { select: { discordUsername: true } },
       updatedAt: true,
       slots: {
-        select: { subgroup: true, slotIndex: true, role: true, profession: true, spec: true, buildName: true, buildDetails: true },
+        select: SLOT_SELECT,
         orderBy: [{ subgroup: 'asc' }, { slotIndex: 'asc' }],
       },
     },
@@ -69,37 +77,49 @@ compositionsRouter.get('/:id', asyncHandler(async (req, res) => {
     id: composition.id,
     name: composition.name,
     fightName: composition.fightName,
-    guildTag: composition.guild.tag,
-    guildName: composition.guild.name,
+    groupId: composition.groupId,
+    groupName: composition.group.name,
     createdBy: composition.createdBy.discordUsername,
     updatedAt: composition.updatedAt,
-    slots: composition.slots,
+    slots: composition.slots.map((s) => ({
+      subgroup: s.subgroup,
+      slotIndex: s.slotIndex,
+      role: s.role,
+      profession: s.profession,
+      spec: s.spec,
+      buildName: s.buildName,
+      buildDetails: s.buildDetails,
+      buildId: s.buildId,
+      characterId: s.characterId,
+      characterName: s.character?.name ?? null,
+      characterTemplateId: s.characterTemplateId,
+    })),
   });
 }));
 
 compositionsRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
-  const guildTag = typeof req.body?.guildTag === 'string' ? req.body.guildTag.trim() : '';
+  const groupId = typeof req.body?.groupId === 'string' ? req.body.groupId.trim() : '';
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   const fightName = typeof req.body?.fightName === 'string' ? req.body.fightName.trim() || null : null;
 
-  if (!guildTag || !name) {
-    res.status(400).json({ error: 'guildTag and name are required' });
+  if (!groupId || !name) {
+    res.status(400).json({ error: 'groupId and name are required' });
     return;
   }
 
-  const guild = await prisma.guild.findFirst({ where: { tag: guildTag } });
-  if (!guild) {
-    res.status(404).json({ error: 'Guild not found' });
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) {
+    res.status(404).json({ error: 'Group not found' });
     return;
   }
 
-  if (!(await requireGuildMember(req.user!.id, guild.id))) {
-    res.status(403).json({ error: 'You must be a member of this guild to create a composition for it' });
+  if (!canManageGroup(await getGroupRole(groupId, req.user!.id))) {
+    res.status(403).json({ error: 'Only leaders and subleaders can create compositions for this group' });
     return;
   }
 
   const composition = await prisma.composition.create({
-    data: { guildId: guild.id, name, fightName, createdById: req.user!.id },
+    data: { groupId, name, fightName, createdById: req.user!.id },
   });
 
   res.status(201).json({ id: composition.id });
@@ -111,8 +131,8 @@ compositionsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
     res.status(404).json({ error: 'Composition not found' });
     return;
   }
-  if (!(await requireGuildMember(req.user!.id, composition.guildId))) {
-    res.status(403).json({ error: 'You must be a member of this guild to edit this composition' });
+  if (!canManageGroup(await getGroupRole(composition.groupId, req.user!.id))) {
+    res.status(403).json({ error: 'Only leaders and subleaders can edit this composition' });
     return;
   }
 
@@ -136,8 +156,8 @@ compositionsRouter.delete('/:id', requireAuth, asyncHandler(async (req, res) => 
     res.status(404).json({ error: 'Composition not found' });
     return;
   }
-  if (!(await requireGuildMember(req.user!.id, composition.guildId))) {
-    res.status(403).json({ error: 'You must be a member of this guild to delete this composition' });
+  if (!canManageGroup(await getGroupRole(composition.groupId, req.user!.id))) {
+    res.status(403).json({ error: 'Only leaders and subleaders can delete this composition' });
     return;
   }
 
@@ -151,8 +171,8 @@ compositionsRouter.put('/:id/slots/:subgroup/:slotIndex', requireAuth, asyncHand
     res.status(404).json({ error: 'Composition not found' });
     return;
   }
-  if (!(await requireGuildMember(req.user!.id, composition.guildId))) {
-    res.status(403).json({ error: 'You must be a member of this guild to edit this composition' });
+  if (!canManageGroup(await getGroupRole(composition.groupId, req.user!.id))) {
+    res.status(403).json({ error: 'Only leaders and subleaders can edit this composition' });
     return;
   }
 
@@ -172,11 +192,24 @@ compositionsRouter.put('/:id/slots/:subgroup/:slotIndex', requireAuth, asyncHand
   const spec = typeof req.body?.spec === 'string' ? req.body.spec.trim() || null : null;
   const buildName = typeof req.body?.buildName === 'string' ? req.body.buildName.trim() || null : null;
   const buildDetails = typeof req.body?.buildDetails === 'string' ? req.body.buildDetails.trim() || null : null;
+  // Structured fields, set when the slot was filled by picking a real
+  // catalog build / character rather than typing a description by hand.
+  const buildId = typeof req.body?.buildId === 'string' ? req.body.buildId.trim() || null : null;
+  const characterId = typeof req.body?.characterId === 'string' ? req.body.characterId.trim() || null : null;
+  const characterTemplateId = typeof req.body?.characterTemplateId === 'string' ? req.body.characterTemplateId.trim() || null : null;
+
+  if (characterId) {
+    const character = await prisma.character.findUnique({ where: { id: characterId } });
+    if (!character) {
+      res.status(400).json({ error: 'characterId does not refer to a real character' });
+      return;
+    }
+  }
 
   await prisma.compositionSlot.upsert({
     where: { compositionId_subgroup_slotIndex: { compositionId: composition.id, subgroup, slotIndex } },
-    update: { role, profession, spec, buildName, buildDetails },
-    create: { compositionId: composition.id, subgroup, slotIndex, role, profession, spec, buildName, buildDetails },
+    update: { role, profession, spec, buildName, buildDetails, buildId, characterId, characterTemplateId },
+    create: { compositionId: composition.id, subgroup, slotIndex, role, profession, spec, buildName, buildDetails, buildId, characterId, characterTemplateId },
   });
   await prisma.composition.update({ where: { id: composition.id }, data: {} }); // bump updatedAt
 
@@ -189,8 +222,8 @@ compositionsRouter.delete('/:id/slots/:subgroup/:slotIndex', requireAuth, asyncH
     res.status(404).json({ error: 'Composition not found' });
     return;
   }
-  if (!(await requireGuildMember(req.user!.id, composition.guildId))) {
-    res.status(403).json({ error: 'You must be a member of this guild to edit this composition' });
+  if (!canManageGroup(await getGroupRole(composition.groupId, req.user!.id))) {
+    res.status(403).json({ error: 'Only leaders and subleaders can edit this composition' });
     return;
   }
 

@@ -133,17 +133,85 @@ export interface CompositionSlotData {
   spec: string | null;
   buildName: string | null;
   buildDetails: string | null;
+  buildId: string | null;
+  characterId: string | null;
+  characterName: string | null;
+  characterTemplateId: string | null;
 }
 
 export interface CompositionDetail {
   id: string;
   name: string;
   fightName: string | null;
-  guildTag: string;
-  guildName: string;
+  groupId: string;
+  groupName: string;
   createdBy: string;
   updatedAt: string;
   slots: CompositionSlotData[];
+}
+
+export interface GroupSummary {
+  id: string;
+  name: string;
+  icon: string | null;
+  background?: string | null;
+  memberCount: number;
+  leader?: string;
+}
+
+export interface GroupMemberData {
+  userId: string;
+  username: string;
+  avatar: string | null;
+  role: 'leader' | 'subleader' | 'member';
+  joinedAt: string;
+}
+
+export interface GroupDetail {
+  id: string;
+  name: string;
+  icon: string | null;
+  background: string | null;
+  leader: string;
+  members: GroupMemberData[];
+  myRole: 'leader' | 'subleader' | 'member' | null;
+  canManage: boolean;
+}
+
+export interface GroupJoinRequest {
+  userId: string;
+  username: string;
+  avatar: string | null;
+  createdAt: string;
+}
+
+export interface RosterCharacter {
+  id: string;
+  name: string;
+  profession: string;
+  race: string | null;
+  source: 'gw2' | 'manual';
+  owner: string;
+  templates: CharacterTemplateData[];
+}
+
+export interface CharacterTemplateData {
+  id: string;
+  tab: number;
+  name: string | null;
+  spec: string | null;
+  isActive: boolean;
+  assignedBuildId: string | null;
+}
+
+export interface CharacterData {
+  id: string;
+  name: string;
+  profession: string;
+  race: string | null;
+  source: 'gw2' | 'manual';
+  activeTab: number;
+  templates: CharacterTemplateData[];
 }
 
 export interface SearchResults {
@@ -293,21 +361,30 @@ export const api = {
     const query = qs.toString();
     return apiFetch<LogListItem[]>(`/logs${query ? `?${query}` : ''}`);
   },
-  compositions: (guildTag: string) =>
-    apiFetch<CompositionSummary[]>(`/compositions?guildTag=${encodeURIComponent(guildTag)}`),
+  compositions: (groupId: string) =>
+    apiFetch<CompositionSummary[]>(`/compositions?groupId=${encodeURIComponent(groupId)}`),
   composition: (id: string) => apiFetch<CompositionDetail>(`/compositions/${encodeURIComponent(id)}`),
-  createComposition: (guildTag: string, name: string, fightName?: string | null) =>
+  createComposition: (groupId: string, name: string, fightName?: string | null) =>
     apiFetch<{ id: string }>('/compositions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guildTag, name, fightName }),
+      body: JSON.stringify({ groupId, name, fightName }),
     }),
   deleteComposition: (id: string) => apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   setCompositionSlot: (
     id: string,
     subgroup: number,
     slotIndex: number,
-    data: { role: string; profession: string; spec?: string | null; buildName?: string | null; buildDetails?: string | null },
+    data: {
+      role: string;
+      profession: string;
+      spec?: string | null;
+      buildName?: string | null;
+      buildDetails?: string | null;
+      buildId?: string | null;
+      characterId?: string | null;
+      characterTemplateId?: string | null;
+    },
   ) =>
     apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}/slots/${subgroup}/${slotIndex}`, {
       method: 'PUT',
@@ -316,6 +393,62 @@ export const api = {
     }),
   clearCompositionSlot: (id: string, subgroup: number, slotIndex: number) =>
     apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}/slots/${subgroup}/${slotIndex}`, { method: 'DELETE' }),
+
+  // --- Groups ---
+  myGroups: () => apiFetch<GroupSummary[]>('/groups'),
+  searchGroups: (search: string) => apiFetch<GroupSummary[]>(`/groups?search=${encodeURIComponent(search)}`),
+  group: (id: string) => apiFetch<GroupDetail>(`/groups/${encodeURIComponent(id)}`),
+  createGroup: (name: string) =>
+    apiFetch<{ id: string }>('/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }),
+  updateGroup: (id: string, data: { name?: string; icon?: string | null; background?: string | null }) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  deleteGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  groupRoster: (id: string) => apiFetch<RosterCharacter[]>(`/groups/${encodeURIComponent(id)}/roster`),
+  requestToJoinGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests`, { method: 'POST' }),
+  groupJoinRequests: (id: string) => apiFetch<GroupJoinRequest[]>(`/groups/${encodeURIComponent(id)}/join-requests`),
+  approveJoinRequest: (id: string, userId: string) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/approve`, { method: 'POST' }),
+  denyJoinRequest: (id: string, userId: string) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/deny`, { method: 'POST' }),
+  inviteToGroup: (id: string, username: string) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    }),
+  setGroupMemberRole: (id: string, userId: string, action: 'promote' | 'demote' | 'makeleader') =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    }),
+  removeGroupMember: (id: string, userId: string) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
+
+  // --- Characters ---
+  myCharacters: () => apiFetch<CharacterData[]>('/characters'),
+  addCharacter: (name: string, profession: string, race?: string | null) =>
+    apiFetch<{ id: string }>('/characters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, profession, race }),
+    }),
+  deleteCharacter: (id: string) => apiFetch<{ ok: true }>(`/characters/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  assignCharacterBuild: (characterId: string, tab: number, assignedBuildId: string | null) =>
+    apiFetch<{ ok: true }>(`/characters/${encodeURIComponent(characterId)}/templates/${tab}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignedBuildId }),
+    }),
+  syncCharacters: () => apiFetch<{ ok: true; count: number }>('/characters/sync', { method: 'POST' }),
 };
 
 export { ApiError };
