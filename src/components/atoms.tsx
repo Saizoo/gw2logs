@@ -150,6 +150,28 @@ export function SquadRoleBadge({ squadRole, style }: { squadRole: string; style?
   );
 }
 
+export function LoadMoreButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{
+        display: 'block',
+        margin: '16px auto 0',
+        padding: '9px 20px',
+        borderRadius: 10,
+        font: '600 12.5px var(--font-sans)',
+        background: 'var(--bg-chip)',
+        color: 'var(--text-80)',
+        border: '1px solid var(--border)',
+        opacity: loading ? 0.6 : 1,
+      }}
+    >
+      {loading ? 'Loading…' : 'Load more'}
+    </button>
+  );
+}
+
 export function ResultPill({ success }: { success: boolean }) {
   return (
     <span

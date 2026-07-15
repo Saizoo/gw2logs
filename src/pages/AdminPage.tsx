@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { api, ApiError, type AdminBuild } from '../lib/api';
+import { api, ApiError, type AdminBuild, type AdminLogRow, type AdminUploadJob, type AdminUserRow } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { toast } from '../lib/toast';
 import { PROF, PROF_ORDER, CAT, type BuildCategory, type ProfessionKey } from '../data/builds';
-import { Card, GoldButton, SectionLabel, StatCard, Badge } from '../components/atoms';
+import { Card, GoldButton, LoadMoreButton, SectionLabel, StatCard, Badge } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
+
+const PAGE_SIZE = 50;
 
 type Tab = 'Overview' | 'Uploads' | 'Logs' | 'Users' | 'Guilds' | 'Groups' | 'Builds';
 const TABS: Tab[] = ['Overview', 'Uploads', 'Logs', 'Users', 'Guilds', 'Groups', 'Builds'];
@@ -91,7 +95,15 @@ function OverviewTab() {
 
 function UploadsTab() {
   const [status, setStatus] = useState<string>('');
-  const { data, loading, error } = useApiQuery(() => api.adminUploadJobs({ status: status || undefined, limit: 100 }), [status]);
+  const [total, setTotal] = useState<number | null>(null);
+  const { items: jobs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<AdminUploadJob>(
+    (offset) =>
+      api.adminUploadJobs({ status: status || undefined, limit: PAGE_SIZE, offset }).then((res) => {
+        setTotal(res.total);
+        return { items: res.jobs, hasMore: offset + res.jobs.length < res.total };
+      }),
+    [status],
+  );
 
   return (
     <div>
@@ -104,9 +116,10 @@ function UploadsTab() {
       </div>
       {loading && <LoadingState label="Loading upload jobs…" />}
       {error && <ErrorState message={error} />}
-      {data && data.jobs.length === 0 && <EmptyState>No upload jobs match this filter.</EmptyState>}
-      {data && <UploadJobList jobs={data.jobs} />}
-      {data && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{data.total} total</div>}
+      {!loading && jobs.length === 0 && <EmptyState>No upload jobs match this filter.</EmptyState>}
+      <UploadJobList jobs={jobs} />
+      {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
+      {total != null && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{jobs.length} of {total}</div>}
     </div>
   );
 }
@@ -146,17 +159,28 @@ function UploadJobList({ jobs }: { jobs: { id: string; status: string; fileName:
 function LogsTab() {
   const [search, setSearch] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
-  const { data, loading, error } = useApiQuery(() => api.adminLogs({ search: search || undefined, limit: 100 }), [search, reloadNonce]);
+  const [total, setTotal] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { items: logs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<AdminLogRow>(
+    (offset) =>
+      api.adminLogs({ search: search || undefined, limit: PAGE_SIZE, offset }).then((res) => {
+        setTotal(res.total);
+        return { items: res.logs, hasMore: offset + res.logs.length < res.total };
+      }),
+    [search, reloadNonce],
+  );
 
   async function handleDelete(id: string, boss: string) {
     if (!confirm(`Delete this "${boss}" log? This removes it and all its player/mechanic data permanently.`)) return;
     setActionError(null);
     try {
       await api.adminDeleteLog(id);
+      toast.success(`Deleted "${boss}"`);
       setReloadNonce((n) => n + 1);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to delete log');
+      const message = err instanceof ApiError ? err.message : 'Failed to delete log';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -166,15 +190,15 @@ function LogsTab() {
       {actionError && <div style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)', marginBottom: 10 }}>{actionError}</div>}
       {loading && <LoadingState label="Loading logs…" />}
       {error && <ErrorState message={error} />}
-      {data && data.logs.length === 0 && <EmptyState>No logs match this search.</EmptyState>}
-      {data && data.logs.length > 0 && (
+      {!loading && logs.length === 0 && <EmptyState>No logs match this search.</EmptyState>}
+      {logs.length > 0 && (
         <Card style={{ overflow: 'hidden' }}>
-          {data.logs.map((l, i) => (
+          {logs.map((l, i) => (
             <div
               key={l.id}
               style={{
                 padding: '11px 18px',
-                borderBottom: i === data.logs.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                borderBottom: i === logs.length - 1 ? 'none' : '1px solid var(--border-faint)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
@@ -196,7 +220,8 @@ function LogsTab() {
           ))}
         </Card>
       )}
-      {data && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{data.total} total</div>}
+      {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
+      {total != null && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{logs.length} of {total}</div>}
     </div>
   );
 }
@@ -206,16 +231,27 @@ function LogsTab() {
 function UsersTab({ currentUserId }: { currentUserId: string }) {
   const [search, setSearch] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
-  const { data, loading, error } = useApiQuery(() => api.adminUsers({ search: search || undefined, limit: 100 }), [search, reloadNonce]);
+  const [total, setTotal] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { items: users, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<AdminUserRow>(
+    (offset) =>
+      api.adminUsers({ search: search || undefined, limit: PAGE_SIZE, offset }).then((res) => {
+        setTotal(res.total);
+        return { items: res.users, hasMore: offset + res.users.length < res.total };
+      }),
+    [search, reloadNonce],
+  );
 
-  async function toggleAdmin(id: string, isAdmin: boolean) {
+  async function toggleAdmin(id: string, name: string, isAdmin: boolean) {
     setActionError(null);
     try {
       await api.adminSetUserAdmin(id, isAdmin);
+      toast.success(`${name} is ${isAdmin ? 'now an admin' : 'no longer an admin'}`);
       setReloadNonce((n) => n + 1);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to update admin status');
+      const message = err instanceof ApiError ? err.message : 'Failed to update admin status';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -223,9 +259,12 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
     if (!confirm(`Force-logout ${name}? This revokes all of their active sessions.`)) return;
     setActionError(null);
     try {
-      await api.adminForceLogout(id);
+      const res = await api.adminForceLogout(id);
+      toast.success(`Revoked ${res.sessionsRevoked} session${res.sessionsRevoked === 1 ? '' : 's'} for ${name}`);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to force logout');
+      const message = err instanceof ApiError ? err.message : 'Failed to force logout';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -235,15 +274,15 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
       {actionError && <div style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)', marginBottom: 10 }}>{actionError}</div>}
       {loading && <LoadingState label="Loading users…" />}
       {error && <ErrorState message={error} />}
-      {data && data.users.length === 0 && <EmptyState>No users match this search.</EmptyState>}
-      {data && data.users.length > 0 && (
+      {!loading && users.length === 0 && <EmptyState>No users match this search.</EmptyState>}
+      {users.length > 0 && (
         <Card style={{ overflow: 'hidden' }}>
-          {data.users.map((u, i) => (
+          {users.map((u, i) => (
             <div
               key={u.id}
               style={{
                 padding: '11px 18px',
-                borderBottom: i === data.users.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                borderBottom: i === users.length - 1 ? 'none' : '1px solid var(--border-faint)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
@@ -262,7 +301,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                 Force logout
               </button>
               <button
-                onClick={() => toggleAdmin(u.id, !u.isAdmin)}
+                onClick={() => toggleAdmin(u.id, u.discordUsername, !u.isAdmin)}
                 disabled={u.id === currentUserId && u.isAdmin}
                 title={u.id === currentUserId && u.isAdmin ? "You can't remove your own admin access" : undefined}
                 style={{ ...ghostBtnStyle, opacity: u.id === currentUserId && u.isAdmin ? 0.5 : 1 }}
@@ -273,7 +312,8 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
           ))}
         </Card>
       )}
-      {data && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{data.total} total</div>}
+      {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
+      {total != null && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{users.length} of {total}</div>}
     </div>
   );
 }
@@ -316,9 +356,12 @@ function GroupsTab() {
     setActionError(null);
     try {
       await api.adminDeleteGroup(id);
+      toast.success(`Deleted group "${name}"`);
       setReloadNonce((n) => n + 1);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to delete group');
+      const message = err instanceof ApiError ? err.message : 'Failed to delete group';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -362,9 +405,12 @@ function BuildsTab() {
     setActionError(null);
     try {
       await api.adminDeleteBuild(b.id);
+      toast.success(`Deleted "${b.name}"`);
       setReloadNonce((n) => n + 1);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to delete build');
+      const message = err instanceof ApiError ? err.message : 'Failed to delete build';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -443,6 +489,7 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
       const data = { profession, category, name: name.trim(), weapons: weapons.trim(), url: url.trim() };
       if (initial) await api.adminUpdateBuild(initial.id, data);
       else await api.adminCreateBuild(data);
+      toast.success(initial ? `Saved changes to "${data.name}"` : `Added "${data.name}"`);
       onSaved();
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : 'Failed to save build');

@@ -73,7 +73,21 @@ export function NavHeader() {
         <SearchBar width="100%" defaultValue="" />
       </div>
 
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Link
+          to="/upload"
+          style={{
+            flex: 'none',
+            padding: '9px 16px',
+            borderRadius: 10,
+            font: '700 12.5px var(--font-sans)',
+            whiteSpace: 'nowrap',
+            background: 'var(--gold-grad)',
+            color: 'var(--gold-fg)',
+          }}
+        >
+          Upload
+        </Link>
         {user && (
           <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
             <div style={{ font: '600 12.5px var(--font-sans)' }}>{user.discordUsername}</div>

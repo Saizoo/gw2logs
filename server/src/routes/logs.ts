@@ -122,6 +122,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
           boons: true,
           mechanics: true,
           squadRole: true,
+          player: { select: { account: true } },
         },
       },
       mechanicEvents: {
@@ -179,6 +180,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     dpsChart: null,
     players: log.players.map((p) => ({
       name: p.characterName,
+      account: p.player.account,
       profession: p.profession,
       spec: p.spec,
       subgroup: p.subgroup,

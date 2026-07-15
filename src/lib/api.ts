@@ -45,6 +45,7 @@ export interface PlayerProfile {
 
 export interface LogDetailPlayer {
   name: string;
+  account: string;
   profession: string;
   spec: string;
   subgroup: number;

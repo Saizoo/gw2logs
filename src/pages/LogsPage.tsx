@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api';
-import { useApiQuery } from '../hooks/useApiQuery';
-import { Card, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
+import { api, type LogListItem } from '../lib/api';
+import { usePaginatedList } from '../hooks/usePaginatedList';
+import { Card, LoadMoreButton, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 type Filter = 'all' | 'raid' | 'other' | 'kills';
+
+const PAGE_SIZE = 50;
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -24,13 +26,18 @@ function formatDuration(ms: number): string {
 export default function LogsPage() {
   const [filter, setFilter] = useState<Filter>('all');
 
-  const { data: logs, loading, error } = useApiQuery(
-    () =>
-      api.logs({
-        category: filter === 'raid' ? 'raid' : filter === 'other' ? 'other' : undefined,
-        killsOnly: filter === 'kills',
-        limit: 100,
-      }),
+  const { items: logs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<LogListItem>(
+    (offset) =>
+      api
+        .logs({
+          category: filter === 'raid' ? 'raid' : filter === 'other' ? 'other' : undefined,
+          killsOnly: filter === 'kills',
+          limit: PAGE_SIZE,
+          offset,
+        })
+        // No total count comes back from this endpoint — a full page is the
+        // only signal there might be more behind it.
+        .then((items) => ({ items, hasMore: items.length === PAGE_SIZE })),
     [filter],
   );
 
@@ -125,6 +132,7 @@ export default function LogsPage() {
           ))}
         </Card>
       )}
+      {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
     </div>
   );
 }

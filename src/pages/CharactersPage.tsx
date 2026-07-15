@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { api, ApiError, type CharacterData } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { toast } from '../lib/toast';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
 import { Card, GoldButton, ProfDot } from '../components/atoms';
@@ -46,17 +47,25 @@ export default function CharactersPage() {
     setAddError(null);
     try {
       await api.addCharacter(newName.trim(), newProf);
+      toast.success(`Added ${newName.trim()}`);
       setNewName('');
       setAdding(false);
       refetch();
     } catch (err) {
-      setAddError(err instanceof ApiError ? err.message : 'Failed to add character');
+      const message = err instanceof ApiError ? err.message : 'Failed to add character';
+      setAddError(message);
+      toast.error(message);
     }
   }
 
-  async function handleDelete(id: string) {
-    await api.deleteCharacter(id);
-    refetch();
+  async function handleDelete(name: string, id: string) {
+    try {
+      await api.deleteCharacter(id);
+      toast.success(`Deleted ${name}`);
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete character');
+    }
   }
 
   return (
@@ -111,7 +120,7 @@ export default function CharactersPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {characters?.map((c) => (
-          <CharacterCard key={c.id} character={c} builds={builds} onChanged={refetch} onDelete={() => handleDelete(c.id)} />
+          <CharacterCard key={c.id} character={c} builds={builds} onChanged={refetch} onDelete={() => handleDelete(c.name, c.id)} />
         ))}
       </div>
     </div>

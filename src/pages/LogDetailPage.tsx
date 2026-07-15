@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
 import { api, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { useComparePicker } from '../hooks/useComparePicker';
+import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
 type Tab = 'Squad' | 'Boons' | 'Mechanics' | 'Timeline';
@@ -174,46 +176,60 @@ function SquadTab({ log }: { log: LogDetail }) {
   }, [log.players]);
 
   const maxDps = Math.max(...log.players.map((p) => p.total), 1);
+  const picker = useComparePicker();
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(subgroups.length, 2) || 1}, 1fr)`, gap: 20 }}>
-      {subgroups.map(([sub, players]) => (
-        <Card key={sub} style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid var(--border-soft)' }}>
-            Subgroup {sub}
-          </div>
-          {players.map((p) => {
-            const barWidth = Math.round((p.total / maxDps) * 100);
-            return (
-              <div key={p.name} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
-                <img
-                  src={professionIconPath(p.profession, p.spec)}
-                  alt={p.spec}
-                  style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }}
-                />
-                <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(p.profession) }}>
-                    <ProfDot color={professionColor(p.profession)} size={6} />
-                    {p.role === 'power' ? 'Power DPS' : 'Condition DPS'} · {p.spec}
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(subgroups.length, 2) || 1}, 1fr)`, gap: 20 }}>
+        {subgroups.map(([sub, players]) => (
+          <Card key={sub} style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid var(--border-soft)' }}>
+              Subgroup {sub}
+            </div>
+            {players.map((p) => {
+              const barWidth = Math.round((p.total / maxDps) * 100);
+              const candidate = { logId: log.id, account: p.account, label: p.name };
+              return (
+                <div key={p.name} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
+                  <div style={{ position: 'relative', flex: 'none' }}>
+                    <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    <SquadRoleBadge squadRole={p.squadRole} />
+                  <img
+                    src={professionIconPath(p.profession, p.spec)}
+                    alt={p.spec}
+                    style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }}
+                  />
+                  <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(p.profession) }}>
+                      <ProfDot color={professionColor(p.profession)} size={6} />
+                      {p.role === 'power' ? 'Power DPS' : 'Condition DPS'} · {p.spec}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Link
+                        to={`/players/${encodeURIComponent(p.account)}`}
+                        style={{ position: 'relative', font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {p.name}
+                      </Link>
+                      <SquadRoleBadge squadRole={p.squadRole} />
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div>
+                      <div style={{ font: '700 12.5px var(--font-mono)' }}>{p.total.toLocaleString()}</div>
+                      <div style={{ font: '400 9.5px var(--font-sans)', color: 'var(--text-55)' }}>dps</div>
+                    </div>
+                    {p.parsePct != null && <ParseBadge pct={p.parsePct} />}
                   </div>
                 </div>
-                <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div>
-                    <div style={{ font: '700 12.5px var(--font-mono)' }}>{p.total.toLocaleString()}</div>
-                    <div style={{ font: '400 9.5px var(--font-sans)', color: 'var(--text-55)' }}>dps</div>
-                  </div>
-                  {p.parsePct != null && <ParseBadge pct={p.parsePct} />}
-                </div>
-              </div>
-            );
-          })}
-        </Card>
-      ))}
+              );
+            })}
+          </Card>
+        ))}
+      </div>
+      <ComparePickerBar selected={picker.selected} onClear={picker.clear} />
     </div>
   );
 }
@@ -238,7 +254,9 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
           {players.map((p) => (
             <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
               <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-              <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
+              <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.name}
+              </Link>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <ProfDot color={professionColor(p.profession)} />
                 <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
@@ -346,7 +364,9 @@ function MechanicsTab({ log }: { log: LogDetail }) {
               {log.players.map((p) => (
                 <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
                   <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-                  <div style={{ font: '600 13px var(--font-sans)' }}>{p.name}</div>
+                  <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.name}
+                  </Link>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <ProfDot color={professionColor(p.profession)} />
                     <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
@@ -390,6 +410,20 @@ function TimelineTab({ log }: { log: LogDetail }) {
     return [...mechanicRows, ...deathRows].sort((a, b) => a.timeMs - b.timeMs);
   }, [log.mechanicEvents, log.deathEvents]);
 
+  // Mechanic/death "actor" is a character name — only squad members resolve
+  // to a profile link here (a boss or NPC name just renders as plain text).
+  const accountByName = useMemo(() => new Map(log.players.map((p) => [p.name, p.account])), [log.players]);
+  const actorLink = (actor: string) => {
+    const account = accountByName.get(actor);
+    return account ? (
+      <Link to={`/players/${encodeURIComponent(account)}`} style={{ color: 'inherit', textDecoration: 'underline', textDecorationColor: 'var(--border)' }}>
+        {actor}
+      </Link>
+    ) : (
+      actor
+    );
+  };
+
   if (rows.length === 0) {
     return (
       <Card style={{ padding: '18px 20px' }}>
@@ -416,7 +450,7 @@ function TimelineTab({ log }: { log: LogDetail }) {
                 <div>
                   <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
                   <div style={{ font: '700 13px var(--font-sans)', color: 'var(--bad)' }}>
-                    {r.actor} died{r.killedBy ? ` — killed by ${r.killedBy}` : ''}
+                    {actorLink(r.actor)} died{r.killedBy ? ` — killed by ${r.killedBy}` : ''}
                   </div>
                 </div>
               </div>
@@ -427,7 +461,7 @@ function TimelineTab({ log }: { log: LogDetail }) {
                   <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
                   <div style={{ font: '500 13px var(--font-sans)' }}>
                     {r.name}
-                    {r.actor ? ` — ${r.actor}` : ''}
+                    {r.actor && <> — {actorLink(r.actor)}</>}
                     {r.severity && (
                       <span style={{ font: '700 10px var(--font-mono)', color: severityColor(r.severity), marginLeft: 8 }}>{r.severity}</span>
                     )}

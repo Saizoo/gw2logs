@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { toast } from '../lib/toast';
 import { Avatar, Card, GoldButton } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
@@ -26,13 +27,16 @@ export default function GroupDetailPage() {
   if (error) return <ErrorState message={error} />;
   if (!group) return null;
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: () => Promise<unknown>, successMessage?: string) {
     setActionError(null);
     try {
       await action();
+      if (successMessage) toast.success(successMessage);
       refetch();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Action failed');
+      const message = err instanceof ApiError ? err.message : 'Action failed';
+      setActionError(message);
+      toast.error(message);
     }
   }
 
@@ -41,10 +45,13 @@ export default function GroupDetailPage() {
     setInviteError(null);
     try {
       await api.inviteToGroup(id, inviteName.trim());
+      toast.success(`Invited ${inviteName.trim()}`);
       setInviteName('');
       refetch();
     } catch (err) {
-      setInviteError(err instanceof ApiError ? err.message : 'Failed to invite');
+      const message = err instanceof ApiError ? err.message : 'Failed to invite';
+      setInviteError(message);
+      toast.error(message);
     }
   }
 
@@ -62,12 +69,12 @@ export default function GroupDetailPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           {isMember && <GoldButton to={`/planner?group=${id}`}>Open Raid Planner</GoldButton>}
           {!isMember && user && (
-            <GoldButton onClick={() => run(() => api.requestToJoinGroup(id))}>Request to join</GoldButton>
+            <GoldButton onClick={() => run(() => api.requestToJoinGroup(id), 'Join request sent')}>Request to join</GoldButton>
           )}
           {group.myRole === 'leader' && (
             <button
               onClick={() => {
-                if (confirm(`Delete "${group.name}"? This cannot be undone.`)) run(() => api.deleteGroup(id));
+                if (confirm(`Delete "${group.name}"? This cannot be undone.`)) run(() => api.deleteGroup(id), `Deleted "${group.name}"`);
               }}
               style={{ ...ghostBtnStyle, color: 'var(--bad)' }}
             >
@@ -115,27 +122,27 @@ export default function GroupDetailPage() {
               {group.myRole === 'leader' && m.role !== 'leader' && (
                 <div style={{ display: 'flex', gap: 6 }}>
                   {m.role === 'member' && (
-                    <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'promote'))} style={smallBtnStyle}>
+                    <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'promote'), `Promoted ${m.username} to subleader`)} style={smallBtnStyle}>
                       Promote
                     </button>
                   )}
                   {m.role === 'subleader' && (
                     <>
-                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'demote'))} style={smallBtnStyle}>
+                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'demote'), `Demoted ${m.username} to member`)} style={smallBtnStyle}>
                         Demote
                       </button>
-                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'makeleader'))} style={smallBtnStyle}>
+                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'makeleader'), `${m.username} is now the leader`)} style={smallBtnStyle}>
                         Make leader
                       </button>
                     </>
                   )}
-                  <button onClick={() => run(() => api.removeGroupMember(id, m.userId))} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                  <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                     Remove
                   </button>
                 </div>
               )}
               {group.canManage && group.myRole !== 'leader' && m.role === 'member' && (
-                <button onClick={() => run(() => api.removeGroupMember(id, m.userId))} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                   Remove
                 </button>
               )}
@@ -165,10 +172,10 @@ export default function GroupDetailPage() {
                 <div key={r.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px', borderBottom: '1px solid var(--border-faint)' }}>
                   <Avatar size={26} name={r.username} imgSrc={r.avatar} />
                   <div style={{ flex: 1, font: '600 12.5px var(--font-sans)' }}>{r.username}</div>
-                  <button onClick={() => run(() => api.approveJoinRequest(id, r.userId))} style={smallBtnStyle}>
+                  <button onClick={() => run(() => api.approveJoinRequest(id, r.userId), `${r.username} joined the group`)} style={smallBtnStyle}>
                     Approve
                   </button>
-                  <button onClick={() => run(() => api.denyJoinRequest(id, r.userId))} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                  <button onClick={() => run(() => api.denyJoinRequest(id, r.userId), `Denied ${r.username}'s request`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                     Deny
                   </button>
                 </div>
