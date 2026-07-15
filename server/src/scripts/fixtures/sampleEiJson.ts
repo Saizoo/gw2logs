@@ -41,7 +41,17 @@ export const sampleEiJson: RawEiJson = {
       Profession: 'Firebrand',
       Group: 2,
       DpsAll: [{ Dps: 21200, PowerDps: 14840, CondiDps: 6360 }],
-      Defenses: [{ DamageTaken: 5720, DownCount: 1, DeadCount: 0 }],
+      Defenses: [{ DamageTaken: 5720, DownCount: 1, DeadCount: 1 }],
+      DeathRecap: [
+        {
+          DeathTime: 120500,
+          ToDown: [{ Id: 12345, IndirectDamage: false, Src: 'Dhuum', Damage: 8000, Time: 119800 }],
+          ToKill: [
+            { Id: 12345, IndirectDamage: false, Src: 'Dhuum', Damage: 4000, Time: 120100 },
+            { Id: 67890, IndirectDamage: true, Src: 'Dhuum', Damage: 6000, Time: 120500 },
+          ],
+        },
+      ],
       BuffUptimes: [
         { Id: 1187, BuffData: [{ Uptime: 91 }] },
         { Id: 30328, BuffData: [{ Uptime: 20 }] },
@@ -66,10 +76,12 @@ export const sampleEiJson: RawEiJson = {
   Mechanics: [
     {
       Name: 'Green Hit',
+      Severity: 'Sev2',
       MechanicsData: [{ Time: 78000, Actor: 'Moira Ashfall' }],
     },
     {
       Name: 'Shackled',
+      Severity: 'Sev4',
       MechanicsData: [{ Time: 100000, Actor: 'Sai Zu' }],
     },
   ],

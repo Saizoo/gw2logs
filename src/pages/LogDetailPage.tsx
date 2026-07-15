@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { heat, mechColor, eventDotColor } from '../data/derived';
+import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
 import { api, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
@@ -262,16 +262,67 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
   );
 }
 
+interface MechanicSummary {
+  name: string;
+  severity: string | null;
+  total: number;
+}
+
+function summarizeMechanics(log: LogDetail): MechanicSummary[] {
+  const byName = new Map<string, MechanicSummary>();
+  for (const e of log.mechanicEvents) {
+    const cur = byName.get(e.name) ?? { name: e.name, severity: e.severity, total: 0 };
+    cur.total++;
+    if (!cur.severity) cur.severity = e.severity;
+    byName.set(e.name, cur);
+  }
+  // Worst mechanics first — the whole point of surfacing severity is so the
+  // dangerous ones don't get lost in a dozen-plus alphabetically-sorted
+  // columns.
+  return [...byName.values()].sort((a, b) => severityRank(b.severity) - severityRank(a.severity) || b.total - a.total);
+}
+
 function MechanicsTab({ log }: { log: LogDetail }) {
-  const mechanicNames = [...new Set(log.players.flatMap((p) => Object.keys(p.mechanics)))];
+  const mechanics = useMemo(() => summarizeMechanics(log), [log]);
+  const mechanicNames = mechanics.map((m) => m.name);
+  const severityByName = new Map(mechanics.map((m) => [m.name, m.severity]));
   // A real raid boss log can log a dozen-plus distinct mechanic names —
   // this grid's width scales with that count, so it must scroll within its
   // own card rather than being left to blow out the whole page's layout.
   const gridColumns = `28px 1fr 90px repeat(${mechanicNames.length}, 100px)`;
 
   return (
-    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-      <Card style={{ flex: '1 1 480px', minWidth: 0, padding: '18px 20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {mechanics.length > 0 && (
+        <Card style={{ padding: '16px 20px' }}>
+          <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 10 }}>
+            Mechanic legend — worst first
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {mechanics.map((m) => (
+              <div
+                key={m.name}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  background: 'var(--bg-chip)',
+                  border: `1px solid ${severityColor(m.severity)}`,
+                }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor(m.severity), flex: 'none' }} />
+                <div style={{ font: '600 12px var(--font-sans)' }}>{m.name}</div>
+                <div style={{ font: '700 10px var(--font-mono)', color: severityColor(m.severity) }}>{m.severity ?? '—'}</div>
+                <div style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)' }}>×{m.total}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card style={{ padding: '18px 20px' }}>
         <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 10 }}>
           Per-player mechanic counts
         </div>
@@ -286,7 +337,9 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 <div style={{ textAlign: 'left' }}>Player</div>
                 <div style={{ textAlign: 'left' }}>Prof</div>
                 {mechanicNames.map((n) => (
-                  <div key={n}>{n}</div>
+                  <div key={n} title={severityByName.get(n) ?? undefined} style={{ color: severityColor(severityByName.get(n) ?? null) }}>
+                    {n}
+                  </div>
                 ))}
               </div>
               {log.players.map((p) => (
@@ -297,66 +350,149 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                     <ProfDot color={professionColor(p.profession)} />
                     <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
                   </div>
-                  {mechanicNames.map((n) => (
-                    <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: mechColor(p.mechanics[n] ?? 0) }}>
-                      {p.mechanics[n] ?? 0}
-                    </div>
-                  ))}
+                  {mechanicNames.map((n) => {
+                    const count = p.mechanics[n] ?? 0;
+                    return (
+                      <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: count > 0 ? severityColor(severityByName.get(n) ?? null) : 'rgba(242,237,226,.25)' }}>
+                        {count}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
+              <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '10px 4px 2px', borderTop: '1px solid var(--border-soft)', marginTop: 4 }}>
+                <div />
+                <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Squad total</div>
+                <div />
+                {mechanics.map((m) => (
+                  <div key={m.name} style={{ textAlign: 'center', font: '800 13px var(--font-mono)', color: severityColor(m.severity) }}>
+                    {m.total}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
       </Card>
-
-      <FightTimeline log={log} />
     </div>
   );
 }
 
-function FightTimeline({ log }: { log: LogDetail }) {
+type TimelineRow =
+  | { kind: 'mechanic'; timeMs: number; name: string; actor: string | null; severity: string | null }
+  | { kind: 'death'; timeMs: number; actor: string; killedBy: string | null };
+
+function TimelineTab({ log }: { log: LogDetail }) {
+  const rows = useMemo<TimelineRow[]>(() => {
+    const mechanicRows: TimelineRow[] = log.mechanicEvents.map((e) => ({ kind: 'mechanic', ...e }));
+    const deathRows: TimelineRow[] = log.deathEvents.map((e) => ({ kind: 'death', ...e }));
+    return [...mechanicRows, ...deathRows].sort((a, b) => a.timeMs - b.timeMs);
+  }, [log.mechanicEvents, log.deathEvents]);
+
+  if (rows.length === 0) {
+    return (
+      <Card style={{ padding: '18px 20px' }}>
+        <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No events recorded for this log.</div>
+      </Card>
+    );
+  }
+
   return (
-    <Card style={{ width: 280, flex: 'none', padding: '18px 20px' }}>
-      <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 10 }}>
-        Fight timeline
-      </div>
-      {log.mechanicEvents.length === 0 && (
-        <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>No events recorded.</div>
-      )}
-      {log.mechanicEvents.slice(0, 20).map((e, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--border-faint)' }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: eventDotColor('info'), marginTop: 5, flex: 'none' }} />
-          <div>
-            <div style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(e.timeMs)}</div>
-            <div style={{ font: '500 12px var(--font-sans)' }}>
-              {e.name}
-              {e.actor ? ` — ${e.actor}` : ''}
-            </div>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <TimelineScrubber log={log} />
+      <Card style={{ padding: '18px 20px' }}>
+        <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 10 }}>
+          Full event history — {rows.length} events
         </div>
-      ))}
-    </Card>
+        <div style={{ maxHeight: 520, overflowY: 'auto' }}>
+          {rows.map((r, i) =>
+            r.kind === 'death' ? (
+              <div
+                key={i}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)', background: 'oklch(0.28 0.08 25 / 20%)', borderRadius: 6 }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: 2, transform: 'rotate(45deg)', background: eventDotColor('bad'), marginTop: 6, flex: 'none' }} />
+                <div>
+                  <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
+                  <div style={{ font: '700 13px var(--font-sans)', color: 'var(--bad)' }}>
+                    {r.actor} died{r.killedBy ? ` — killed by ${r.killedBy}` : ''}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor(r.severity), marginTop: 5, flex: 'none' }} />
+                <div>
+                  <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
+                  <div style={{ font: '500 13px var(--font-sans)' }}>
+                    {r.name}
+                    {r.actor ? ` — ${r.actor}` : ''}
+                    {r.severity && (
+                      <span style={{ font: '700 10px var(--font-mono)', color: severityColor(r.severity), marginLeft: 8 }}>{r.severity}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }
 
-function TimelineTab({ log }: { log: LogDetail }) {
+function TimelineScrubber({ log }: { log: LogDetail }) {
+  const w = 720;
+  const h = 90;
+  const pad = 14;
+  const duration = Math.max(log.durationMs, 1);
+  const xFor = (t: number) => pad + (Math.min(t, duration) / duration) * (w - pad * 2);
+
+  const minuteMarks = useMemo(() => {
+    const marks: number[] = [];
+    for (let ms = 0; ms <= duration; ms += 60000) marks.push(ms);
+    return marks;
+  }, [duration]);
+
   return (
-    <Card style={{ padding: '18px 20px', maxWidth: 480 }}>
-      {log.mechanicEvents.length === 0 && (
-        <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No events recorded for this log.</div>
-      )}
-      {log.mechanicEvents.map((e, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-faint)' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: eventDotColor('info'), marginTop: 5, flex: 'none' }} />
-          <div>
-            <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(e.timeMs)}</div>
-            <div style={{ font: '500 13px var(--font-sans)' }}>
-              {e.name}
-              {e.actor ? ` — ${e.actor}` : ''}
-            </div>
-          </div>
+    <Card style={{ padding: '20px 20px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Fight Timeline</div>
+        <div style={{ display: 'flex', gap: 14, font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: severityColor('Sev4'), display: 'inline-block' }} /> mechanic (severity)
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 2, transform: 'rotate(45deg)', background: eventDotColor('bad'), display: 'inline-block' }} /> death
+          </span>
         </div>
-      ))}
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: h, overflow: 'visible' }}>
+        <line x1={pad} y1={60} x2={w - pad} y2={60} stroke="var(--border-soft)" strokeWidth={1} />
+        {minuteMarks.map((ms) => (
+          <g key={ms}>
+            <line x1={xFor(ms)} y1={20} x2={xFor(ms)} y2={70} stroke="var(--border-faint)" strokeWidth={1} />
+            <text x={xFor(ms)} y={84} textAnchor="middle" fontSize={9} fill="var(--text-50)">
+              {formatDuration(ms)}
+            </text>
+          </g>
+        ))}
+        {log.mechanicEvents.map((e, i) => (
+          <circle key={`m${i}`} cx={xFor(e.timeMs)} cy={60} r={3 + severityRank(e.severity) * 0.6} fill={severityColor(e.severity)} opacity={0.85}>
+            <title>
+              {formatDuration(e.timeMs)} — {e.name}
+              {e.actor ? ` (${e.actor})` : ''}
+            </title>
+          </circle>
+        ))}
+        {log.deathEvents.map((e, i) => (
+          <rect key={`d${i}`} x={xFor(e.timeMs) - 4} y={16} width={8} height={8} transform={`rotate(45 ${xFor(e.timeMs)} 20)`} fill={eventDotColor('bad')} stroke="var(--bg)" strokeWidth={1}>
+            <title>
+              {formatDuration(e.timeMs)} — {e.actor} died{e.killedBy ? ` (killed by ${e.killedBy})` : ''}
+            </title>
+          </rect>
+        ))}
+      </svg>
     </Card>
   );
 }

@@ -79,7 +79,13 @@ export interface LogDetail {
   date: string;
   dpsChart: DpsChartPoint[] | null;
   players: LogDetailPlayer[];
-  mechanicEvents: { timeMs: number; name: string; actor: string | null }[];
+  // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
+  // EI itself didn't set one — never guessed client-side.
+  mechanicEvents: { timeMs: number; name: string; actor: string | null; severity: string | null }[];
+  // From EI's own per-death recap (JsonPlayer.DeathRecap) — killedBy is the
+  // resolved display name of whatever dealt the killing hit, already
+  // human-readable from EI, not a raw skill/actor id.
+  deathEvents: { timeMs: number; actor: string; killedBy: string | null }[];
 }
 
 export interface LogListItem {

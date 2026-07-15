@@ -126,7 +126,11 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       },
       mechanicEvents: {
         orderBy: { timeMs: 'asc' },
-        select: { timeMs: true, name: true, actor: true },
+        select: { timeMs: true, name: true, actor: true, severity: true },
+      },
+      deathEvents: {
+        orderBy: { timeMs: 'asc' },
+        select: { timeMs: true, actor: true, killedBy: true },
       },
     },
   });
@@ -200,6 +204,12 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       timeMs: e.timeMs,
       name: e.name,
       actor: e.actor,
+      severity: e.severity,
+    })),
+    deathEvents: log.deathEvents.map((e) => ({
+      timeMs: e.timeMs,
+      actor: e.actor,
+      killedBy: e.killedBy,
     })),
   });
 }));

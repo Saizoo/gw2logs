@@ -116,6 +116,7 @@ model Log {
   // right after normalizeEiJson() runs, never written to the DB.
   players        LogPlayer[]
   mechanicEvents MechanicEvent[]
+  deathEvents    DeathEvent[]
 
   @@index([fightName, isCm])
   @@index([uploadedAt])
@@ -168,6 +169,30 @@ model MechanicEvent {
   timeMs Int
   name   String
   actor  String?
+  // "Sev0".."Sev4" from Elite Insights' own Mechanics[].Severity — the only
+  // classification EI provides for a mechanic (no icon/color-hex field
+  // exists upstream). Denormalized onto every event row (rather than a
+  // join back to a per-log mechanic-definition table) since it's the same
+  // value for every instance of a given mechanic name within one log.
+  severity String?
+
+  @@index([logId])
+}
+
+// From JsonPlayer.DeathRecap — EI's own recap of each death, not something
+// derived/guessed here. `killedBy` is DeathRecap.ToKill's last entry's
+// `Src`, which EI already resolves to a display name (the actor or skill
+// source of the killing hit) — no separate skill-id lookup needed for that
+// part. Downs that didn't end in death aren't covered (EI only recaps
+// actual deaths), and there's deliberately no separate "went down" event
+// here for the same reason.
+model DeathEvent {
+  id       String  @id @default(cuid())
+  logId    String
+  log      Log     @relation(fields: [logId], references: [id], onDelete: Cascade)
+  timeMs   Int
+  actor    String
+  killedBy String?
 
   @@index([logId])
 }

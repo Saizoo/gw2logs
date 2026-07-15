@@ -1,11 +1,13 @@
 // Field names verified against Elite Insights source (GW2EIJSON project,
 // baaron4/GW2-Elite-Insights-Parser@master): JsonLog, JsonActor, JsonPlayer,
-// JsonStatistics (JsonDPS/JsonDefensesAll), JsonBuffsUptime, JsonMechanics.
-// EI serializes with the C# property names verbatim (PascalCase, no
-// camelCase naming policy found in the source) — camelCase fallbacks are
-// kept below anyway since that costs little and hedges against a version
-// difference. As before, the full raw JSON is always persisted so a wrong
-// guess here is correctable without re-parsing.
+// JsonStatistics (JsonDPS/JsonDefensesAll), JsonBuffsUptime, JsonMechanics,
+// JsonDeathRecap. EI serializes with the C# property names verbatim
+// (PascalCase, no camelCase naming policy found in the source) — camelCase
+// fallbacks are kept below anyway since that costs little and hedges
+// against a version difference. Unlike earlier in this file's history, the
+// raw JSON is no longer persisted after parsing (see persist.ts) — a wrong
+// guess here means re-uploading the source log, not just re-running
+// extraction against a stored copy.
 
 export type RawEiJson = Record<string, any>;
 
@@ -66,6 +68,16 @@ export interface NormalizedMechanicEvent {
   timeMs: number;
   name: string;
   actor: string | null;
+  // "Sev0".."Sev4", straight from Elite Insights' Mechanics[].Severity —
+  // null when EI doesn't set it (older EI versions, or a mechanic that
+  // predates the field), not a guessed default.
+  severity: string | null;
+}
+
+export interface NormalizedDeathEvent {
+  timeMs: number;
+  actor: string;
+  killedBy: string | null;
 }
 
 export interface NormalizedLog {
@@ -78,6 +90,7 @@ export interface NormalizedLog {
   encounterTime: Date;
   players: NormalizedPlayer[];
   mechanicEvents: NormalizedMechanicEvent[];
+  deathEvents: NormalizedDeathEvent[];
 }
 
 function extractPlayerDps(player: any) {
@@ -205,10 +218,11 @@ function extractMechanics(raw: RawEiJson): {
 
   for (const mech of mechanics) {
     const name: string = field(mech, 'Name') ?? field(mech, 'FullName') ?? 'Mechanic';
+    const severity: string | null = field(mech, 'Severity') ?? null;
     const instances: any[] = field(mech, 'MechanicsData') ?? [];
     for (const inst of instances) {
       const actor: string | null = field(inst, 'Actor') ?? null;
-      events.push({ timeMs: Math.round(field(inst, 'Time') ?? 0), name, actor });
+      events.push({ timeMs: Math.round(field(inst, 'Time') ?? 0), name, actor, severity });
       if (actor) {
         const counts = perPlayerCounts.get(actor) ?? {};
         counts[name] = (counts[name] ?? 0) + 1;
@@ -218,6 +232,31 @@ function extractMechanics(raw: RawEiJson): {
   }
 
   return { perPlayerCounts, events };
+}
+
+// JsonPlayer.DeathRecap — one entry per actual death (downs that were
+// rallied aren't covered, EI doesn't recap those). `killedBy` reads the
+// last entry of ToKill (the killing hit) — EI already resolves that to a
+// display name (attacker or skill source), no separate id lookup needed.
+function extractDeaths(raw: RawEiJson): NormalizedDeathEvent[] {
+  const players: any[] = field(raw, 'Players') ?? [];
+  const deaths: NormalizedDeathEvent[] = [];
+
+  for (const p of players) {
+    const name: string = field(p, 'Name') ?? 'Unknown';
+    const recaps: any[] = field(p, 'DeathRecap') ?? [];
+    for (const recap of recaps) {
+      const toKill: any[] = field(recap, 'ToKill') ?? [];
+      const killingBlow = toKill[toKill.length - 1];
+      deaths.push({
+        timeMs: Math.round(field(recap, 'DeathTime') ?? 0),
+        actor: name,
+        killedBy: field(killingBlow, 'Src') ?? null,
+      });
+    }
+  }
+
+  return deaths;
 }
 
 export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
@@ -268,5 +307,6 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
     encounterTime: timeStart ? new Date(timeStart) : new Date(),
     players: normalizedPlayers,
     mechanicEvents: events,
+    deathEvents: extractDeaths(raw),
   };
 }

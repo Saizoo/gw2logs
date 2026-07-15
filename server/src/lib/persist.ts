@@ -74,6 +74,18 @@ export async function persistLog(params: {
             timeMs: e.timeMs,
             name: e.name,
             actor: e.actor,
+            severity: e.severity,
+          })),
+        });
+      }
+
+      if (normalized.deathEvents.length) {
+        await tx.deathEvent.createMany({
+          data: normalized.deathEvents.map((e) => ({
+            logId: log.id,
+            timeMs: e.timeMs,
+            actor: e.actor,
+            killedBy: e.killedBy,
           })),
         });
       }

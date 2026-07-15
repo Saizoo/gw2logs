@@ -18,7 +18,7 @@ async function main() {
 
   const reloaded = await prisma.log.findUnique({
     where: { id: log.id },
-    include: { players: true, mechanicEvents: true },
+    include: { players: true, mechanicEvents: true, deathEvents: true },
   });
 
   console.log('--- reloaded from db ---');
@@ -35,6 +35,10 @@ async function main() {
     ['Sai Zu (alac gen, no healing data) classified boon_dps', reloaded?.players.find((p) => p.characterName === 'Sai Zu')?.squadRole === 'boon_dps'],
     ['Moira (quick gen, high healing) classified boon_heal', reloaded?.players.find((p) => p.characterName === 'Moira Ashfall')?.squadRole === 'boon_heal'],
     ['2 mechanic events persisted', reloaded?.mechanicEvents.length === 2],
+    ['Shackled mechanic carries severity Sev4', reloaded?.mechanicEvents.find((e) => e.name === 'Shackled')?.severity === 'Sev4'],
+    ['1 death event persisted', reloaded?.deathEvents.length === 1],
+    ['Moira death event has correct actor/time', reloaded?.deathEvents[0]?.actor === 'Moira Ashfall' && reloaded?.deathEvents[0]?.timeMs === 120500],
+    ['Death killedBy resolves to the last ToKill hit\'s Src', reloaded?.deathEvents[0]?.killedBy === 'Dhuum'],
   ];
 
   let failed = 0;
