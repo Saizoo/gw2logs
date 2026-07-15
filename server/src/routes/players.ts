@@ -41,19 +41,24 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
   // other parse of the same boss+CM combination (0-100, same percentile
   // convention as the leaderboard's rank pill). Consistency score: how
   // tightly clustered those percentiles are — always near the same
-  // percentile scores higher than swinging between top and bottom. Per-row
-  // `id` is carried through so the same percentiles can pick each fight's
-  // best *parse* (highest percentile) below, rather than just its highest
-  // raw DPS number — DPS alone isn't comparable across specs/builds, which
-  // is exactly what the percentile already normalizes for everywhere else
-  // in the app (ParseBadge, leaderboard rank).
+  // percentile scores higher than swinging between top and bottom. Both
+  // `mine` (this player's own logs) and the reference population it's
+  // ranked against are restricted to kills — a wipe's "final" DPS reflects
+  // when the fight got cut off, not performance, and would otherwise drag
+  // both scores around for reasons that have nothing to do with how well
+  // anyone actually played. Matches the leaderboard's own success filter.
+  // Per-row `id` is carried through so the same percentiles can pick each
+  // fight's best *parse* (highest percentile) below, rather than just its
+  // highest raw DPS number — DPS alone isn't comparable across
+  // specs/builds, which is exactly what the percentile already normalizes
+  // for everywhere else in the app (ParseBadge, leaderboard rank).
   const percentiles = logPlayers.length
     ? await prisma.$queryRaw<{ id: string; pct: number }[]>`
         WITH mine AS (
           SELECT lp.id, lp."totalDps", l."fightName", l."isCm"
           FROM "LogPlayer" lp
           JOIN "Log" l ON lp."logId" = l.id
-          WHERE lp."playerId" = ${player.id}
+          WHERE lp."playerId" = ${player.id} AND l.success = true
         )
         SELECT
           id,
@@ -64,9 +69,9 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
           SELECT
             mine.id,
             (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
-               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm") AS total,
+               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm" AND l2.success = true) AS total,
             (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
-               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm"
+               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm" AND l2.success = true
                  AND lp2."totalDps" <= mine."totalDps") AS rank_from_bottom
           FROM mine
         ) sub
