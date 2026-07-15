@@ -58,17 +58,16 @@ export default function LoginPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button
-            disabled
-            title="Discord login isn't wired up yet — uploads work without an account for now."
+          <a
+            href="/api/auth/discord"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
-              background: '#5865F2', borderRadius: 8, opacity: 0.5, cursor: 'not-allowed',
+              background: '#5865F2', borderRadius: 8,
             }}
           >
             <div style={{ width: 18, height: 18, borderRadius: 5, background: 'rgba(255,255,255,.9)' }} />
-            <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord (coming soon)</span>
-          </button>
+            <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord</span>
+          </a>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>

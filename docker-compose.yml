@@ -26,6 +26,11 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-gw2logs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gw2logs}?schema=public
       PORT: 4000
+      NODE_ENV: production
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?set DISCORD_CLIENT_ID in .env}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:?set DISCORD_CLIENT_SECRET in .env}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:?set DISCORD_REDIRECT_URI in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
     ports:
       - '127.0.0.1:4000:4000'
     networks:

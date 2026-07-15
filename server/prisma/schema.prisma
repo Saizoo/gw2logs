@@ -17,6 +17,53 @@ model Player {
   displayName String
   createdAt   DateTime    @default(now())
   logPlayers  LogPlayer[]
+  userId      String?     @unique
+  user        User?       @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id              String            @id @default(cuid())
+  discordId       String            @unique
+  discordUsername String
+  discordAvatar   String?
+  gw2AccountName  String?           @unique
+  gw2ApiKeyEnc    String?
+  gw2LinkedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  sessions        Session[]
+  guildMemberships GuildMembership[]
+  player          Player?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Guild {
+  id           String            @id @default(cuid())
+  gw2GuildId   String            @unique
+  name         String
+  tag          String
+  lastSyncedAt DateTime          @default(now())
+  memberships  GuildMembership[]
+}
+
+model GuildMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guildId   String
+  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  isLeader  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, guildId])
 }
 
 model Log {

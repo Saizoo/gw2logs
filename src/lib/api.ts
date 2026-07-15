@@ -83,6 +83,42 @@ export interface UploadResult {
   error?: string;
 }
 
+export interface CurrentUser {
+  id: string;
+  discordId: string;
+  discordUsername: string;
+  discordAvatar: string | null;
+  gw2AccountName: string | null;
+  gw2LinkedAt: string | null;
+  createdAt: string;
+}
+
+export interface LinkGw2Result {
+  gw2AccountName: string;
+  guildsSynced: boolean;
+  guilds: { name: string; tag: string }[];
+}
+
+export interface GuildSummary {
+  tag: string;
+  name: string;
+  memberCount: number;
+}
+
+export interface GuildRoster {
+  tag: string;
+  name: string;
+  memberCount: number;
+  roster: {
+    account: string | null;
+    displayName: string;
+    isLeader: boolean;
+    totalLogs: number;
+    logsThisWeek: number;
+    bestSpec: string | null;
+  }[];
+}
+
 class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -92,7 +128,7 @@ class ApiError extends Error {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, init);
+  const res = await fetch(`/api${path}`, { credentials: 'include', ...init });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new ApiError(body.error ?? `Request failed (${res.status})`, res.status);
@@ -125,6 +161,17 @@ export const api = {
     if (!res.ok) throw new ApiError(body.error ?? `Upload failed (${res.status})`, res.status);
     return body;
   },
+  me: () => apiFetch<CurrentUser>('/auth/me'),
+  logout: () => apiFetch<{ ok: true }>('/auth/logout', { method: 'POST' }),
+  linkGw2: (apiKey: string) =>
+    apiFetch<LinkGw2Result>('/account/link-gw2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    }),
+  unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
+  guilds: () => apiFetch<GuildSummary[]>('/guilds'),
+  guildRoster: (tag: string) => apiFetch<GuildRoster>(`/guilds/${encodeURIComponent(tag)}`),
 };
 
 export { ApiError };

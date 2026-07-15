@@ -11,15 +11,18 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
     "ingest:test": "tsx src/scripts/testIngest.ts",
+    "auth:test": "tsx src/scripts/testAuthFlow.ts",
     "seed:demo": "tsx src/scripts/seedDemoData.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "multer": "^2.0.1"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.12",

@@ -4,11 +4,13 @@ import EncountersIndexPage from './pages/EncountersIndexPage';
 import EncounterPage from './pages/EncounterPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PlayerProfilePage from './pages/PlayerProfilePage';
+import GuildsIndexPage from './pages/GuildsIndexPage';
 import GuildPage from './pages/GuildPage';
 import ComparePage from './pages/ComparePage';
 import LogDetailPage from './pages/LogDetailPage';
 import UploadPage from './pages/UploadPage';
 import LoginPage from './pages/LoginPage';
+import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 
 export default function App() {
@@ -24,9 +26,11 @@ export default function App() {
         <Route path="/encounters/:bossName" element={<EncounterPage />} />
         <Route path="/leaderboards" element={<LeaderboardPage />} />
         <Route path="/players/:name" element={<PlayerProfilePage />} />
-        <Route path="/guilds" element={<GuildPage />} />
+        <Route path="/guilds" element={<GuildsIndexPage />} />
+        <Route path="/guilds/:tag" element={<GuildPage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

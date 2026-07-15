@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Logo, Avatar } from './atoms';
 import { SearchBar } from './SearchBar';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 const LINKS = [
   { label: 'Encounters', to: '/encounters' },
@@ -11,6 +12,7 @@ const LINKS = [
 
 export function NavHeader() {
   const location = useLocation();
+  const { user } = useCurrentUser();
 
   return (
     <header
@@ -38,7 +40,11 @@ export function NavHeader() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <SearchBar />
-        <Avatar />
+        <Avatar
+          to={user ? '/account' : '/login'}
+          name={user?.discordUsername}
+          imgSrc={user?.discordAvatar}
+        />
       </div>
     </header>
   );

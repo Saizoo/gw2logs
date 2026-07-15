@@ -12,10 +12,20 @@ export function Logo() {
   );
 }
 
-export function Avatar({ size = 30, name }: { size?: number; name?: string }) {
+export function Avatar({
+  size = 30,
+  name,
+  to = '/login',
+  imgSrc,
+}: {
+  size?: number;
+  name?: string;
+  to?: string;
+  imgSrc?: string | null;
+}) {
   return (
     <Link
-      to="/login"
+      to={to}
       title={name ?? 'Sign in'}
       style={{
         width: size,
@@ -30,9 +40,14 @@ export function Avatar({ size = 30, name }: { size?: number; name?: string }) {
         fontWeight: 800,
         fontSize: size * 0.4,
         color: '#14120f',
+        overflow: 'hidden',
       }}
     >
-      {(name ?? '?').charAt(0)}
+      {imgSrc ? (
+        <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        (name ?? '?').charAt(0)
+      )}
     </Link>
   );
 }

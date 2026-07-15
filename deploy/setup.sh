@@ -38,13 +38,32 @@ mkdir -p "$WEB_ROOT"
 rsync -a --delete "$REPO_DIR/dist/" "$WEB_ROOT/"
 
 if [ ! -f "$REPO_DIR/.env" ]; then
-  echo "==> Generating $REPO_DIR/.env with a random Postgres password"
+  echo "==> Generating $REPO_DIR/.env with a random Postgres password and encryption key"
   RANDOM_PW="$(openssl rand -hex 24)"
+  ENCRYPTION_KEY="$(openssl rand -hex 32)"
+  REDIRECT_URI="https://${DOMAIN:-yourdomain.com}/api/auth/discord/callback"
   cat > "$REPO_DIR/.env" <<EOF
 POSTGRES_USER=gw2logs
 POSTGRES_PASSWORD=$RANDOM_PW
 POSTGRES_DB=gw2logs
+
+# Fill these in from https://discord.com/developers/applications (OAuth2 tab)
+# before starting the API — Discord login won't work without them.
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_REDIRECT_URI=$REDIRECT_URI
+
+ENCRYPTION_KEY=$ENCRYPTION_KEY
 EOF
+fi
+
+if ! grep -q '^DISCORD_CLIENT_ID=.\+' "$REPO_DIR/.env" || ! grep -q '^DISCORD_CLIENT_SECRET=.\+' "$REPO_DIR/.env"; then
+  echo ""
+  echo "==> DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET are not set in $REPO_DIR/.env"
+  echo "    Create an application at https://discord.com/developers/applications, add an"
+  echo "    OAuth2 redirect of $REPO_DIR/.env's DISCORD_REDIRECT_URI, fill in the two values,"
+  echo "    then re-run this script (or just: docker compose up -d --build)."
+  exit 1
 fi
 
 echo "==> Starting Postgres + API (docker compose)"
