@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import LandingPage from './pages/LandingPage';
 import EncountersIndexPage from './pages/EncountersIndexPage';
 import EncounterPage from './pages/EncounterPage';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -21,7 +22,7 @@ export default function App() {
       <Route path="/search" element={<SearchResultsPage />} />
 
       <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/encounters" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/encounters" element={<EncountersIndexPage />} />
         <Route path="/encounters/:bossName" element={<EncounterPage />} />
         <Route path="/leaderboards" element={<LeaderboardPage />} />

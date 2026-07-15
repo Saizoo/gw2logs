@@ -135,6 +135,11 @@ export interface DpsReportImportStatus {
   error?: string;
 }
 
+export interface HomeSummary {
+  topByProfession: { profession: string; name: string; account: string; spec: string; dps: number; boss: string; logId: string }[];
+  recentLogs: { id: string; boss: string; isCm: boolean; wing: string | null; squadDps: number; success: boolean; playerCount: number; uploadedAt: string }[];
+}
+
 class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -196,6 +201,7 @@ export const api = {
     }),
   importDpsReportStatus: (batchId: string) =>
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
+  home: () => apiFetch<HomeSummary>('/home'),
 };
 
 export { ApiError };

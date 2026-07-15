@@ -13,6 +13,7 @@ import { compareRouter } from './routes/compare.js';
 import { authRouter } from './routes/auth.js';
 import { accountRouter } from './routes/account.js';
 import { guildsRouter } from './routes/guilds.js';
+import { homeRouter } from './routes/home.js';
 
 export function createApp() {
   const app = express();
@@ -41,6 +42,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/guilds', guildsRouter);
+  app.use('/api/home', homeRouter);
 
   // Last-resort safety net: without this, any error thrown by an async
   // route handler that isn't individually try/caught (e.g. a Prisma error
