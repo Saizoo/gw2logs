@@ -39,6 +39,10 @@ services:
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:?set DISCORD_CLIENT_SECRET in .env}
       DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:?set DISCORD_REDIRECT_URI in .env}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
+      # Comma-separated Discord user IDs (snowflakes, not usernames) — see
+      # server/src/routes/auth.ts isBootstrapAdmin. Optional: an empty
+      # value just means nobody gets auto-promoted on login.
+      ADMIN_DISCORD_IDS: ${ADMIN_DISCORD_IDS:-}
       DEBUG_PRISMA_QUERIES: ${DEBUG_PRISMA_QUERIES:-}
     ports:
       - '127.0.0.1:4000:4000'

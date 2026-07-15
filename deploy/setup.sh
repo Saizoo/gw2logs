@@ -54,6 +54,12 @@ DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=$REDIRECT_URI
 
 ENCRYPTION_KEY=$ENCRYPTION_KEY
+
+# Comma-separated Discord user IDs (snowflakes, not usernames) that get
+# auto-promoted to admin on login — see server/src/routes/auth.ts. Enable
+# Developer Mode in Discord (User Settings > Advanced), then right-click
+# your own username anywhere and "Copy User ID". Leave blank for none.
+ADMIN_DISCORD_IDS=
 EOF
 fi
 
