@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
-import { attachUser } from './middleware/auth.js';
+import { attachUser, requireAdmin, requireAuth } from './middleware/auth.js';
 import { asyncHandler } from './lib/asyncHandler.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { encountersRouter } from './routes/encounters.js';
@@ -18,6 +18,14 @@ import { compositionsRouter } from './routes/compositions.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { groupsRouter } from './routes/groups.js';
 import { charactersRouter } from './routes/characters.js';
+import { buildsRouter } from './routes/builds.js';
+import { adminOverviewRouter } from './routes/admin/overview.js';
+import { adminUploadsRouter } from './routes/admin/uploads.js';
+import { adminLogsRouter } from './routes/admin/logs.js';
+import { adminUsersRouter } from './routes/admin/users.js';
+import { adminGuildsRouter } from './routes/admin/guilds.js';
+import { adminGroupsRouter } from './routes/admin/groups.js';
+import { adminBuildsRouter } from './routes/admin/builds.js';
 
 export function createApp() {
   const app = express();
@@ -51,6 +59,21 @@ export function createApp() {
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/groups', groupsRouter);
   app.use('/api/characters', charactersRouter);
+  app.use('/api/builds', buildsRouter);
+
+  // Every /api/admin/* route needs both a valid session and isAdmin — gated
+  // once here rather than per-file, so a new admin route file can't
+  // accidentally forget the check.
+  const adminRouter = express.Router();
+  adminRouter.use(requireAuth, requireAdmin);
+  adminRouter.use('/overview', adminOverviewRouter);
+  adminRouter.use('/uploads', adminUploadsRouter);
+  adminRouter.use('/logs', adminLogsRouter);
+  adminRouter.use('/users', adminUsersRouter);
+  adminRouter.use('/guilds', adminGuildsRouter);
+  adminRouter.use('/groups', adminGroupsRouter);
+  adminRouter.use('/builds', adminBuildsRouter);
+  app.use('/api/admin', adminRouter);
 
   // Last-resort safety net: without this, any error thrown by an async
   // route handler that isn't individually try/caught (e.g. a Prisma error

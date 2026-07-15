@@ -16,6 +16,7 @@ import SearchResultsPage from './pages/SearchResultsPage';
 import CharactersPage from './pages/CharactersPage';
 import MyGroupsPage from './pages/MyGroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
+import AdminPage from './pages/AdminPage';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

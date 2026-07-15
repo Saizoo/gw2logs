@@ -1,0 +1,2027 @@
+[
+  {
+    "id": "elementalist/celestial-alacrity-tempest-scepter-warhorn",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Celestial Alacrity Tempest",
+    "weapons": "Scepter & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/celestial-alacrity-tempest-scepter-warhorn",
+    "sortOrder": 0
+  },
+  {
+    "id": "elementalist/condition-alacrity-tempest-scepter-warhorn",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Condition Alacrity Tempest",
+    "weapons": "Scepter & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-alacrity-tempest-scepter-warhorn",
+    "sortOrder": 1
+  },
+  {
+    "id": "elementalist/condition-alacrity-tempest-pistol-warhorn",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Condition Alacrity Tempest",
+    "weapons": "Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-alacrity-tempest-pistol-warhorn",
+    "sortOrder": 2
+  },
+  {
+    "id": "elementalist/condition-alacrity-tempest-fire-only-scepter-focus",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Condition Alacrity Tempest",
+    "weapons": "Fire Only - Scepter & Focus",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-alacrity-tempest-fire-only-scepter-focus",
+    "sortOrder": 3
+  },
+  {
+    "id": "elementalist/condition-tempest-pistol-warhorn",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Tempest",
+    "weapons": "Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-tempest-pistol-warhorn",
+    "sortOrder": 4
+  },
+  {
+    "id": "elementalist/condition-tempest-scepter-warhorn",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Tempest",
+    "weapons": "Scepter & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-tempest-scepter-warhorn",
+    "sortOrder": 5
+  },
+  {
+    "id": "elementalist/heal-alacrity-tempest-dagger-warhorn",
+    "profession": "ele",
+    "category": "aheal",
+    "name": "Heal Alacrity Tempest",
+    "weapons": "Dagger & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/heal-alacrity-tempest-dagger-warhorn",
+    "sortOrder": 6
+  },
+  {
+    "id": "elementalist/inferno-tempest-scepter-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Inferno Tempest",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/inferno-tempest-scepter-dagger",
+    "sortOrder": 7
+  },
+  {
+    "id": "elementalist/power-alacrity-tempest-hammer",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Power Alacrity Tempest",
+    "weapons": "Hammer",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-alacrity-tempest-hammer",
+    "sortOrder": 8
+  },
+  {
+    "id": "elementalist/power-alacrity-tempest-sword-dagger",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Power Alacrity Tempest",
+    "weapons": "Sword & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-alacrity-tempest-sword-dagger",
+    "sortOrder": 9
+  },
+  {
+    "id": "elementalist/power-tempest-scepter-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Tempest",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-tempest-scepter-dagger",
+    "sortOrder": 10
+  },
+  {
+    "id": "elementalist/power-tempest-hammer",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Tempest",
+    "weapons": "Hammer",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-tempest-hammer",
+    "sortOrder": 11
+  },
+  {
+    "id": "elementalist/power-tempest-sword-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Tempest",
+    "weapons": "Sword & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-tempest-sword-dagger",
+    "sortOrder": 12
+  },
+  {
+    "id": "elementalist/power-tempest-spear",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Tempest",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-tempest-spear",
+    "sortOrder": 13
+  },
+  {
+    "id": "elementalist/condition-weaver-pistol-dagger",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Weaver",
+    "weapons": "Pistol & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-weaver-pistol-dagger",
+    "sortOrder": 14
+  },
+  {
+    "id": "elementalist/condition-weaver-pistol-warhorn",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Weaver",
+    "weapons": "Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-weaver-pistol-warhorn",
+    "sortOrder": 15
+  },
+  {
+    "id": "elementalist/condition-weaver-scepter-warhorn",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Weaver",
+    "weapons": "Scepter & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-weaver-scepter-warhorn",
+    "sortOrder": 16
+  },
+  {
+    "id": "elementalist/power-weaver-sword-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Weaver",
+    "weapons": "Sword & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-weaver-sword-dagger",
+    "sortOrder": 17
+  },
+  {
+    "id": "elementalist/power-weaver-spear",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Weaver",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-weaver-spear",
+    "sortOrder": 18
+  },
+  {
+    "id": "elementalist/condition-catalyst-pistol-dagger",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Catalyst",
+    "weapons": "Pistol & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-catalyst-pistol-dagger",
+    "sortOrder": 19
+  },
+  {
+    "id": "elementalist/condition-quickness-catalyst-pistol-dagger",
+    "profession": "ele",
+    "category": "qdps",
+    "name": "Condition Quickness Catalyst",
+    "weapons": "Pistol & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-quickness-catalyst-pistol-dagger",
+    "sortOrder": 20
+  },
+  {
+    "id": "elementalist/condition-quickness-catalyst-pistol-warhorn",
+    "profession": "ele",
+    "category": "qdps",
+    "name": "Condition Quickness Catalyst",
+    "weapons": "Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-quickness-catalyst-pistol-warhorn",
+    "sortOrder": 21
+  },
+  {
+    "id": "elementalist/heal-quickness-catalyst-staff",
+    "profession": "ele",
+    "category": "qheal",
+    "name": "Heal Quickness Catalyst",
+    "weapons": "Staff",
+    "url": "https://snowcrows.com/builds/raids/elementalist/heal-quickness-catalyst-staff",
+    "sortOrder": 22
+  },
+  {
+    "id": "elementalist/inferno-catalyst-scepter-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Inferno Catalyst",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/inferno-catalyst-scepter-dagger",
+    "sortOrder": 23
+  },
+  {
+    "id": "elementalist/power-catalyst-scepter-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Catalyst",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-catalyst-scepter-dagger",
+    "sortOrder": 24
+  },
+  {
+    "id": "elementalist/power-catalyst-spear",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Catalyst",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-catalyst-spear",
+    "sortOrder": 25
+  },
+  {
+    "id": "elementalist/power-catalyst-sword-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Catalyst",
+    "weapons": "Sword & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-catalyst-sword-dagger",
+    "sortOrder": 26
+  },
+  {
+    "id": "elementalist/power-quickness-catalyst-scepter-dagger",
+    "profession": "ele",
+    "category": "qdps",
+    "name": "Power Quickness Catalyst",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-quickness-catalyst-scepter-dagger",
+    "sortOrder": 27
+  },
+  {
+    "id": "elementalist/power-quickness-catalyst-sword-dagger",
+    "profession": "ele",
+    "category": "qdps",
+    "name": "Power Quickness Catalyst",
+    "weapons": "Sword & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-quickness-catalyst-sword-dagger",
+    "sortOrder": 28
+  },
+  {
+    "id": "elementalist/condition-alacrity-evoker-pistol-warhorn",
+    "profession": "ele",
+    "category": "adps",
+    "name": "Condition Alacrity Evoker",
+    "weapons": "Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-alacrity-evoker-pistol-warhorn",
+    "sortOrder": 29
+  },
+  {
+    "id": "elementalist/condition-evoker-specialized-elements",
+    "profession": "ele",
+    "category": "cdps",
+    "name": "Condition Evoker Specialized Elements",
+    "weapons": "Scepter & Focus",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-evoker-specialized-elements",
+    "sortOrder": 30
+  },
+  {
+    "id": "elementalist/condition-quickness-evoker-specialized-elements",
+    "profession": "ele",
+    "category": "qdps",
+    "name": "Condition Quickness Evoker Specialized Elements",
+    "weapons": "Scepter & Focus",
+    "url": "https://snowcrows.com/builds/raids/elementalist/condition-quickness-evoker-specialized-elements",
+    "sortOrder": 31
+  },
+  {
+    "id": "elementalist/heal-alacrity-evoker-otter",
+    "profession": "ele",
+    "category": "aheal",
+    "name": "Heal Alacrity Evoker",
+    "weapons": "Staff",
+    "url": "https://snowcrows.com/builds/raids/elementalist/heal-alacrity-evoker-otter",
+    "sortOrder": 32
+  },
+  {
+    "id": "elementalist/power-evoker-scepter-dagger",
+    "profession": "ele",
+    "category": "pdps",
+    "name": "Power Evoker",
+    "weapons": "Hare - Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/elementalist/power-evoker-scepter-dagger",
+    "sortOrder": 33
+  },
+  {
+    "id": "guardian/power-dragonhunter-radiance-spear-greatsword",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Dragonhunter",
+    "weapons": "Radiance — Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-dragonhunter-radiance-spear-greatsword",
+    "sortOrder": 34
+  },
+  {
+    "id": "guardian/power-dragonhunter-radiance-longbow-greatsword",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Dragonhunter",
+    "weapons": "Radiance - Longbow / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-dragonhunter-radiance-longbow-greatsword",
+    "sortOrder": 35
+  },
+  {
+    "id": "guardian/celestial-quickness-firebrand-staff-axe-torch",
+    "profession": "guard",
+    "category": "qdps",
+    "name": "Celestial Quickness Firebrand",
+    "weapons": "Staff / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/guardian/celestial-quickness-firebrand-staff-axe-torch",
+    "sortOrder": 36
+  },
+  {
+    "id": "guardian/condition-firebrand-axe-torch-pistol-pistol",
+    "profession": "guard",
+    "category": "cdps",
+    "name": "Condition Firebrand",
+    "weapons": "Axe & Torch / Pistol & Pistol",
+    "url": "https://snowcrows.com/builds/raids/guardian/condition-firebrand-axe-torch-pistol-pistol",
+    "sortOrder": 37
+  },
+  {
+    "id": "guardian/condition-quickness-firebrand-axe-torch-pistol-pistol",
+    "profession": "guard",
+    "category": "qdps",
+    "name": "Condition Quickness Firebrand",
+    "weapons": "Pistol & Pistol / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/guardian/condition-quickness-firebrand-axe-torch-pistol-pistol",
+    "sortOrder": 38
+  },
+  {
+    "id": "guardian/heal-quickness-firebrand-staff-axe-shield",
+    "profession": "guard",
+    "category": "qheal",
+    "name": "Heal Quickness Firebrand",
+    "weapons": "Staff / Axe & Shield",
+    "url": "https://snowcrows.com/builds/raids/guardian/heal-quickness-firebrand-staff-axe-shield",
+    "sortOrder": 39
+  },
+  {
+    "id": "guardian/condition-alacrity-willbender-pistol-pistol-axe-torch",
+    "profession": "guard",
+    "category": "adps",
+    "name": "Condition Alacrity Willbender",
+    "weapons": "Pistol & Pistol / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/guardian/condition-alacrity-willbender-pistol-pistol-axe-torch",
+    "sortOrder": 40
+  },
+  {
+    "id": "guardian/condition-willbender-pistol-torch-pistol",
+    "profession": "guard",
+    "category": "cdps",
+    "name": "Condition Willbender",
+    "weapons": "Pistol & Torch / Pistol",
+    "url": "https://snowcrows.com/builds/raids/guardian/condition-willbender-pistol-torch-pistol",
+    "sortOrder": 41
+  },
+  {
+    "id": "guardian/heal-alacrity-willbender-spear-staff",
+    "profession": "guard",
+    "category": "aheal",
+    "name": "Heal Alacrity Willbender",
+    "weapons": "Spear / Staff",
+    "url": "https://snowcrows.com/builds/raids/guardian/heal-alacrity-willbender-spear-staff",
+    "sortOrder": 42
+  },
+  {
+    "id": "guardian/power-alacrity-willbender-greatsword-sword-focus",
+    "profession": "guard",
+    "category": "adps",
+    "name": "Power Alacrity Willbender",
+    "weapons": "Greatsword / Sword & Focus",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-alacrity-willbender-greatsword-sword-focus",
+    "sortOrder": 43
+  },
+  {
+    "id": "guardian/power-alacrity-willbender-spear-greatsword",
+    "profession": "guard",
+    "category": "adps",
+    "name": "Power Alacrity Willbender",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-alacrity-willbender-spear-greatsword",
+    "sortOrder": 44
+  },
+  {
+    "id": "guardian/power-willbender-peitha-greatsword-sword-focus",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Willbender",
+    "weapons": "Peitha - Greatsword / Sword & Focus",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-willbender-peitha-greatsword-sword-focus",
+    "sortOrder": 45
+  },
+  {
+    "id": "guardian/power-willbender-spear-greatsword",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Willbender",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-willbender-spear-greatsword",
+    "sortOrder": 46
+  },
+  {
+    "id": "guardian/hand-kite-luminary-mace-shield-mace-focus",
+    "profession": "guard",
+    "category": "kiter",
+    "name": "Hand Kite Luminary",
+    "weapons": "Mace & Shield / Mace & Focus",
+    "url": "https://snowcrows.com/builds/raids/guardian/hand-kite-luminary-mace-shield-mace-focus",
+    "sortOrder": 47
+  },
+  {
+    "id": "guardian/heal-alacrity-luminary-spear-staff",
+    "profession": "guard",
+    "category": "aheal",
+    "name": "Heal Alacrity Luminary",
+    "weapons": "Spear / Staff",
+    "url": "https://snowcrows.com/builds/raids/guardian/heal-alacrity-luminary-spear-staff",
+    "sortOrder": 48
+  },
+  {
+    "id": "guardian/power-alacrity-luminary-spear-greatsword",
+    "profession": "guard",
+    "category": "adps",
+    "name": "Power Alacrity Luminary",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-alacrity-luminary-spear-greatsword",
+    "sortOrder": 49
+  },
+  {
+    "id": "guardian/power-alacrity-luminary-longbow-greatsword",
+    "profession": "guard",
+    "category": "adps",
+    "name": "Power Alacrity Luminary",
+    "weapons": "Longbow / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-alacrity-luminary-longbow-greatsword",
+    "sortOrder": 50
+  },
+  {
+    "id": "guardian/power-luminary-spear-greatsword",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Luminary",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-luminary-spear-greatsword",
+    "sortOrder": 51
+  },
+  {
+    "id": "guardian/power-luminary-longbow-greatsword",
+    "profession": "guard",
+    "category": "pdps",
+    "name": "Power Luminary",
+    "weapons": "Longbow / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/guardian/power-luminary-longbow-greatsword",
+    "sortOrder": 52
+  },
+  {
+    "id": "mesmer/condition-boon-chronomancer-staff-scepter-torch",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Condition Quickness Chronomancer",
+    "weapons": "Staff / Scepter & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-boon-chronomancer-staff-scepter-torch",
+    "sortOrder": 53
+  },
+  {
+    "id": "mesmer/condition-boon-chronomancer-staff-scepter-torch-adps",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Condition Alacrity Chronomancer",
+    "weapons": "Staff / Scepter & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-boon-chronomancer-staff-scepter-torch",
+    "sortOrder": 54
+  },
+  {
+    "id": "mesmer/condition-chronomancer-staff-scepter-torch",
+    "profession": "mes",
+    "category": "cdps",
+    "name": "Condition Chronomancer",
+    "weapons": "Staff / Scepter & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-chronomancer-staff-scepter-torch",
+    "sortOrder": 55
+  },
+  {
+    "id": "mesmer/heal-boon-chronomancer-rifle-only",
+    "profession": "mes",
+    "category": "aheal",
+    "name": "Heal Alacrity Chronomancer",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/mesmer/heal-boon-chronomancer-rifle-only",
+    "sortOrder": 56
+  },
+  {
+    "id": "mesmer/heal-boon-chronomancer-rifle-only-qheal",
+    "profession": "mes",
+    "category": "qheal",
+    "name": "Heal Quickness Chronomancer",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/mesmer/heal-boon-chronomancer-rifle-only",
+    "sortOrder": 57
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-dagger-sword",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Power Alacrity Chronomancer",
+    "weapons": "Greatsword / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-dagger-sword",
+    "sortOrder": 58
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-dagger-sword-qdps",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Chronomancer",
+    "weapons": "Greatsword / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-dagger-sword",
+    "sortOrder": 59
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-spear-dagger-sword",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Power Alacrity Chronomancer",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-spear-dagger-sword",
+    "sortOrder": 60
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-spear-dagger-sword-qdps",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Chronomancer",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-spear-dagger-sword",
+    "sortOrder": 61
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-spear",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Power Alacrity Chronomancer",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-spear",
+    "sortOrder": 62
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-spear-qdps",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Chronomancer",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-spear",
+    "sortOrder": 63
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-dagger-focus",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Power Alacrity Chronomancer",
+    "weapons": "Greatsword / Dagger & Focus",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-dagger-focus",
+    "sortOrder": 64
+  },
+  {
+    "id": "mesmer/power-boon-chronomancer-greatsword-dagger-focus-qdps",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Chronomancer",
+    "weapons": "Greatsword / Dagger & Focus",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-boon-chronomancer-greatsword-dagger-focus",
+    "sortOrder": 65
+  },
+  {
+    "id": "mesmer/power-chronomancer-greatsword-dagger-sword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Chronomancer",
+    "weapons": "Greatsword / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-chronomancer-greatsword-dagger-sword",
+    "sortOrder": 66
+  },
+  {
+    "id": "mesmer/power-chronomancer-spear-dagger-sword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Chronomancer",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-chronomancer-spear-dagger-sword",
+    "sortOrder": 67
+  },
+  {
+    "id": "mesmer/condition-alacrity-mirage-staff-axe-torch",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Condition Alacrity Mirage",
+    "weapons": "Staff / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-alacrity-mirage-staff-axe-torch",
+    "sortOrder": 68
+  },
+  {
+    "id": "mesmer/condition-alacrity-mirage-staff-only",
+    "profession": "mes",
+    "category": "adps",
+    "name": "Condition Alacrity Mirage",
+    "weapons": "Staff / Staff",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-alacrity-mirage-staff-only",
+    "sortOrder": 69
+  },
+  {
+    "id": "mesmer/condition-mirage-ih-ether-staff-axe-torch",
+    "profession": "mes",
+    "category": "cdps",
+    "name": "Condition Mirage",
+    "weapons": "Infinite Horizon + Ether - Staff / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-mirage-ih-ether-staff-axe-torch",
+    "sortOrder": 70
+  },
+  {
+    "id": "mesmer/condition-mirage-ih-oasis-staff-axe-torch",
+    "profession": "mes",
+    "category": "cdps",
+    "name": "Condition Mirage",
+    "weapons": "Infinite Horizon + Oasis - Staff / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-mirage-ih-oasis-staff-axe-torch",
+    "sortOrder": 71
+  },
+  {
+    "id": "mesmer/condition-mirage-dune-cloak-staff-axe-torch",
+    "profession": "mes",
+    "category": "cdps",
+    "name": "Condition Mirage",
+    "weapons": "Dune Cloak - Staff / Axe & Torch",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-mirage-dune-cloak-staff-axe-torch",
+    "sortOrder": 72
+  },
+  {
+    "id": "mesmer/condition-virtuoso-dagger-sword-focus",
+    "profession": "mes",
+    "category": "cdps",
+    "name": "Condition Virtuoso",
+    "weapons": "Dagger & Sword / Focus",
+    "url": "https://snowcrows.com/builds/raids/mesmer/condition-virtuoso-dagger-sword-focus",
+    "sortOrder": 73
+  },
+  {
+    "id": "mesmer/power-virtuoso-spear-greatsword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Virtuoso",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-virtuoso-spear-greatsword",
+    "sortOrder": 74
+  },
+  {
+    "id": "mesmer/power-virtuoso-greatsword-dagger-sword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Virtuoso",
+    "weapons": "Greatsword / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-virtuoso-greatsword-dagger-sword",
+    "sortOrder": 75
+  },
+  {
+    "id": "mesmer/power-virtuoso-spear-dagger-sword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Virtuoso",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-virtuoso-spear-dagger-sword",
+    "sortOrder": 76
+  },
+  {
+    "id": "mesmer/heal-quickness-troubadour-rifle-only",
+    "profession": "mes",
+    "category": "qheal",
+    "name": "Heal Quickness Troubadour",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/mesmer/heal-quickness-troubadour-rifle-only",
+    "sortOrder": 77
+  },
+  {
+    "id": "mesmer/power-quickness-troubadour-spear-dagger-sword",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Troubadour",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-quickness-troubadour-spear-dagger-sword",
+    "sortOrder": 78
+  },
+  {
+    "id": "mesmer/power-quickness-troubadour-spear-greatsword",
+    "profession": "mes",
+    "category": "qdps",
+    "name": "Power Quickness Troubadour",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-quickness-troubadour-spear-greatsword",
+    "sortOrder": 79
+  },
+  {
+    "id": "mesmer/power-troubadour-spear-greatsword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Troubadour",
+    "weapons": "Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-troubadour-spear-greatsword",
+    "sortOrder": 80
+  },
+  {
+    "id": "mesmer/power-troubadour-spear-dagger-sword",
+    "profession": "mes",
+    "category": "pdps",
+    "name": "Power Troubadour",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/mesmer/power-troubadour-spear-dagger-sword",
+    "sortOrder": 81
+  },
+  {
+    "id": "necromancer/condition-reaper-spear-dagger-sword",
+    "profession": "nec",
+    "category": "cdps",
+    "name": "Condition Reaper",
+    "weapons": "Spear / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/necromancer/condition-reaper-spear-dagger-sword",
+    "sortOrder": 82
+  },
+  {
+    "id": "necromancer/power-reaper-greatsword-dagger-sword",
+    "profession": "nec",
+    "category": "pdps",
+    "name": "Power Reaper",
+    "weapons": "Greatsword / Dagger & Sword",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-reaper-greatsword-dagger-sword",
+    "sortOrder": 83
+  },
+  {
+    "id": "necromancer/power-reaper-greatsword-spear",
+    "profession": "nec",
+    "category": "pdps",
+    "name": "Power Reaper",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-reaper-greatsword-spear",
+    "sortOrder": 84
+  },
+  {
+    "id": "necromancer/power-reaper-greatsword-sword-sword",
+    "profession": "nec",
+    "category": "pdps",
+    "name": "Power Reaper",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-reaper-greatsword-sword-sword",
+    "sortOrder": 85
+  },
+  {
+    "id": "necromancer/celestial-alacrity-scourge-dagger-torch-pistol-warhorn",
+    "profession": "nec",
+    "category": "aheal",
+    "name": "Celestial Alacrity Scourge",
+    "weapons": "Dagger & Torch / Pistol & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/necromancer/celestial-alacrity-scourge-dagger-torch-pistol-warhorn",
+    "sortOrder": 86
+  },
+  {
+    "id": "necromancer/condition-alacrity-scourge-scepter-torch-pistol",
+    "profession": "nec",
+    "category": "adps",
+    "name": "Condition Alacrity Scourge",
+    "weapons": "Scepter & Torch / Pistol",
+    "url": "https://snowcrows.com/builds/raids/necromancer/condition-alacrity-scourge-scepter-torch-pistol",
+    "sortOrder": 87
+  },
+  {
+    "id": "necromancer/condition-scourge-scepter-torch-pistol",
+    "profession": "nec",
+    "category": "cdps",
+    "name": "Condition Scourge",
+    "weapons": "Scepter & Torch / Pistol",
+    "url": "https://snowcrows.com/builds/raids/necromancer/condition-scourge-scepter-torch-pistol",
+    "sortOrder": 88
+  },
+  {
+    "id": "necromancer/heal-alacrity-scourge-staff-dagger-warhorn",
+    "profession": "nec",
+    "category": "aheal",
+    "name": "Heal Alacrity Scourge",
+    "weapons": "Staff / Dagger & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/necromancer/heal-alacrity-scourge-staff-dagger-warhorn",
+    "sortOrder": 89
+  },
+  {
+    "id": "necromancer/heal-alacrity-scourge-dagger-torch-warhorn",
+    "profession": "nec",
+    "category": "aheal",
+    "name": "Heal Alacrity Scourge",
+    "weapons": "Dagger & Torch / Dagger & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/necromancer/heal-alacrity-scourge-dagger-torch-warhorn",
+    "sortOrder": 90
+  },
+  {
+    "id": "necromancer/heal-alacrity-scourge-staff-dagger-torch",
+    "profession": "nec",
+    "category": "aheal",
+    "name": "Heal Alacrity Scourge",
+    "weapons": "Staff / Dagger & Torch",
+    "url": "https://snowcrows.com/builds/raids/necromancer/heal-alacrity-scourge-staff-dagger-torch",
+    "sortOrder": 91
+  },
+  {
+    "id": "necromancer/kite-scourge-qadim-the-peerless",
+    "profession": "nec",
+    "category": "kiter",
+    "name": "Kite Scourge (Qadim the Peerless)",
+    "weapons": "Scepter & Torch / Pistol",
+    "url": "https://snowcrows.com/builds/raids/necromancer/kite-scourge-qadim-the-peerless",
+    "sortOrder": 92
+  },
+  {
+    "id": "necromancer/condition-harbinger-pistol-torch-scepter-dagger",
+    "profession": "nec",
+    "category": "cdps",
+    "name": "Condition Harbinger",
+    "weapons": "Pistol & Torch / Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/necromancer/condition-harbinger-pistol-torch-scepter-dagger",
+    "sortOrder": 93
+  },
+  {
+    "id": "necromancer/condition-quickness-harbinger-pistol-dagger-scepter-torch",
+    "profession": "nec",
+    "category": "qdps",
+    "name": "Condition Quickness Harbinger",
+    "weapons": "Pistol & Dagger / Scepter & Torch",
+    "url": "https://snowcrows.com/builds/raids/necromancer/condition-quickness-harbinger-pistol-dagger-scepter-torch",
+    "sortOrder": 94
+  },
+  {
+    "id": "necromancer/power-harbinger-greatsword-spear",
+    "profession": "nec",
+    "category": "pdps",
+    "name": "Power Harbinger",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-harbinger-greatsword-spear",
+    "sortOrder": 95
+  },
+  {
+    "id": "necromancer/power-quickness-harbinger-greatsword-spear",
+    "profession": "nec",
+    "category": "qdps",
+    "name": "Power Quickness Harbinger",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-quickness-harbinger-greatsword-spear",
+    "sortOrder": 96
+  },
+  {
+    "id": "necromancer/heal-quickness-ritualist-staff-dagger-warhorn",
+    "profession": "nec",
+    "category": "qheal",
+    "name": "Heal Quickness Ritualist",
+    "weapons": "Staff / Dagger & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/necromancer/heal-quickness-ritualist-staff-dagger-warhorn",
+    "sortOrder": 97
+  },
+  {
+    "id": "necromancer/power-quickness-ritualist-greatsword-spear",
+    "profession": "nec",
+    "category": "qdps",
+    "name": "Power Quickness Ritualist",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-quickness-ritualist-greatsword-spear",
+    "sortOrder": 98
+  },
+  {
+    "id": "necromancer/power-ritualist-greatsword-spear",
+    "profession": "nec",
+    "category": "pdps",
+    "name": "Power Ritualist",
+    "weapons": "Greatsword / Spear",
+    "url": "https://snowcrows.com/builds/raids/necromancer/power-ritualist-greatsword-spear",
+    "sortOrder": 99
+  },
+  {
+    "id": "engineer/condition-quickness-scrapper-spear",
+    "profession": "eng",
+    "category": "qdps",
+    "name": "Condition Quickness Scrapper",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-quickness-scrapper-spear",
+    "sortOrder": 100
+  },
+  {
+    "id": "engineer/heal-quickness-scrapper-mace-shield",
+    "profession": "eng",
+    "category": "qheal",
+    "name": "Heal Quickness Scrapper",
+    "weapons": "Mace & Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-quickness-scrapper-mace-shield",
+    "sortOrder": 101
+  },
+  {
+    "id": "engineer/heal-quickness-scrapper-shortbow",
+    "profession": "eng",
+    "category": "qheal",
+    "name": "Heal Quickness Scrapper",
+    "weapons": "Shortbow",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-quickness-scrapper-shortbow",
+    "sortOrder": 102
+  },
+  {
+    "id": "engineer/power-quickness-scrapper-hammer",
+    "profession": "eng",
+    "category": "qdps",
+    "name": "Power Quickness Scrapper",
+    "weapons": "Hammer",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-quickness-scrapper-hammer",
+    "sortOrder": 103
+  },
+  {
+    "id": "engineer/power-scrapper-hammer",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Scrapper",
+    "weapons": "Hammer",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-scrapper-hammer",
+    "sortOrder": 104
+  },
+  {
+    "id": "engineer/condition-holosmith-pistol-pistol",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Holosmith",
+    "weapons": "Pistol & Pistol",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-holosmith-pistol-pistol",
+    "sortOrder": 105
+  },
+  {
+    "id": "engineer/power-holosmith-sword-pistol",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Holosmith",
+    "weapons": "Sword & Pistol / Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-holosmith-sword-pistol",
+    "sortOrder": 106
+  },
+  {
+    "id": "engineer/condition-alacrity-mechanist-one-kit-pistol-pistol",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Condition Alacrity Mechanist",
+    "weapons": "One Kit - Pistol & Pistol",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-alacrity-mechanist-one-kit-pistol-pistol",
+    "sortOrder": 107
+  },
+  {
+    "id": "engineer/condition-alacrity-mechanist-one-kit-spear",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Condition Alacrity Mechanist",
+    "weapons": "One Kit - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-alacrity-mechanist-one-kit-spear",
+    "sortOrder": 108
+  },
+  {
+    "id": "engineer/condition-alacrity-mechanist-two-kits-spear",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Condition Alacrity Mechanist",
+    "weapons": "Two Kits - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-alacrity-mechanist-two-kits-spear",
+    "sortOrder": 109
+  },
+  {
+    "id": "engineer/condition-mechanist-one-kit-spear",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Mechanist",
+    "weapons": "One Kit - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-mechanist-one-kit-spear",
+    "sortOrder": 110
+  },
+  {
+    "id": "engineer/condition-mechanist-no-kit-spear",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Mechanist",
+    "weapons": "No Kit - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-mechanist-no-kit-spear",
+    "sortOrder": 111
+  },
+  {
+    "id": "engineer/condition-mechanist-two-kits-spear",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Mechanist",
+    "weapons": "Two Kits - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-mechanist-two-kits-spear",
+    "sortOrder": 112
+  },
+  {
+    "id": "engineer/hand-kite-mechanist-mace-shield",
+    "profession": "eng",
+    "category": "kiter",
+    "name": "Hand Kite Alacrity Mechanist",
+    "weapons": "Mace & Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/hand-kite-mechanist-mace-shield",
+    "sortOrder": 113
+  },
+  {
+    "id": "engineer/heal-alacrity-mechanist-shortbow",
+    "profession": "eng",
+    "category": "aheal",
+    "name": "Heal Alacrity Mechanist",
+    "weapons": "Shortbow",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-alacrity-mechanist-shortbow",
+    "sortOrder": 114
+  },
+  {
+    "id": "engineer/heal-alacrity-mechanist-mace-shield",
+    "profession": "eng",
+    "category": "aheal",
+    "name": "Heal Alacrity Mechanist",
+    "weapons": "Mace & Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-alacrity-mechanist-mace-shield",
+    "sortOrder": 115
+  },
+  {
+    "id": "engineer/power-alacrity-mechanist-rifle",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Power Alacrity Mechanist",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-alacrity-mechanist-rifle",
+    "sortOrder": 116
+  },
+  {
+    "id": "engineer/power-alacrity-mechanist-two-kits-sword-pistol",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Power Alacrity Mechanist",
+    "weapons": "Two Kits - Sword & Pistol / Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-alacrity-mechanist-two-kits-sword-pistol",
+    "sortOrder": 117
+  },
+  {
+    "id": "engineer/power-mechanist-sword-pistol",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Mechanist",
+    "weapons": "Sword & Pistol / Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-mechanist-sword-pistol",
+    "sortOrder": 118
+  },
+  {
+    "id": "engineer/power-mechanist-rifle",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Mechanist",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-mechanist-rifle",
+    "sortOrder": 119
+  },
+  {
+    "id": "engineer/condition-alacrity-amalgam-steamshrieker-spear",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Condition Alacrity Amalgam",
+    "weapons": "Steamshrieker - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-alacrity-amalgam-steamshrieker-spear",
+    "sortOrder": 120
+  },
+  {
+    "id": "engineer/condition-alacrity-amalgam-two-kits-spear",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Condition Alacrity Amalgam",
+    "weapons": "Two Kits - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-alacrity-amalgam-two-kits-spear",
+    "sortOrder": 121
+  },
+  {
+    "id": "engineer/condition-amalgam-steamshrieker-spear",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Amalgam",
+    "weapons": "Steamshrieker - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-amalgam-steamshrieker-spear",
+    "sortOrder": 122
+  },
+  {
+    "id": "engineer/condition-amalgam-three-kits-spear",
+    "profession": "eng",
+    "category": "cdps",
+    "name": "Condition Amalgam",
+    "weapons": "Three Kits - Spear",
+    "url": "https://snowcrows.com/builds/raids/engineer/condition-amalgam-three-kits-spear",
+    "sortOrder": 123
+  },
+  {
+    "id": "engineer/heal-alacrity-amalgam-shortbow",
+    "profession": "eng",
+    "category": "aheal",
+    "name": "Heal Alacrity Amalgam",
+    "weapons": "Shortbow",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-alacrity-amalgam-shortbow",
+    "sortOrder": 124
+  },
+  {
+    "id": "engineer/heal-alacrity-amalgam-mace-shield",
+    "profession": "eng",
+    "category": "aheal",
+    "name": "Heal Alacrity Amalgam",
+    "weapons": "Mace & Shield",
+    "url": "https://snowcrows.com/builds/raids/engineer/heal-alacrity-amalgam-mace-shield",
+    "sortOrder": 125
+  },
+  {
+    "id": "engineer/power-alacrity-amalgam-hammer",
+    "profession": "eng",
+    "category": "adps",
+    "name": "Power Alacrity Amalgam",
+    "weapons": "Hammer",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-alacrity-amalgam-hammer",
+    "sortOrder": 126
+  },
+  {
+    "id": "engineer/power-amalgam-double-helix-hammer",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Amalgam",
+    "weapons": "Double Helix - Hammer",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-amalgam-double-helix-hammer",
+    "sortOrder": 127
+  },
+  {
+    "id": "engineer/power-amalgam-hammer",
+    "profession": "eng",
+    "category": "pdps",
+    "name": "Power Amalgam",
+    "weapons": "Symbiotic Synergy - Hammer",
+    "url": "https://snowcrows.com/builds/raids/engineer/power-amalgam-hammer",
+    "sortOrder": 128
+  },
+  {
+    "id": "ranger/condition-druid-dagger-torch-axe-dagger",
+    "profession": "rang",
+    "category": "cdps",
+    "name": "Condition Druid",
+    "weapons": "Dagger & Torch / Axe & Dagger",
+    "url": "https://snowcrows.com/builds/raids/ranger/condition-druid-dagger-torch-axe-dagger",
+    "sortOrder": 129
+  },
+  {
+    "id": "ranger/heal-alacrity-druid-staff-mace-warhorn",
+    "profession": "rang",
+    "category": "aheal",
+    "name": "Heal Alacrity Druid",
+    "weapons": "Staff / Mace & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/ranger/heal-alacrity-druid-staff-mace-warhorn",
+    "sortOrder": 130
+  },
+  {
+    "id": "ranger/condition-soulbeast-shortbow-dagger-dagger",
+    "profession": "rang",
+    "category": "cdps",
+    "name": "Condition Soulbeast",
+    "weapons": "Shortbow / Dagger & Dagger",
+    "url": "https://snowcrows.com/builds/raids/ranger/condition-soulbeast-shortbow-dagger-dagger",
+    "sortOrder": 131
+  },
+  {
+    "id": "ranger/hand-kite-soulbeast-greatsword-staff",
+    "profession": "rang",
+    "category": "kiter",
+    "name": "Hand Kite Soulbeast",
+    "weapons": "Greatsword / Staff",
+    "url": "https://snowcrows.com/builds/raids/ranger/hand-kite-soulbeast-greatsword-staff",
+    "sortOrder": 132
+  },
+  {
+    "id": "ranger/power-soulbeast-hammer-sword-axe",
+    "profession": "rang",
+    "category": "pdps",
+    "name": "Power Soulbeast",
+    "weapons": "Hammer / Sword & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-soulbeast-hammer-sword-axe",
+    "sortOrder": 133
+  },
+  {
+    "id": "ranger/power-soulbeast-hammer-axe-axe",
+    "profession": "rang",
+    "category": "pdps",
+    "name": "Power Soulbeast",
+    "weapons": "Hammer / Axe & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-soulbeast-hammer-axe-axe",
+    "sortOrder": 134
+  },
+  {
+    "id": "ranger/condition-quickness-untamed-axe-dagger-dagger-torch",
+    "profession": "rang",
+    "category": "qdps",
+    "name": "Condition Quickness Untamed",
+    "weapons": "Axe & Dagger / Dagger & Torch",
+    "url": "https://snowcrows.com/builds/raids/ranger/condition-quickness-untamed-axe-dagger-dagger-torch",
+    "sortOrder": 135
+  },
+  {
+    "id": "ranger/heal-quickness-untamed-staff-mace-warhorn",
+    "profession": "rang",
+    "category": "qheal",
+    "name": "Heal Quickness Untamed",
+    "weapons": "Staff / Mace & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/ranger/heal-quickness-untamed-staff-mace-warhorn",
+    "sortOrder": 136
+  },
+  {
+    "id": "ranger/power-quickness-untamed-hammer-sword-axe",
+    "profession": "rang",
+    "category": "qdps",
+    "name": "Power Quickness Untamed",
+    "weapons": "Beastmastery - Hammer / Sword & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-quickness-untamed-hammer-sword-axe",
+    "sortOrder": 137
+  },
+  {
+    "id": "ranger/power-quickness-untamed-nature-magic-hammer-sword-axe",
+    "profession": "rang",
+    "category": "qdps",
+    "name": "Power Quickness Untamed",
+    "weapons": "Nature Magic - Hammer / Sword & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-quickness-untamed-nature-magic-hammer-sword-axe",
+    "sortOrder": 138
+  },
+  {
+    "id": "ranger/power-untamed-beastmastery-hammer-sword-axe",
+    "profession": "rang",
+    "category": "pdps",
+    "name": "Power Untamed",
+    "weapons": "Beastmastery - Hammer / Sword & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-untamed-beastmastery-hammer-sword-axe",
+    "sortOrder": 139
+  },
+  {
+    "id": "ranger/power-untamed-hammer-spear",
+    "profession": "rang",
+    "category": "pdps",
+    "name": "Power Untamed",
+    "weapons": "Hammer / Spear",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-untamed-hammer-spear",
+    "sortOrder": 140
+  },
+  {
+    "id": "ranger/power-galeshot-longbow-axe-axe",
+    "profession": "rang",
+    "category": "pdps",
+    "name": "Power Galeshot",
+    "weapons": "Longbow / Axe & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-galeshot-longbow-axe-axe",
+    "sortOrder": 141
+  },
+  {
+    "id": "ranger/power-quickness-galeshot-longbow-axe-axe",
+    "profession": "rang",
+    "category": "qdps",
+    "name": "Power Quickness Galeshot",
+    "weapons": "Longbow / Axe & Axe",
+    "url": "https://snowcrows.com/builds/raids/ranger/power-quickness-galeshot-longbow-axe-axe",
+    "sortOrder": 142
+  },
+  {
+    "id": "thief/condition-thief-axe-dagger-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Thief",
+    "weapons": "Axe & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-thief-axe-dagger-only",
+    "sortOrder": 143
+  },
+  {
+    "id": "thief/condition-daredevil-dagger-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Daredevil",
+    "weapons": "Dagger / Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-daredevil-dagger-only",
+    "sortOrder": 144
+  },
+  {
+    "id": "thief/condition-daredevil-spear-axe-dagger",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Daredevil",
+    "weapons": "Spear / Axe & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-daredevil-spear-axe-dagger",
+    "sortOrder": 145
+  },
+  {
+    "id": "thief/power-daredevil-dagger-dagger-axe-pistol",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Daredevil",
+    "weapons": "Dagger & Dagger / Axe & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-daredevil-dagger-dagger-axe-pistol",
+    "sortOrder": 146
+  },
+  {
+    "id": "thief/power-daredevil-staff",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Daredevil",
+    "weapons": "Staff / Axe & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-daredevil-staff",
+    "sortOrder": 147
+  },
+  {
+    "id": "thief/power-daredevil-sword-dagger-axe-pistol",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Daredevil",
+    "weapons": "Sword & Dagger / Axe & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-daredevil-sword-dagger-axe-pistol",
+    "sortOrder": 148
+  },
+  {
+    "id": "thief/condition-quickness-deadeye-spear-only",
+    "profession": "thief",
+    "category": "qdps",
+    "name": "Condition Quickness Deadeye",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-quickness-deadeye-spear-only",
+    "sortOrder": 149
+  },
+  {
+    "id": "thief/kite-deadeye-qtp-rifle-spear",
+    "profession": "thief",
+    "category": "kiter",
+    "name": "Kite Deadeye",
+    "weapons": "Qadim the Peerless - Rifle / Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/kite-deadeye-qtp-rifle-spear",
+    "sortOrder": 150
+  },
+  {
+    "id": "thief/kite-deadeye-q-spear-dagger-dagger",
+    "profession": "thief",
+    "category": "kiter",
+    "name": "Kite Deadeye",
+    "weapons": "Qadim - Spear / Dagger & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/kite-deadeye-q-spear-dagger-dagger",
+    "sortOrder": 151
+  },
+  {
+    "id": "thief/power-deadeye-m7-rifle-dagger-dagger",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Deadeye",
+    "weapons": "M7 - Rifle / Dagger & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/power-deadeye-m7-rifle-dagger-dagger",
+    "sortOrder": 152
+  },
+  {
+    "id": "thief/power-quickness-deadeye-dagger-only",
+    "profession": "thief",
+    "category": "qdps",
+    "name": "Power Quickness Deadeye",
+    "weapons": "Dagger & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/power-quickness-deadeye-dagger-only",
+    "sortOrder": 153
+  },
+  {
+    "id": "thief/power-quickness-deadeye-spear-only",
+    "profession": "thief",
+    "category": "qdps",
+    "name": "Power Quickness Deadeye",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/power-quickness-deadeye-spear-only",
+    "sortOrder": 154
+  },
+  {
+    "id": "thief/power-quickness-deadeye-axe-pistol-dagger",
+    "profession": "thief",
+    "category": "qdps",
+    "name": "Power Quickness Deadeye",
+    "weapons": "Axe & Pistol / Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/power-quickness-deadeye-axe-pistol-dagger",
+    "sortOrder": 155
+  },
+  {
+    "id": "thief/celestial-alacrity-specter-scepter-pistol-dagger",
+    "profession": "thief",
+    "category": "aheal",
+    "name": "Celestial Alacrity Specter",
+    "weapons": "Scepter & Pistol / Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/celestial-alacrity-specter-scepter-pistol-dagger",
+    "sortOrder": 156
+  },
+  {
+    "id": "thief/condition-alacrity-specter-spear-only",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Condition Alacrity Specter",
+    "weapons": "Spear / Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-alacrity-specter-spear-only",
+    "sortOrder": 157
+  },
+  {
+    "id": "thief/condition-alacrity-specter-scepter-dagger-dagger",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Condition Alacrity Specter",
+    "weapons": "Scepter & Dagger / Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-alacrity-specter-scepter-dagger-dagger",
+    "sortOrder": 158
+  },
+  {
+    "id": "thief/condition-alacrity-specter-scepter-pistol-scepter-pistol",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Condition Alacrity Specter",
+    "weapons": "Scepter & Pistol / Scepter & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-alacrity-specter-scepter-pistol-scepter-pistol",
+    "sortOrder": 159
+  },
+  {
+    "id": "thief/condition-specter-scepter-dagger-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Specter",
+    "weapons": "Scepter & Dagger / Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-specter-scepter-dagger-only",
+    "sortOrder": 160
+  },
+  {
+    "id": "thief/condition-specter-spear-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Specter",
+    "weapons": "Spear / Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-specter-spear-only",
+    "sortOrder": 161
+  },
+  {
+    "id": "thief/heal-alacrity-specter-scepter-pistol",
+    "profession": "thief",
+    "category": "aheal",
+    "name": "Heal Alacrity Specter",
+    "weapons": "Scepter & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/heal-alacrity-specter-scepter-pistol",
+    "sortOrder": 162
+  },
+  {
+    "id": "thief/condition-alacrity-antiquary-spear-only",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Condition Alacrity Antiquary",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-alacrity-antiquary-spear-only",
+    "sortOrder": 163
+  },
+  {
+    "id": "thief/condition-alacrity-antiquary-scepter-dagger-only",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Condition Alacrity Antiquary",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-alacrity-antiquary-scepter-dagger-only",
+    "sortOrder": 164
+  },
+  {
+    "id": "thief/condition-antiquary-spear-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Antiquary",
+    "weapons": "Spear",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-antiquary-spear-only",
+    "sortOrder": 165
+  },
+  {
+    "id": "thief/condition-antiquary-dagger-only",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Antiquary",
+    "weapons": "Dagger & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-antiquary-dagger-only",
+    "sortOrder": 166
+  },
+  {
+    "id": "thief/condition-antiquary-scepter-dagger",
+    "profession": "thief",
+    "category": "cdps",
+    "name": "Condition Antiquary",
+    "weapons": "Scepter & Dagger",
+    "url": "https://snowcrows.com/builds/raids/thief/condition-antiquary-scepter-dagger",
+    "sortOrder": 167
+  },
+  {
+    "id": "thief/power-alacrity-antiquary-staff-dagger-pistol",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Power Alacrity Antiquary",
+    "weapons": "Staff / Dagger & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-alacrity-antiquary-staff-dagger-pistol",
+    "sortOrder": 168
+  },
+  {
+    "id": "thief/power-alacrity-antiquary-spear-axe-pistol",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Power Alacrity Antiquary",
+    "weapons": "Spear / Axe & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-alacrity-antiquary-spear-axe-pistol",
+    "sortOrder": 169
+  },
+  {
+    "id": "thief/power-alacrity-antiquary-rifle-only",
+    "profession": "thief",
+    "category": "adps",
+    "name": "Power Alacrity Antiquary",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/thief/power-alacrity-antiquary-rifle-only",
+    "sortOrder": 170
+  },
+  {
+    "id": "thief/power-antiquary-staff-dagger-pistol",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Antiquary",
+    "weapons": "Staff / Dagger & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-antiquary-staff-dagger-pistol",
+    "sortOrder": 171
+  },
+  {
+    "id": "thief/power-antiquary-rifle-only",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Antiquary",
+    "weapons": "Rifle",
+    "url": "https://snowcrows.com/builds/raids/thief/power-antiquary-rifle-only",
+    "sortOrder": 172
+  },
+  {
+    "id": "thief/power-antiquary-spear-axe-pistol",
+    "profession": "thief",
+    "category": "pdps",
+    "name": "Power Antiquary",
+    "weapons": "Spear / Axe & Pistol",
+    "url": "https://snowcrows.com/builds/raids/thief/power-antiquary-spear-axe-pistol",
+    "sortOrder": 173
+  },
+  {
+    "id": "revenant/condition-quickness-herald-shortbow-mace-axe",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Condition Quickness Herald",
+    "weapons": "Shortbow / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-quickness-herald-shortbow-mace-axe",
+    "sortOrder": 174
+  },
+  {
+    "id": "revenant/condition-quickness-herald-spear-mace-axe",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Condition Quickness Herald",
+    "weapons": "Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-quickness-herald-spear-mace-axe",
+    "sortOrder": 175
+  },
+  {
+    "id": "revenant/condition-quickness-herald-spear-only",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Condition Quickness Herald",
+    "weapons": "Spear / Spear",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-quickness-herald-spear-only",
+    "sortOrder": 176
+  },
+  {
+    "id": "revenant/hand-kite-herald-staff-scepter-shield",
+    "profession": "rev",
+    "category": "kiter",
+    "name": "Hand Kite Herald",
+    "weapons": "Staff / Scepter & Shield",
+    "url": "https://snowcrows.com/builds/raids/revenant/hand-kite-herald-staff-scepter-shield",
+    "sortOrder": 177
+  },
+  {
+    "id": "revenant/heal-quickness-herald-staff-scepter-shield",
+    "profession": "rev",
+    "category": "qheal",
+    "name": "Heal Quickness Herald",
+    "weapons": "Staff / Scepter & Shield",
+    "url": "https://snowcrows.com/builds/raids/revenant/heal-quickness-herald-staff-scepter-shield",
+    "sortOrder": 178
+  },
+  {
+    "id": "revenant/power-herald-staff-sword-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Herald",
+    "weapons": "Staff / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-herald-staff-sword-sword",
+    "sortOrder": 179
+  },
+  {
+    "id": "revenant/power-quickness-herald-greatsword-sword-sword",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Power Quickness Herald",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-quickness-herald-greatsword-sword-sword",
+    "sortOrder": 180
+  },
+  {
+    "id": "revenant/power-quickness-herald-staff-sword-sword",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Power Quickness Herald",
+    "weapons": "Staff / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-quickness-herald-staff-sword-sword",
+    "sortOrder": 181
+  },
+  {
+    "id": "revenant/condition-alacrity-renegade-shortbow-mace-axe",
+    "profession": "rev",
+    "category": "adps",
+    "name": "Condition Alacrity Renegade",
+    "weapons": "Shortbow / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-alacrity-renegade-shortbow-mace-axe",
+    "sortOrder": 182
+  },
+  {
+    "id": "revenant/condition-alacrity-renegade-spear-mace-axe",
+    "profession": "rev",
+    "category": "adps",
+    "name": "Condition Alacrity Renegade",
+    "weapons": "Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-alacrity-renegade-spear-mace-axe",
+    "sortOrder": 183
+  },
+  {
+    "id": "revenant/condition-alacrity-renegade-spear-only",
+    "profession": "rev",
+    "category": "adps",
+    "name": "Condition Alacrity Renegade",
+    "weapons": "Spear / Spear",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-alacrity-renegade-spear-only",
+    "sortOrder": 184
+  },
+  {
+    "id": "revenant/condition-renegade-shortbow-mace-axe",
+    "profession": "rev",
+    "category": "cdps",
+    "name": "Condition Renegade",
+    "weapons": "Shortbow / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-renegade-shortbow-mace-axe",
+    "sortOrder": 185
+  },
+  {
+    "id": "revenant/condition-renegade-spear-mace-axe",
+    "profession": "rev",
+    "category": "cdps",
+    "name": "Condition Renegade",
+    "weapons": "Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-renegade-spear-mace-axe",
+    "sortOrder": 186
+  },
+  {
+    "id": "revenant/condition-renegade-spear-only",
+    "profession": "rev",
+    "category": "cdps",
+    "name": "Condition Renegade",
+    "weapons": "Spear / Spear",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-renegade-spear-only",
+    "sortOrder": 187
+  },
+  {
+    "id": "revenant/heal-alacrity-renegade-staff-scepter-shield",
+    "profession": "rev",
+    "category": "aheal",
+    "name": "Heal Alacrity Renegade",
+    "weapons": "Staff / Scepter & Shield",
+    "url": "https://snowcrows.com/builds/raids/revenant/heal-alacrity-renegade-staff-scepter-shield",
+    "sortOrder": 188
+  },
+  {
+    "id": "revenant/power-alacrity-renegade-greatsword-sword-sword",
+    "profession": "rev",
+    "category": "adps",
+    "name": "Power Alacrity Renegade",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-alacrity-renegade-greatsword-sword-sword",
+    "sortOrder": 189
+  },
+  {
+    "id": "revenant/power-alacrity-renegade-staff-sword-sword",
+    "profession": "rev",
+    "category": "adps",
+    "name": "Power Alacrity Renegade",
+    "weapons": "Staff / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-alacrity-renegade-staff-sword-sword",
+    "sortOrder": 190
+  },
+  {
+    "id": "revenant/power-renegade-greatsword-sword-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Renegade",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-renegade-greatsword-sword-sword",
+    "sortOrder": 191
+  },
+  {
+    "id": "revenant/power-renegade-hammer-sword-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Renegade",
+    "weapons": "Hammer / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-renegade-hammer-sword-sword",
+    "sortOrder": 192
+  },
+  {
+    "id": "revenant/heal-alacrity-vindicator-staff-scepter-shield",
+    "profession": "rev",
+    "category": "aheal",
+    "name": "Heal Alacrity Vindicator",
+    "weapons": "Staff / Scepter & Shield",
+    "url": "https://snowcrows.com/builds/raids/revenant/heal-alacrity-vindicator-staff-scepter-shield",
+    "sortOrder": 193
+  },
+  {
+    "id": "revenant/power-vindicator-greatsword-sword-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Vindicator",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-vindicator-greatsword-sword-sword",
+    "sortOrder": 194
+  },
+  {
+    "id": "revenant/condition-conduit-mistfire-spear-mace-axe",
+    "profession": "rev",
+    "category": "cdps",
+    "name": "Condition Conduit",
+    "weapons": "Mistfire - Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-conduit-mistfire-spear-mace-axe",
+    "sortOrder": 195
+  },
+  {
+    "id": "revenant/condition-conduit-spear-mace-axe",
+    "profession": "rev",
+    "category": "cdps",
+    "name": "Condition Conduit",
+    "weapons": "Enhanced Embodiment - Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-conduit-spear-mace-axe",
+    "sortOrder": 196
+  },
+  {
+    "id": "revenant/condition-quickness-conduit-spear-mace-axe",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Condition Quickness Conduit",
+    "weapons": "Spear / Mace & Axe",
+    "url": "https://snowcrows.com/builds/raids/revenant/condition-quickness-conduit-spear-mace-axe",
+    "sortOrder": 197
+  },
+  {
+    "id": "revenant/heal-quickness-conduit-staff-scepter-shield",
+    "profession": "rev",
+    "category": "qheal",
+    "name": "Heal Quickness Conduit",
+    "weapons": "Staff / Scepter & Shield",
+    "url": "https://snowcrows.com/builds/raids/revenant/heal-quickness-conduit-staff-scepter-shield",
+    "sortOrder": 198
+  },
+  {
+    "id": "revenant/power-conduit-staff-sword-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Conduit",
+    "weapons": "Staff / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-conduit-staff-sword-sword",
+    "sortOrder": 199
+  },
+  {
+    "id": "revenant/power-conduit-greatsword-scepter-sword",
+    "profession": "rev",
+    "category": "pdps",
+    "name": "Power Conduit",
+    "weapons": "Greatsword / Scepter & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-conduit-greatsword-scepter-sword",
+    "sortOrder": 200
+  },
+  {
+    "id": "revenant/power-quickness-conduit-staff-sword-sword",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Power Quickness Conduit",
+    "weapons": "Staff / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-quickness-conduit-staff-sword-sword",
+    "sortOrder": 201
+  },
+  {
+    "id": "revenant/power-quickness-conduit-greatsword-sword-sword",
+    "profession": "rev",
+    "category": "qdps",
+    "name": "Power Quickness Conduit",
+    "weapons": "Greatsword / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/revenant/power-quickness-conduit-greatsword-sword-sword",
+    "sortOrder": 202
+  },
+  {
+    "id": "warrior/power-warrior-sword-axe-dagger-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Warrior",
+    "weapons": "Sword & Axe / Dagger & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-warrior-sword-axe-dagger-mace",
+    "sortOrder": 203
+  },
+  {
+    "id": "warrior/power-warrior-mace-axe-dagger-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Warrior",
+    "weapons": "Mace & Axe / Dagger & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-warrior-mace-axe-dagger-mace",
+    "sortOrder": 204
+  },
+  {
+    "id": "warrior/condition-berserker-longbow-sword-torch",
+    "profession": "war",
+    "category": "cdps",
+    "name": "Condition Berserker",
+    "weapons": "Longbow / Sword & Torch",
+    "url": "https://snowcrows.com/builds/raids/warrior/condition-berserker-longbow-sword-torch",
+    "sortOrder": 205
+  },
+  {
+    "id": "warrior/condition-quickness-berserker-longbow-sword-torch",
+    "profession": "war",
+    "category": "qdps",
+    "name": "Condition Quickness Berserker",
+    "weapons": "Longbow / Sword & Torch",
+    "url": "https://snowcrows.com/builds/raids/warrior/condition-quickness-berserker-longbow-sword-torch",
+    "sortOrder": 206
+  },
+  {
+    "id": "warrior/heal-quickness-berserker-staff-mace-warhorn",
+    "profession": "war",
+    "category": "qheal",
+    "name": "Heal Quickness Berserker",
+    "weapons": "Staff / Mace & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/warrior/heal-quickness-berserker-staff-mace-warhorn",
+    "sortOrder": 207
+  },
+  {
+    "id": "warrior/power-berserker-tactics-spear-greatsword",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Berserker",
+    "weapons": "Tactics - Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-berserker-tactics-spear-greatsword",
+    "sortOrder": 208
+  },
+  {
+    "id": "warrior/power-berserker-axe-axe-sword-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Berserker",
+    "weapons": "Arms - Axe & Axe / Sword & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-berserker-axe-axe-sword-mace",
+    "sortOrder": 209
+  },
+  {
+    "id": "warrior/power-berserker-whirlpain-spear-greatsword",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Berserker",
+    "weapons": "Whirlpain - Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-berserker-whirlpain-spear-greatsword",
+    "sortOrder": 210
+  },
+  {
+    "id": "warrior/power-berserker-hammer-axe-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Berserker",
+    "weapons": "Defense - Hammer / Axe & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-berserker-hammer-axe-mace",
+    "sortOrder": 211
+  },
+  {
+    "id": "warrior/power-quickness-berserker-tactics-spear-greatsword",
+    "profession": "war",
+    "category": "qdps",
+    "name": "Power Quickness Berserker",
+    "weapons": "Tactics - Spear / Greatsword",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-quickness-berserker-tactics-spear-greatsword",
+    "sortOrder": 212
+  },
+  {
+    "id": "warrior/power-quickness-berserker-spear-axe-axe",
+    "profession": "war",
+    "category": "qdps",
+    "name": "Power Quickness Berserker",
+    "weapons": "Discipline - Spear / Axe & Axe",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-quickness-berserker-spear-axe-axe",
+    "sortOrder": 213
+  },
+  {
+    "id": "warrior/power-quickness-berserker-greatsword-axe-axe",
+    "profession": "war",
+    "category": "qdps",
+    "name": "Power Quickness Berserker",
+    "weapons": "Discipline - Greatsword / Axe & Axe",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-quickness-berserker-greatsword-axe-axe",
+    "sortOrder": 214
+  },
+  {
+    "id": "warrior/hand-kite-spellbreaker-staff-mace-shield",
+    "profession": "war",
+    "category": "kiter",
+    "name": "Hand Kite Spellbreaker",
+    "weapons": "Staff / Mace & Shield",
+    "url": "https://snowcrows.com/builds/raids/warrior/hand-kite-spellbreaker-staff-mace-shield",
+    "sortOrder": 215
+  },
+  {
+    "id": "warrior/power-spellbreaker-dagger-mace-dagger-axe",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Spellbreaker",
+    "weapons": "Dagger & Mace / Axe",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-spellbreaker-dagger-mace-dagger-axe",
+    "sortOrder": 216
+  },
+  {
+    "id": "warrior/power-spellbreaker-hammer-dagger-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Spellbreaker",
+    "weapons": "Hammer / Dagger & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-spellbreaker-hammer-dagger-mace",
+    "sortOrder": 217
+  },
+  {
+    "id": "warrior/power-alacrity-bladesworn-overcharged-cartridges-sword-pistol",
+    "profession": "war",
+    "category": "adps",
+    "name": "Power Alacrity Bladesworn",
+    "weapons": "Overcharged Cartridges - Sword & Pistol",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-alacrity-bladesworn-overcharged-cartridges-sword-pistol",
+    "sortOrder": 218
+  },
+  {
+    "id": "warrior/power-alacrity-bladesworn-signets-sword-pistol",
+    "profession": "war",
+    "category": "adps",
+    "name": "Power Alacrity Bladesworn",
+    "weapons": "Signets - Sword & Pistol",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-alacrity-bladesworn-signets-sword-pistol",
+    "sortOrder": 219
+  },
+  {
+    "id": "warrior/power-bladesworn-faf-sword-pistol",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Bladesworn",
+    "weapons": "Fierce as Fire - Sword & Pistol",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-bladesworn-faf-sword-pistol",
+    "sortOrder": 220
+  },
+  {
+    "id": "warrior/condition-paragon-longbow-sword-sword",
+    "profession": "war",
+    "category": "cdps",
+    "name": "Condition Paragon",
+    "weapons": "Longbow / Sword & Sword",
+    "url": "https://snowcrows.com/builds/raids/warrior/condition-paragon-longbow-sword-sword",
+    "sortOrder": 221
+  },
+  {
+    "id": "warrior/heal-alacrity-paragon-staff-mace-warhorn",
+    "profession": "war",
+    "category": "aheal",
+    "name": "Heal Alacrity Paragon",
+    "weapons": "Staff / Mace & Warhorn",
+    "url": "https://snowcrows.com/builds/raids/warrior/heal-alacrity-paragon-staff-mace-warhorn",
+    "sortOrder": 222
+  },
+  {
+    "id": "warrior/power-alacrity-paragon-sword-axe-dagger-mace",
+    "profession": "war",
+    "category": "adps",
+    "name": "Power Alacrity Paragon",
+    "weapons": "Sword & Axe / Dagger & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-alacrity-paragon-sword-axe-dagger-mace",
+    "sortOrder": 223
+  },
+  {
+    "id": "warrior/power-paragon-sword-axe-dagger-mace",
+    "profession": "war",
+    "category": "pdps",
+    "name": "Power Paragon",
+    "weapons": "Sword & Axe / Dagger & Mace",
+    "url": "https://snowcrows.com/builds/raids/warrior/power-paragon-sword-axe-dagger-mace",
+    "sortOrder": 224
+  }
+]

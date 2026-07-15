@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { api, ApiError, type CharacterData } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { BUILDS, CAT, PROF, PROF_BY_API, PROF_ORDER, buildById } from '../data/builds';
+import { CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
 import { Card, GoldButton, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
@@ -13,6 +13,8 @@ export default function CharactersPage() {
   const [reloadNonce, setReloadNonce] = useState(0);
   const refetch = () => setReloadNonce((n) => n + 1);
   const { data: characters, loading, error } = useApiQuery(() => api.myCharacters(), [reloadNonce]);
+  const { data: buildsRaw } = useApiQuery(() => api.builds(), []);
+  const builds = useMemo(() => (buildsRaw ?? []).map(toBuildEntry), [buildsRaw]);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function CharactersPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {characters?.map((c) => (
-          <CharacterCard key={c.id} character={c} onChanged={refetch} onDelete={() => handleDelete(c.id)} />
+          <CharacterCard key={c.id} character={c} builds={builds} onChanged={refetch} onDelete={() => handleDelete(c.id)} />
         ))}
       </div>
     </div>
@@ -118,10 +120,12 @@ export default function CharactersPage() {
 
 function CharacterCard({
   character,
+  builds,
   onChanged,
   onDelete,
 }: {
   character: CharacterData;
+  builds: BuildEntry[];
   onChanged: () => void;
   onDelete: () => void;
 }) {
@@ -161,7 +165,7 @@ function CharacterCard({
         )}
       </div>
       {character.templates.map((t) => (
-        <TemplateRow key={t.id} character={character} template={t} profKey={profKey} onChanged={onChanged} />
+        <TemplateRow key={t.id} character={character} template={t} profKey={profKey} builds={builds} onChanged={onChanged} />
       ))}
     </Card>
   );
@@ -171,15 +175,17 @@ function TemplateRow({
   character,
   template,
   profKey,
+  builds,
   onChanged,
 }: {
   character: CharacterData;
   template: CharacterData['templates'][number];
   profKey: string | undefined;
+  builds: BuildEntry[];
   onChanged: () => void;
 }) {
-  const options = profKey ? BUILDS.filter((b) => b.p === profKey) : [];
-  const assigned = template.assignedBuildId ? buildById(template.assignedBuildId) : undefined;
+  const options = profKey ? builds.filter((b) => b.p === profKey) : [];
+  const assigned = template.assignedBuildId ? builds.find((b) => b.id === template.assignedBuildId) : undefined;
 
   async function handleAssign(buildId: string) {
     await api.assignCharacterBuild(character.id, template.tab, buildId || null);

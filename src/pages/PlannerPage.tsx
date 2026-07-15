@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api, ApiError, type CompositionDetail, type CompositionSlotData, type RosterCharacter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { PROF, PROF_ORDER, BUILDS, CAT, buildById } from '../data/builds';
+import { PROF, PROF_ORDER, CAT, toBuildEntry, type BuildEntry } from '../data/builds';
 import { EXPANSIONS, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO } from '../data/encounters';
 import { COV_BOONS, coverageFor } from '../data/boonCoverage';
 import { professionColor, professionIconPath } from '../data/gw2-data';
@@ -18,6 +18,12 @@ export default function PlannerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: myGroups, loading: groupsLoading } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([])), [user]);
+  const { data: buildsRaw } = useApiQuery(() => api.builds(), []);
+  const builds = useMemo(() => (buildsRaw ?? []).map(toBuildEntry), [buildsRaw]);
+  const buildById = useMemo(() => {
+    const map = new Map(builds.map((b) => [b.id, b]));
+    return (id: string) => map.get(id);
+  }, [builds]);
   const groupIdParam = searchParams.get('group');
   const [groupId, setGroupId] = useState<string | null>(groupIdParam);
 
@@ -330,6 +336,7 @@ export default function PlannerPage() {
                 composition={composition}
                 canEdit={canEdit}
                 roster={roster ?? []}
+                builds={builds}
                 onChanged={() => setReloadNonce((n) => n + 1)}
               />
             ))}
@@ -378,12 +385,14 @@ function SubgroupCard({
   composition,
   canEdit,
   roster,
+  builds,
   onChanged,
 }: {
   subgroup: number;
   composition: CompositionDetail;
   canEdit: boolean;
   roster: RosterCharacter[];
+  builds: BuildEntry[];
   onChanged: () => void;
 }) {
   const slotByIndex = new Map(composition.slots.filter((s) => s.subgroup === subgroup).map((s) => [s.slotIndex, s]));
@@ -402,6 +411,7 @@ function SubgroupCard({
           slot={slotByIndex.get(i) ?? null}
           canEdit={canEdit}
           roster={roster}
+          builds={builds}
           onChanged={onChanged}
         />
       ))}
@@ -418,6 +428,7 @@ function SlotRow({
   slot,
   canEdit,
   roster,
+  builds,
   onChanged,
 }: {
   compositionId: string;
@@ -426,6 +437,7 @@ function SlotRow({
   slot: CompositionSlotData | null;
   canEdit: boolean;
   roster: RosterCharacter[];
+  builds: BuildEntry[];
   onChanged: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -435,7 +447,8 @@ function SlotRow({
   const [role, setRole] = useState(slot?.role ?? '');
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const catalogOptions = BUILDS.filter((b) => b.p === profKey);
+  const buildById = (id: string) => builds.find((b) => b.id === id);
+  const catalogOptions = builds.filter((b) => b.p === profKey);
 
   async function handleSaveCatalog() {
     const build = buildById(buildId);

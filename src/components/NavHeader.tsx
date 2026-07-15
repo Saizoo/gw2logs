@@ -48,7 +48,7 @@ export function NavHeader() {
           overflowX: 'auto',
         }}
       >
-        {TABS.map((tab) => {
+        {[...TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])].map((tab) => {
           const active = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to);
           return (
             <Link

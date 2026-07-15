@@ -9,6 +9,18 @@ export const authRouter = Router();
 
 const STATE_COOKIE = 'gw2logs_oauth_state';
 
+// Comma-separated Discord user ids that should always be admins — read
+// fresh on every login rather than cached at startup, so updating .env and
+// restarting the API is enough to promote someone, no DB access needed.
+// Whoever's in this list gets forced to isAdmin:true on every login; anyone
+// not in the list keeps whatever isAdmin value they already have (default
+// false, or whatever an existing admin set for them from the admin panel) —
+// login never demotes someone the panel promoted by hand.
+function isBootstrapAdmin(discordId: string): boolean {
+  const ids = (process.env.ADMIN_DISCORD_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean);
+  return ids.includes(discordId);
+}
+
 function redirectUri(req: Request): string {
   return process.env.DISCORD_REDIRECT_URI ?? `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
 }
@@ -33,13 +45,19 @@ authRouter.get('/discord/callback', async (req, res) => {
     const accessToken = await exchangeCodeForToken(code, redirectUri(req));
     const discordUser = await fetchDiscordUser(accessToken);
 
+    const bootstrapAdmin = isBootstrapAdmin(discordUser.id);
     const user = await prisma.user.upsert({
       where: { discordId: discordUser.id },
-      update: { discordUsername: discordUser.username, discordAvatar: discordAvatarUrl(discordUser) },
+      update: {
+        discordUsername: discordUser.username,
+        discordAvatar: discordAvatarUrl(discordUser),
+        ...(bootstrapAdmin ? { isAdmin: true } : {}),
+      },
       create: {
         discordId: discordUser.id,
         discordUsername: discordUser.username,
         discordAvatar: discordAvatarUrl(discordUser),
+        isAdmin: bootstrapAdmin,
       },
     });
 

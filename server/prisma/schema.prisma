@@ -11,6 +11,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// The raid-planner build catalog, admin-editable. `id` is kept as the
+// path-derived string the static catalog always used (e.g.
+// "elementalist/celestial-alacrity-tempest-scepter-warhorn"), not a cuid —
+// existing CompositionSlot.buildId values already reference these exact
+// strings, and preserving them means the migration from the static file
+// doesn't orphan any composition a user has already saved.
+model Build {
+  id         String   @id
+  profession String
+  category   String
+  name       String
+  weapons    String
+  url        String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([profession])
+}
+
 model Player {
   id          String      @id @default(cuid())
   account     String      @unique
@@ -30,6 +50,10 @@ model User {
   gw2ApiKeyEnc     String?
   gw2LinkedAt      DateTime?
   createdAt        DateTime          @default(now())
+  // Bootstrapped from ADMIN_DISCORD_IDS on login (see routes/auth.ts) so the
+  // first admin exists without manual SQL after a DB reset; promotable/
+  // demotable afterward from the admin panel itself.
+  isAdmin          Boolean           @default(false)
   sessions         Session[]
   guildMemberships GuildMembership[]
   player           Player?

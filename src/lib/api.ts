@@ -248,6 +248,83 @@ export interface CurrentUser {
   gw2AccountName: string | null;
   gw2LinkedAt: string | null;
   createdAt: string;
+  isAdmin: boolean;
+}
+
+export interface Build {
+  id: string;
+  profession: string;
+  category: string;
+  name: string;
+  weapons: string;
+  url: string;
+}
+
+export interface AdminBuild extends Build {
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOverview {
+  totalLogs: number;
+  totalUsers: number;
+  totalPlayers: number;
+  totalGuilds: number;
+  totalGroups: number;
+  totalBuilds: number;
+  failedUploadsThisWeek: number;
+  recentUploadJobs: AdminUploadJob[];
+}
+
+export interface AdminUploadJob {
+  id: string;
+  status: string;
+  fileName: string;
+  fileSizeByte: number;
+  errorMessage: string | null;
+  logId: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdminLogRow {
+  id: string;
+  boss: string;
+  isCm: boolean;
+  success: boolean;
+  squadDps: number;
+  durationMs: number;
+  uploadedAt: string;
+  sourceFileName: string | null;
+  playerCount: number;
+}
+
+export interface AdminUserRow {
+  id: string;
+  discordUsername: string;
+  discordAvatar: string | null;
+  gw2AccountName: string | null;
+  linkedPlayerAccount: string | null;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+export interface AdminGuildRow {
+  id: string;
+  name: string;
+  tag: string;
+  lastSyncedAt: string;
+  memberCount: number;
+}
+
+export interface AdminGroupRow {
+  id: string;
+  name: string;
+  leader: string;
+  createdAt: string;
+  memberCount: number;
+  compositionCount: number;
 }
 
 export interface LinkGw2Result {
@@ -456,6 +533,63 @@ export const api = {
       body: JSON.stringify({ assignedBuildId }),
     }),
   syncCharacters: () => apiFetch<{ ok: true; count: number }>('/characters/sync', { method: 'POST' }),
+
+  // --- Build catalog ---
+  builds: () => apiFetch<Build[]>('/builds'),
+
+  // --- Admin ---
+  adminOverview: () => apiFetch<AdminOverview>('/admin/overview'),
+  adminUploadJobs: (params: { status?: string; limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set('status', params.status);
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.offset) qs.set('offset', String(params.offset));
+    const query = qs.toString();
+    return apiFetch<{ total: number; jobs: AdminUploadJob[] }>(`/admin/uploads${query ? `?${query}` : ''}`);
+  },
+  adminLogs: (params: { search?: string; limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set('search', params.search);
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.offset) qs.set('offset', String(params.offset));
+    const query = qs.toString();
+    return apiFetch<{ total: number; logs: AdminLogRow[] }>(`/admin/logs${query ? `?${query}` : ''}`);
+  },
+  adminDeleteLog: (id: string) => apiFetch<{ ok: true }>(`/admin/logs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  adminUsers: (params: { search?: string; limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set('search', params.search);
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.offset) qs.set('offset', String(params.offset));
+    const query = qs.toString();
+    return apiFetch<{ total: number; users: AdminUserRow[] }>(`/admin/users${query ? `?${query}` : ''}`);
+  },
+  adminSetUserAdmin: (id: string, isAdmin: boolean) =>
+    apiFetch<{ id: string; isAdmin: boolean }>(`/admin/users/${encodeURIComponent(id)}/admin`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isAdmin }),
+    }),
+  adminForceLogout: (id: string) =>
+    apiFetch<{ ok: true; sessionsRevoked: number }>(`/admin/users/${encodeURIComponent(id)}/logout`, { method: 'POST' }),
+  adminGuilds: () => apiFetch<AdminGuildRow[]>('/admin/guilds'),
+  adminGroups: () => apiFetch<AdminGroupRow[]>('/admin/groups'),
+  adminDeleteGroup: (id: string) => apiFetch<{ ok: true }>(`/admin/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  adminBuilds: () => apiFetch<AdminBuild[]>('/admin/builds'),
+  adminCreateBuild: (data: { profession: string; category: string; name: string; weapons: string; url: string }) =>
+    apiFetch<AdminBuild>('/admin/builds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  adminUpdateBuild: (id: string, data: { profession: string; category: string; name: string; weapons: string; url: string }) =>
+    apiFetch<AdminBuild>(`/admin/builds/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  adminDeleteBuild: (id: string) =>
+    apiFetch<{ ok: true; referencedSlots: number }>(`/admin/builds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
 export { ApiError };
