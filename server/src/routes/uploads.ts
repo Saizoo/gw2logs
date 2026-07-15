@@ -1,26 +1,13 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { prisma } from '../db.js';
-import { uploadToDpsReport, fetchEiJson } from '../lib/dpsReport.js';
+import { uploadToDpsReport, fetchEiJson, withRetry } from '../lib/dpsReport.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 64 * 1024 * 1024 } });
 
 export const uploadsRouter = Router();
-
-async function fetchEiJsonWithRetry(permalink: string, attempts = 6, delayMs = 3000) {
-  let lastErr: unknown;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fetchEiJson(permalink);
-    } catch (err) {
-      lastErr = err;
-      await new Promise((r) => setTimeout(r, delayMs));
-    }
-  }
-  throw lastErr;
-}
 
 uploadsRouter.post('/', upload.single('file'), async (req, res) => {
   const file = req.file;
@@ -34,7 +21,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
   });
 
   try {
-    const uploadResult = await uploadToDpsReport(file.buffer, file.originalname);
+    const uploadResult = await withRetry(() => uploadToDpsReport(file.buffer, file.originalname));
 
     const alreadyIngested = await prisma.log.findUnique({
       where: { permalink: uploadResult.permalink },
@@ -48,7 +35,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       return;
     }
 
-    const rawJson = await fetchEiJsonWithRetry(uploadResult.permalink);
+    const rawJson = await withRetry(() => fetchEiJson(uploadResult.permalink), 6, 3000);
     const normalized = normalizeEiJson(rawJson);
 
     const log = await persistLog({
