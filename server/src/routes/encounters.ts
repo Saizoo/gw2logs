@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -22,41 +23,65 @@ encountersRouter.get('/', asyncHandler(async (_req, res) => {
   );
 }));
 
+interface LeaderboardRawRow {
+  logId: string;
+  characterName: string;
+  profession: string;
+  spec: string;
+  totalDps: number;
+  powerDps: number;
+  condiDps: number;
+  account: string;
+  durationMs: number;
+  encounterTime: Date;
+}
+
 encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) => {
   const { fightName } = req.params;
   const isCm = req.query.cm === 'true';
   const profession = typeof req.query.profession === 'string' ? req.query.profession : undefined;
+  const roleParam = req.query.role;
+  // Role isn't stored — a player is classed "power" or "condi" by whichever
+  // of their own powerDps/condiDps split is larger for that parse.
+  const role = roleParam === 'power' || roleParam === 'condi' ? roleParam : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
 
-  const where = {
-    log: { fightName, isCm, success: true },
-    ...(profession ? { profession } : {}),
-  };
+  const professionCondition = profession ? Prisma.sql`AND lp.profession = ${profession}` : Prisma.empty;
+  const roleCondition =
+    role === 'power'
+      ? Prisma.sql`AND lp."powerDps" >= lp."condiDps"`
+      : role === 'condi'
+        ? Prisma.sql`AND lp."powerDps" < lp."condiDps"`
+        : Prisma.empty;
 
   // Pull the total count separately so percentile rank stays correct against
   // the whole population — the row fetch itself is capped at `limit` so a
   // popular boss with thousands of parses doesn't pull every row (and every
-  // row's nested log + player) into memory just to keep the top 50.
-  const [total, rows] = await Promise.all([
-    prisma.logPlayer.count({ where }),
-    prisma.logPlayer.findMany({
-      where,
-      // `rawJson` holds the full Elite Insights dump for the log (can be
-      // many MB) — `include: { log: true }` pulls that in for every row.
-      // Select only the couple of fields actually used below instead.
-      select: {
-        logId: true,
-        characterName: true,
-        profession: true,
-        spec: true,
-        totalDps: true,
-        player: { select: { account: true } },
-        log: { select: { durationMs: true, encounterTime: true } },
-      },
-      orderBy: { totalDps: 'desc' },
-      take: limit,
-    }),
+  // row's nested log + player) into memory just to keep the top 50. Raw SQL
+  // here (rather than Prisma's query builder) because filtering by role
+  // means comparing two columns on the same row, which Prisma's `where`
+  // can't express.
+  const [totalRows, rows] = await Promise.all([
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) AS count
+      FROM "LogPlayer" lp
+      JOIN "Log" l ON lp."logId" = l.id
+      WHERE l."fightName" = ${fightName} AND l."isCm" = ${isCm} AND l.success = true
+      ${professionCondition} ${roleCondition}
+    `,
+    prisma.$queryRaw<LeaderboardRawRow[]>`
+      SELECT lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
+             p.account, l."durationMs", l."encounterTime"
+      FROM "LogPlayer" lp
+      JOIN "Log" l ON lp."logId" = l.id
+      JOIN "Player" p ON lp."playerId" = p.id
+      WHERE l."fightName" = ${fightName} AND l."isCm" = ${isCm} AND l.success = true
+      ${professionCondition} ${roleCondition}
+      ORDER BY lp."totalDps" DESC
+      LIMIT ${limit}
+    `,
   ]);
+  const total = Number(totalRows[0]?.count ?? 0);
 
   res.json(
     rows.map((r, i) => ({
@@ -64,12 +89,13 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       pct: total <= 1 ? 100 : Math.round(((total - 1 - i) / (total - 1)) * 100),
       logId: r.logId,
       name: r.characterName,
-      account: r.player.account,
+      account: r.account,
       profession: r.profession,
       spec: r.spec,
       dps: r.totalDps,
-      durationMs: r.log.durationMs,
-      date: r.log.encounterTime,
+      role: r.powerDps >= r.condiDps ? 'power' : 'condi',
+      durationMs: r.durationMs,
+      date: r.encounterTime,
     })),
   );
 }));

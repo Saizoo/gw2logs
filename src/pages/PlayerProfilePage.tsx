@@ -1,133 +1,182 @@
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { professionColor, professionColorAlpha, professionForSpec, professionIconPath } from '../data/gw2-data';
+import { Card, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
   const { data: player, loading, error } = useApiQuery(() => api.player(name), [name]);
 
+  const avgRecentDps = useMemo(() => {
+    if (!player || player.recent.length === 0) return null;
+    return Math.round(player.recent.reduce((s, r) => s + r.dps, 0) / player.recent.length);
+  }, [player]);
+
+  const chart = useMemo(() => {
+    if (!player || player.recent.length < 2) return null;
+    const values = [...player.recent].reverse().map((r) => r.dps);
+    const w = 720;
+    const h = 150;
+    const pad = 14;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const step = (w - pad * 2) / (values.length - 1);
+    const pts = values.map((v, i) => ({ x: pad + i * step, y: pad + (1 - (v - min) / range) * (h - pad * 2) }));
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
+    return { line, area, pts };
+  }, [player]);
+
   if (loading) return <LoadingState label="Loading profile…" />;
   if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
   if (!player) return null;
 
+  const mainProfession = player.professionBreakdown[0]?.profession ?? null;
+
+  const profileStats = [
+    { label: 'Total Logs', value: player.totalLogs },
+    { label: 'Overall Score', value: player.overallScore ?? '—' },
+    { label: 'Consistency', value: player.consistencyScore ?? '—' },
+    { label: 'Avg DPS (recent)', value: avgRecentDps ? avgRecentDps.toLocaleString() : '—' },
+  ];
+
   return (
-    <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 0 40px' }}>
-      <div
+    <div>
+      <Card
         style={{
+          padding: 32,
+          marginBottom: 22,
           display: 'flex',
           alignItems: 'center',
-          gap: 20,
-          padding: '26px 28px',
-          background: 'var(--bg-header)',
-          borderBottom: '1px solid var(--border)',
+          gap: 22,
+          background:
+            'radial-gradient(600px 260px at 85% 0%, oklch(0.32 0.06 155 / 25%), transparent), linear-gradient(135deg, oklch(0.2 0.018 250), oklch(0.13 0.014 250))',
         }}
       >
         <div
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            background: 'repeating-linear-gradient(115deg,rgba(224,180,88,.25) 0 6px,rgba(224,180,88,.08) 6px 12px)',
+            width: 84,
+            height: 84,
+            borderRadius: 18,
+            background: mainProfession
+              ? `linear-gradient(135deg, ${professionColorAlpha(mainProfession, 50)}, oklch(0.16 0.02 155 / 60%))`
+              : 'oklch(0.22 0.014 250)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             flex: 'none',
+            border: '1px solid var(--border)',
           }}
-        />
+        >
+          {mainProfession && <img src={professionIconPath(mainProfession)} style={{ width: 56, height: 56, objectFit: 'contain' }} />}
+        </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ font: '800 24px var(--font-sans)', color: 'var(--text)' }}>{player.displayName}</h1>
-          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-45)', marginTop: 4 }}>{player.account}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
-            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.totalLogs}</div>
-            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
-              Logs uploaded
-            </div>
+          <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.displayName}</div>
+          <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>
+            {mainProfession ? `${mainProfession} · ` : ''}
+            {player.account}
           </div>
-          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
-            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.overallScore ?? '—'}</div>
-            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
-              Overall score
-            </div>
-          </div>
-          <div style={{ textAlign: 'center', padding: '10px 22px', background: 'var(--gold-dim)', borderRadius: 8 }}>
-            <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)' }}>{player.consistencyScore ?? '—'}</div>
-            <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase' }}>
-              Consistency
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 24, padding: '24px 28px 0', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 480px', minWidth: 0 }}>
-          <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-            Best parses
-          </div>
-          {player.bestParses.length === 0 && (
-            <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>No logs yet.</div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-            {player.bestParses.map((bp) => (
-              <Link
-                key={bp.logId}
-                to={`/logs/${bp.logId}`}
-                style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}
-              >
-                <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>
-                  {bp.boss}{bp.isCm ? ' CM' : ''}
-                </div>
-                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)', marginBottom: 10 }}>{bp.spec}</div>
-                <span style={{ font: '700 16px var(--font-mono)', color: 'var(--text)' }}>{bp.dps.toLocaleString()}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ width: 260, flex: 'none' }}>
-          <div style={{ background: 'var(--bg-row)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
-            <div style={{ font: '600 11px var(--font-sans)', color: 'var(--text-40)', textTransform: 'uppercase', marginBottom: 12 }}>
-              Profession breakdown
-            </div>
-            {player.professionBreakdown.map((pb) => (
-              <div key={pb.profession} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', font: '500 11px var(--font-sans)', color: 'var(--text-60)', marginBottom: 4 }}>
-                  <span>{pb.profession}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{pb.pct}%</span>
-                </div>
-                <div style={{ height: 6, background: 'rgba(255,255,255,.06)', borderRadius: 3 }}>
-                  <div style={{ height: 6, width: `${pb.pct}%`, background: 'var(--gold)', borderRadius: 3 }} />
+          <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
+            {profileStats.map((s) => (
+              <div key={s.label}>
+                <div style={{ font: '800 18px var(--font-sans)' }}>{s.value}</div>
+                <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>
+                  {s.label}
                 </div>
               </div>
             ))}
           </div>
         </div>
+      </Card>
+
+      {chart && (
+        <Card style={{ padding: '20px 20px 8px', marginBottom: 20 }}>
+          <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {player.recent.length} Logs</div>
+          <svg viewBox="0 0 720 150" style={{ width: '100%', height: 150, overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <g stroke="var(--border-soft)" strokeWidth={1}>
+              <line x1="0" y1="10" x2="720" y2="10" />
+              <line x1="0" y1="56" x2="720" y2="56" />
+              <line x1="0" y1="102" x2="720" y2="102" />
+              <line x1="0" y1="148" x2="720" y2="148" />
+            </g>
+            <path d={chart.area} fill="url(#dpsFill2)" />
+            <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            {chart.pts.map((pt, i) => (
+              <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} />
+            ))}
+          </svg>
+        </Card>
+      )}
+
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
+          Best parses
+        </div>
+        {player.bestParses.length === 0 && (
+          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet.</div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          {player.bestParses.map((bp) => (
+            <Card key={bp.logId} style={{ padding: 14 }}>
+              <Link to={`/logs/${bp.logId}`} style={{ display: 'block' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <ProfDot color={professionColor(professionForSpec(bp.spec))} />
+                  <div style={{ font: '700 13px var(--font-sans)' }}>
+                    {bp.boss}
+                    {bp.isCm ? ' CM' : ''}
+                  </div>
+                </div>
+                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 10 }}>{bp.spec}</div>
+                <span style={{ font: '700 16px var(--font-mono)', color: 'var(--gold)' }}>{bp.dps.toLocaleString()}</span>
+              </Link>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <div style={{ padding: '24px 28px 0' }}>
-        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-45)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-          Recent uploads
+      <Card style={{ marginTop: 20, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
+          Recent Activity
         </div>
         {player.recent.length === 0 && (
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-40)' }}>Nothing uploaded yet.</div>
+          <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
         )}
-        {player.recent.map((r) => (
+        {player.recent.map((r, i) => (
           <Link
             key={r.logId}
             to={`/logs/${r.logId}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border-soft)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '11px 20px',
+              borderBottom: i === player.recent.length - 1 ? 'none' : '1px solid var(--border-faint)',
+            }}
           >
-            <div style={{ flex: 1 }}>
-              <div style={{ font: '700 13px var(--font-sans)', color: 'var(--text)' }}>
-                {r.boss}{r.isCm ? ' CM' : ''}
+            <img src={professionIconPath(professionForSpec(r.spec), r.spec)} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ font: '600 13px var(--font-sans)' }}>
+                {r.boss}
+                {r.isCm ? ' CM' : ''}
               </div>
-              <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-40)' }}>
+              <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
                 {r.spec} · {new Date(r.uploadedAt).toLocaleString()}
               </div>
             </div>
-            <div style={{ font: '700 13px var(--font-mono)', color: 'var(--text)' }}>{r.dps.toLocaleString()} dps</div>
+            <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{r.dps.toLocaleString()}</div>
           </Link>
         ))}
-      </div>
+      </Card>
     </div>
   );
 }

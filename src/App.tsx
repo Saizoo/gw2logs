@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import LandingPage from './pages/LandingPage';
-import EncountersIndexPage from './pages/EncountersIndexPage';
-import EncounterPage from './pages/EncounterPage';
+import DashboardPage from './pages/DashboardPage';
+import LogsPage from './pages/LogsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import PlannerPage from './pages/PlannerPage';
 import PlayerProfilePage from './pages/PlayerProfilePage';
 import GuildsIndexPage from './pages/GuildsIndexPage';
 import GuildPage from './pages/GuildPage';
@@ -22,10 +22,10 @@ export default function App() {
       <Route path="/search" element={<SearchResultsPage />} />
 
       <Route element={<Layout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/encounters" element={<EncountersIndexPage />} />
-        <Route path="/encounters/:bossName" element={<EncounterPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/logs" element={<LogsPage />} />
         <Route path="/leaderboards" element={<LeaderboardPage />} />
+        <Route path="/planner" element={<PlannerPage />} />
         <Route path="/players/:name" element={<PlayerProfilePage />} />
         <Route path="/guilds" element={<GuildsIndexPage />} />
         <Route path="/guilds/:tag" element={<GuildPage />} />

@@ -1,7 +1,7 @@
-import { useState, type CSSProperties, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export function SearchBar({ width = 220, defaultValue = '' }: { width?: number; defaultValue?: string }) {
+export function SearchBar({ width = '100%', defaultValue = '' }: { width?: number | string; defaultValue?: string }) {
   const [value, setValue] = useState(defaultValue);
   const navigate = useNavigate();
 
@@ -10,24 +10,33 @@ export function SearchBar({ width = 220, defaultValue = '' }: { width?: number; 
     if (value.trim()) navigate(`/search?q=${encodeURIComponent(value.trim())}`);
   }
 
-  const inputStyle: CSSProperties = {
-    width,
-    padding: '7px 12px',
-    background: 'var(--bg-chip)',
-    border: '1px solid var(--border)',
-    borderRadius: 6,
-    font: '400 12px var(--font-sans)',
-    color: 'var(--text)',
-    outline: 'none',
-  };
-
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={onSubmit} style={{ position: 'relative', width }}>
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+      >
+        <circle cx="11" cy="11" r="7" stroke="var(--text-55)" strokeWidth="2" />
+        <line x1="21" y1="21" x2="16.2" y2="16.2" stroke="var(--text-55)" strokeWidth="2" strokeLinecap="round" />
+      </svg>
       <input
-        style={inputStyle}
-        placeholder="Search player, guild, boss…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        placeholder="Search logs, players, guilds…"
+        style={{
+          width: '100%',
+          background: 'var(--bg-input)',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          padding: '9px 14px 9px 36px',
+          color: 'var(--text)',
+          fontSize: 13,
+          fontFamily: 'var(--font-sans)',
+          outline: 'none',
+        }}
       />
     </form>
   );

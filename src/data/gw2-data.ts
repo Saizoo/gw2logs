@@ -1,41 +1,53 @@
 // Static reference data — real GW2 game facts (profession colors/specs,
-// rank-color thresholds, raid wing labels). No mock results here; log,
+// parse-tier thresholds, raid wing labels). No mock results here; log,
 // leaderboard, and profile data all come from the API (see src/lib/api.ts).
 
-export const RANK_COLORS = {
-  gray: '#8b8f98',
-  green: '#4caf6d',
-  blue: '#4a9eff',
-  purple: '#b46eff',
-  orange: '#ff9640',
-  pink: '#ff6ec7',
-  gold: '#f0c852',
-} as const;
-
 export interface ProfessionInfo {
-  color: string;
+  hue: number;
   specs: [string, string, string, string];
 }
 
+// Hue values match the design system's profession color wheel.
 export const PROFESSIONS: Record<string, ProfessionInfo> = {
-  Guardian: { color: '#72c1d9', specs: ['Dragonhunter', 'Firebrand', 'Willbender', 'Luminary'] },
-  Warrior: { color: '#ffd166', specs: ['Berserker', 'Spellbreaker', 'Bladesworn', 'Paragon'] },
-  Revenant: { color: '#d16e5a', specs: ['Herald', 'Renegade', 'Vindicator', 'Conduit'] },
-  Engineer: { color: '#d09c59', specs: ['Scrapper', 'Holosmith', 'Mechanist', 'Amalgam'] },
-  Ranger: { color: '#8cdc82', specs: ['Druid', 'Soulbeast', 'Untamed', 'Galeshot'] },
-  Thief: { color: '#c08f95', specs: ['Daredevil', 'Deadeye', 'Specter', 'Antiquary'] },
-  Elementalist: { color: '#f55d4e', specs: ['Tempest', 'Weaver', 'Catalyst', 'Evoker'] },
-  Mesmer: { color: '#d6708b', specs: ['Chronomancer', 'Mirage', 'Virtuoso', 'Troubadour'] },
-  Necromancer: { color: '#52a76f', specs: ['Reaper', 'Scourge', 'Harbinger', 'Ritualist'] },
+  Warrior: { hue: 55, specs: ['Berserker', 'Spellbreaker', 'Bladesworn', 'Paragon'] },
+  Guardian: { hue: 230, specs: ['Dragonhunter', 'Firebrand', 'Willbender', 'Luminary'] },
+  Revenant: { hue: 25, specs: ['Herald', 'Renegade', 'Vindicator', 'Conduit'] },
+  Ranger: { hue: 140, specs: ['Druid', 'Soulbeast', 'Untamed', 'Galeshot'] },
+  Thief: { hue: 10, specs: ['Daredevil', 'Deadeye', 'Specter', 'Antiquary'] },
+  Engineer: { hue: 70, specs: ['Scrapper', 'Holosmith', 'Mechanist', 'Amalgam'] },
+  Necromancer: { hue: 155, specs: ['Reaper', 'Scourge', 'Harbinger', 'Ritualist'] },
+  Elementalist: { hue: 35, specs: ['Tempest', 'Weaver', 'Catalyst', 'Evoker'] },
+  Mesmer: { hue: 300, specs: ['Chronomancer', 'Mirage', 'Virtuoso', 'Troubadour'] },
 };
 
 export const PROFESSION_CHIPS = Object.keys(PROFESSIONS).map((k) => ({
   name: k,
-  color: PROFESSIONS[k].color,
+  color: professionColor(k),
 }));
 
 export function professionColor(profession: string): string {
-  return PROFESSIONS[profession]?.color ?? '#8b8f98';
+  const hue = PROFESSIONS[profession]?.hue;
+  return hue === undefined ? 'oklch(0.6 0.015 90)' : `oklch(0.65 0.15 ${hue})`;
+}
+
+export function professionColorAlpha(profession: string, alphaPct: number): string {
+  const hue = PROFESSIONS[profession]?.hue;
+  return hue === undefined ? `oklch(0.6 0.015 90 / ${alphaPct}%)` : `oklch(0.65 0.15 ${hue} / ${alphaPct}%)`;
+}
+
+const SPEC_TO_PROFESSION: Record<string, string> = Object.fromEntries(
+  Object.entries(PROFESSIONS).flatMap(([profession, info]) => info.specs.map((spec) => [spec, profession])),
+);
+
+export function professionForSpec(spec: string): string {
+  return SPEC_TO_PROFESSION[spec] ?? spec;
+}
+
+// Icon file names in /public/professions match spec/profession names
+// lowercased exactly (verified against the shipped icon set).
+export function professionIconPath(profession: string, spec?: string | null): string {
+  const key = spec && spec.trim() ? spec : profession;
+  return `/professions/${key.toLowerCase()}.png`;
 }
 
 export interface Boss {
@@ -62,12 +74,27 @@ export const BOSSES: Boss[] = [
   { name: 'Qadim the Peerless', wing: 'Wing 6 — Mythwright Gambit', cm: true },
 ];
 
-export function rankColorForPct(pct: number): string {
-  if (pct >= 100) return RANK_COLORS.gold;
-  if (pct >= 99) return RANK_COLORS.pink;
-  if (pct >= 95) return RANK_COLORS.orange;
-  if (pct >= 75) return RANK_COLORS.purple;
-  if (pct >= 50) return RANK_COLORS.blue;
-  if (pct >= 25) return RANK_COLORS.green;
-  return RANK_COLORS.gray;
+export interface ParseTier {
+  color: string;
+  bg: string;
 }
+
+// Percentile color thresholds match the design system's parse legend.
+export function parseTier(pct: number): ParseTier {
+  if (pct >= 99) return { color: 'var(--parse-99)', bg: 'var(--parse-99-bg)' };
+  if (pct >= 95) return { color: 'var(--parse-95)', bg: 'var(--parse-95-bg)' };
+  if (pct >= 75) return { color: 'var(--parse-75)', bg: 'var(--parse-75-bg)' };
+  if (pct >= 50) return { color: 'var(--parse-50)', bg: 'var(--parse-50-bg)' };
+  if (pct >= 25) return { color: 'var(--parse-25)', bg: 'var(--parse-25-bg)' };
+  return { color: 'var(--parse-0)', bg: 'var(--parse-0-bg)' };
+}
+
+export const PARSE_LEGEND: { label: string; pct: number }[] = [
+  { label: '0–24', pct: 10 },
+  { label: '25–49', pct: 30 },
+  { label: '50–74', pct: 60 },
+  { label: '75–94', pct: 80 },
+  { label: '95–98', pct: 96 },
+  { label: '99', pct: 99 },
+  { label: '100', pct: 100 },
+];

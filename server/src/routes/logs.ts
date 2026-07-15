@@ -1,14 +1,29 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { extractDpsOverTime } from '../lib/dpsChart.js';
 
 export const logsRouter = Router();
 
-logsRouter.get('/:id', asyncHandler(async (req, res) => {
-  const log = await prisma.log.findUnique({
-    where: { id: req.params.id },
-    // Excludes `rawJson` (the full Elite Insights dump, can be many MB) —
-    // nothing below reads it, so there's no reason to pull it off disk.
+// Only "Raid" (wing is set, from the verified BOSS_WING table) vs "Other" is
+// reliably derivable from the data we have. A Strikes/Fractals-CM split
+// would need either a hardcoded boss-name list or arcdps triggerID ranges
+// neither of which I could verify against a live source — guessing that
+// badly once already caused real damage this session (the profession
+// mapping mess), so this stays a two-way split rather than a guessed one.
+logsRouter.get('/', asyncHandler(async (req, res) => {
+  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  const killsOnly = req.query.killsOnly === 'true';
+  const limit = Math.min(Number(req.query.limit ?? 50), 200);
+  const offset = Math.max(Number(req.query.offset ?? 0), 0);
+
+  const where = {
+    ...(category === 'raid' ? { wing: { not: null } } : category === 'other' ? { wing: null } : {}),
+    ...(killsOnly ? { success: true } : {}),
+  };
+
+  const logs = await prisma.log.findMany({
+    where,
     select: {
       id: true,
       fightName: true,
@@ -17,35 +32,134 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       success: true,
       durationMs: true,
       squadDps: true,
-      encounterTime: true,
-      players: {
-        orderBy: { totalDps: 'desc' },
-        select: {
-          characterName: true,
-          profession: true,
-          spec: true,
-          subgroup: true,
-          totalDps: true,
-          powerDps: true,
-          condiDps: true,
-          damageTaken: true,
-          downCount: true,
-          deadCount: true,
-          boons: true,
-          mechanics: true,
+      uploadedAt: true,
+      _count: { select: { players: true } },
+    },
+    orderBy: { uploadedAt: 'desc' },
+    take: limit,
+    skip: offset,
+  });
+
+  const fightNames = [...new Set(logs.map((l) => l.fightName))];
+  const logIds = logs.map((l) => l.id);
+
+  // Each log's "parse" badge is its top performer's percentile against the
+  // GLOBAL population for that exact boss+CM — same convention the
+  // leaderboard uses. Computed for the whole page in one query (window
+  // function scoped to just the fight names on this page) rather than one
+  // query per row.
+  // PERCENT_RANK() is 0 for a partition with only one row (there's nothing
+  // below it to rank against) — without correcting for that, a boss+CM
+  // with a single parse ever logged would show its only performer at the
+  // 0th percentile instead of the 100th. Same fix as the leaderboard
+  // route's `total <= 1 ? 100 : ...` special case, expressed in SQL here.
+  const percentiles = logIds.length
+    ? await prisma.$queryRaw<{ logId: string; pct: number }[]>`
+        WITH ranked AS (
+          SELECT lp."logId",
+            CASE WHEN COUNT(*) OVER (PARTITION BY l."fightName", l."isCm") <= 1 THEN 1.0
+                 ELSE PERCENT_RANK() OVER (PARTITION BY l."fightName", l."isCm" ORDER BY lp."totalDps")
+            END AS pct_rank
+          FROM "LogPlayer" lp
+          JOIN "Log" l ON lp."logId" = l.id
+          WHERE l."fightName" = ANY(${fightNames})
+        )
+        SELECT "logId", ROUND(MAX(pct_rank) * 100) AS pct
+        FROM ranked
+        WHERE "logId" = ANY(${logIds})
+        GROUP BY "logId"
+      `
+    : [];
+  const pctByLogId = new Map(percentiles.map((p) => [p.logId, Number(p.pct)]));
+
+  res.json(
+    logs.map((l) => ({
+      id: l.id,
+      boss: l.fightName,
+      wing: l.wing,
+      category: l.wing ? 'raid' : 'other',
+      isCm: l.isCm,
+      success: l.success,
+      durationMs: l.durationMs,
+      squadDps: l.squadDps,
+      playerCount: l._count.players,
+      uploadedAt: l.uploadedAt,
+      parsePct: pctByLogId.get(l.id) ?? null,
+    })),
+  );
+}));
+
+logsRouter.get('/:id', asyncHandler(async (req, res) => {
+  // rawJson fetched separately from the main select, and only for this one
+  // log — fine for a single-row detail view, unlike the list/leaderboard
+  // routes where pulling it per-row was the actual cause of the earlier
+  // site-wide slowness (see encounters/players/guilds routes for that fix).
+  const [log, rawJsonRow] = await Promise.all([
+    prisma.log.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        fightName: true,
+        wing: true,
+        isCm: true,
+        success: true,
+        durationMs: true,
+        squadDps: true,
+        encounterTime: true,
+        players: {
+          orderBy: { totalDps: 'desc' },
+          select: {
+            characterName: true,
+            profession: true,
+            spec: true,
+            subgroup: true,
+            totalDps: true,
+            powerDps: true,
+            condiDps: true,
+            damageTaken: true,
+            downCount: true,
+            deadCount: true,
+            boons: true,
+            mechanics: true,
+          },
+        },
+        mechanicEvents: {
+          orderBy: { timeMs: 'asc' },
+          select: { timeMs: true, name: true, actor: true },
         },
       },
-      mechanicEvents: {
-        orderBy: { timeMs: 'asc' },
-        select: { timeMs: true, name: true, actor: true },
-      },
-    },
-  });
+    }),
+    prisma.log.findUnique({ where: { id: req.params.id }, select: { rawJson: true } }),
+  ]);
 
   if (!log) {
     res.status(404).json({ error: 'Log not found' });
     return;
   }
+
+  // Same convention as the leaderboard/list routes: each player's parse
+  // badge is their percentile against the global population for this exact
+  // boss+CM, computed via one window-function query rather than N lookups.
+  // Scoped by logId (not just characterName) so a character that has
+  // played this same boss in other logs doesn't leak its best-ever
+  // percentile onto this specific log's row. Single-row populations are
+  // forced to the 100th percentile (see the /:id list route above for why
+  // PERCENT_RANK() alone would wrongly give the only performer a 0).
+  const playerPercentiles = await prisma.$queryRaw<{ characterName: string; pct: number }[]>`
+    WITH ranked AS (
+      SELECT lp."logId", lp."characterName",
+        CASE WHEN COUNT(*) OVER (PARTITION BY l."fightName", l."isCm") <= 1 THEN 1.0
+             ELSE PERCENT_RANK() OVER (PARTITION BY l."fightName", l."isCm" ORDER BY lp."totalDps")
+        END AS pct_rank
+      FROM "LogPlayer" lp
+      JOIN "Log" l ON lp."logId" = l.id
+      WHERE l."fightName" = ${log.fightName} AND l."isCm" = ${log.isCm}
+    )
+    SELECT "characterName", ROUND(pct_rank * 100) AS pct
+    FROM ranked
+    WHERE "logId" = ${log.id}
+  `;
+  const pctByName = new Map(playerPercentiles.map((p) => [p.characterName, Number(p.pct)]));
 
   res.json({
     id: log.id,
@@ -56,11 +170,16 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     durationMs: log.durationMs,
     squadDps: log.squadDps,
     date: log.encounterTime,
+    // Best-effort — see extractDpsOverTime for why this is null more often
+    // than not right now, rather than a guess dressed up as real data.
+    dpsChart: rawJsonRow ? extractDpsOverTime(rawJsonRow.rawJson as Record<string, any>) : null,
     players: log.players.map((p) => ({
       name: p.characterName,
       profession: p.profession,
       spec: p.spec,
       subgroup: p.subgroup,
+      role: p.powerDps >= p.condiDps ? 'power' : 'condi',
+      parsePct: pctByName.get(p.characterName) ?? null,
       total: p.totalDps,
       power: p.powerDps,
       condi: p.condiDps,

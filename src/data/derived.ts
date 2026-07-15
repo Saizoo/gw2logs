@@ -27,15 +27,3 @@ export const STATUS_META: Record<UploadStatus, { label: string; color: string }>
   success: { label: 'Parsed', color: '#4caf6d' },
   failed: { label: 'Failed', color: '#f55d4e' },
 };
-
-export function rowBg(index: number): string {
-  return index % 2 === 0 ? '#1c1913' : '#181510';
-}
-
-const MEDALS = ['🥇', '🥈', '🥉'];
-const MEDAL_COLORS = ['#f0c852', '#c7cdd6', '#c98a4d'];
-
-export function medalFor(index: number, rank: number): { medal: string; color: string } {
-  if (index < 3) return { medal: MEDALS[index], color: MEDAL_COLORS[index] };
-  return { medal: String(rank), color: 'rgba(242,237,226,.35)' };
-}

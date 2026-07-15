@@ -3,60 +3,85 @@ import { Logo, Avatar } from './atoms';
 import { SearchBar } from './SearchBar';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
-const LINKS = [
-  { label: 'Encounters', to: '/encounters' },
+const TABS = [
+  { label: 'Dashboard', to: '/' },
+  { label: 'Logs', to: '/logs' },
   { label: 'Leaderboards', to: '/leaderboards' },
+  { label: 'Raid Planner', to: '/planner' },
   { label: 'Guilds', to: '/guilds' },
   { label: 'Compare', to: '/compare' },
 ];
-
-const UPLOAD_LINK_STYLE = {
-  padding: '6px 14px',
-  background: 'var(--gold)',
-  borderRadius: 6,
-  font: '700 12px var(--font-sans)',
-  color: '#14120f',
-} as const;
 
 export function NavHeader() {
   const location = useLocation();
   const { user } = useCurrentUser();
 
   return (
-    <header
+    <div
       style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 28px',
-        background: 'var(--bg-header)',
+        gap: 24,
+        padding: '0 32px',
+        height: 64,
+        background: 'var(--bg-nav)',
+        backdropFilter: 'blur(16px) saturate(140%)',
         borderBottom: '1px solid var(--border)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        <Logo />
-        <nav style={{ display: 'flex', gap: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>
-          {LINKS.map((link) => {
-            const active = location.pathname.startsWith(link.to.split('/').slice(0, 2).join('/'));
-            return (
-              <Link key={link.label} to={link.to} style={{ color: active ? 'var(--gold)' : 'var(--text-55)' }}>
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+      <Logo />
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-soft)',
+          borderRadius: 12,
+          padding: 4,
+          overflowX: 'auto',
+        }}
+      >
+        {TABS.map((tab) => {
+          const active = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to);
+          return (
+            <Link
+              key={tab.to}
+              to={tab.to}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 9,
+                font: '600 12.5px var(--font-sans)',
+                whiteSpace: 'nowrap',
+                background: active ? 'var(--gold-grad)' : 'transparent',
+                color: active ? 'var(--gold-fg)' : 'var(--text-65)',
+              }}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <SearchBar />
-        <Link to="/upload" style={UPLOAD_LINK_STYLE}>
-          Upload
-        </Link>
-        <Avatar
-          to={user ? '/account' : '/login'}
-          name={user?.discordUsername}
-          imgSrc={user?.discordAvatar}
-        />
+
+      <div style={{ flex: 1, maxWidth: 420, marginLeft: 8 }}>
+        <SearchBar width={9999} defaultValue="" />
       </div>
-    </header>
+
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+        {user && (
+          <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
+            <div style={{ font: '600 12.5px var(--font-sans)' }}>{user.discordUsername}</div>
+            <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--gold)' }}>
+              {user.gw2AccountName ?? 'Not linked'}
+            </div>
+          </div>
+        )}
+        <Avatar to={user ? '/account' : '/login'} name={user?.discordUsername} imgSrc={user?.discordAvatar} />
+      </div>
+    </div>
   );
 }

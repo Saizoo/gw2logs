@@ -13,6 +13,9 @@
     "ingest:test": "tsx src/scripts/testIngest.ts",
     "auth:test": "tsx src/scripts/testAuthFlow.ts",
     "dpsreport:test": "tsx src/scripts/testDpsReportImport.ts",
+    "compositions:test": "tsx src/scripts/testCompositions.ts",
+    "dashboard:test": "tsx src/scripts/testDashboard.ts",
+    "logs-route:test": "tsx src/scripts/testLogsRoute.ts",
     "seed:demo": "tsx src/scripts/seedDemoData.ts",
     "backfill:professions": "tsx src/scripts/backfillProfessions.ts"
   },

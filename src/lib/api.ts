@@ -21,6 +21,7 @@ export interface LeaderboardRow {
   profession: string;
   spec: string;
   dps: number;
+  role: 'power' | 'condi';
   durationMs: number;
   date: string;
 }
@@ -41,6 +42,8 @@ export interface LogDetailPlayer {
   profession: string;
   spec: string;
   subgroup: number;
+  role: 'power' | 'condi';
+  parsePct: number | null;
   total: number;
   power: number;
   condi: number;
@@ -53,6 +56,11 @@ export interface LogDetailPlayer {
   mechanics: Record<string, number>;
 }
 
+export interface DpsChartPoint {
+  timeMs: number;
+  dps: number;
+}
+
 export interface LogDetail {
   id: string;
   boss: string;
@@ -62,8 +70,80 @@ export interface LogDetail {
   durationMs: number;
   squadDps: number;
   date: string;
+  dpsChart: DpsChartPoint[] | null;
   players: LogDetailPlayer[];
   mechanicEvents: { timeMs: number; name: string; actor: string | null }[];
+}
+
+export interface LogListItem {
+  id: string;
+  boss: string;
+  wing: string | null;
+  category: 'raid' | 'other';
+  isCm: boolean;
+  success: boolean;
+  durationMs: number;
+  squadDps: number;
+  playerCount: number;
+  uploadedAt: string;
+  parsePct: number | null;
+}
+
+export interface DashboardSummary {
+  displayName: string;
+  gw2AccountName: string | null;
+  guild: { id: string; tag: string; name: string } | null;
+  stats: {
+    logsThisWeek: number;
+    logsThisWeekDelta: number;
+    avgSquadDps: number;
+    avgSquadDpsDelta: number;
+    clearsThisWeek: number;
+    totalThisWeek: number;
+    guildRank: number | null;
+  };
+  weeklyActivity: { label: string; count: number }[];
+  recentLogs: {
+    logId: string;
+    boss: string;
+    wing: string | null;
+    isCm: boolean;
+    success: boolean;
+    durationMs: number;
+    dps: number;
+    profession: string;
+    uploadedAt: string;
+  }[];
+  guildActivity: { text: string; time: string }[];
+}
+
+export interface CompositionSummary {
+  id: string;
+  name: string;
+  fightName: string | null;
+  updatedAt: string;
+  createdBy: string;
+}
+
+export interface CompositionSlotData {
+  subgroup: number;
+  slotIndex: number;
+  role: string;
+  profession: string;
+  spec: string | null;
+  buildName: string | null;
+  buildDetails: string | null;
+}
+
+export interface CompositionDetail {
+  id: string;
+  name: string;
+  fightName: string | null;
+  guildTag: string;
+  guildName: string;
+  createdBy: string;
+  updatedAt: string;
+  slots: CompositionSlotData[];
 }
 
 export interface SearchResults {
@@ -160,9 +240,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   stats: () => apiFetch<{ totalLogs: number; totalPlayers: number }>('/stats'),
   encounters: () => apiFetch<EncounterSummary[]>('/encounters'),
-  leaderboard: (fightName: string, isCm: boolean, profession?: string) => {
+  leaderboard: (fightName: string, isCm: boolean, opts: { profession?: string; role?: 'power' | 'condi' } = {}) => {
     const params = new URLSearchParams({ cm: String(isCm) });
-    if (profession) params.set('profession', profession);
+    if (opts.profession) params.set('profession', opts.profession);
+    if (opts.role) params.set('role', opts.role);
     return apiFetch<LeaderboardRow[]>(`/encounters/${encodeURIComponent(fightName)}/leaderboard?${params}`);
   },
   encounterStats: (fightName: string, isCm: boolean) =>
@@ -202,6 +283,39 @@ export const api = {
   importDpsReportStatus: (batchId: string) =>
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
   home: () => apiFetch<HomeSummary>('/home'),
+  dashboard: () => apiFetch<DashboardSummary>('/dashboard'),
+  logs: (params: { category?: 'raid' | 'other'; killsOnly?: boolean; limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.category) qs.set('category', params.category);
+    if (params.killsOnly) qs.set('killsOnly', 'true');
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.offset) qs.set('offset', String(params.offset));
+    const query = qs.toString();
+    return apiFetch<LogListItem[]>(`/logs${query ? `?${query}` : ''}`);
+  },
+  compositions: (guildTag: string) =>
+    apiFetch<CompositionSummary[]>(`/compositions?guildTag=${encodeURIComponent(guildTag)}`),
+  composition: (id: string) => apiFetch<CompositionDetail>(`/compositions/${encodeURIComponent(id)}`),
+  createComposition: (guildTag: string, name: string, fightName?: string | null) =>
+    apiFetch<{ id: string }>('/compositions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildTag, name, fightName }),
+    }),
+  deleteComposition: (id: string) => apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  setCompositionSlot: (
+    id: string,
+    subgroup: number,
+    slotIndex: number,
+    data: { role: string; profession: string; spec?: string | null; buildName?: string | null; buildDetails?: string | null },
+  ) =>
+    apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}/slots/${subgroup}/${slotIndex}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  clearCompositionSlot: (id: string, subgroup: number, slotIndex: number) =>
+    apiFetch<{ ok: true }>(`/compositions/${encodeURIComponent(id)}/slots/${subgroup}/${slotIndex}`, { method: 'DELETE' }),
 };
 
 export { ApiError };

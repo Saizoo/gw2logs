@@ -33,6 +33,7 @@ model User {
   sessions        Session[]
   guildMemberships GuildMembership[]
   player          Player?
+  compositions    Composition[]
 }
 
 model Session {
@@ -52,6 +53,7 @@ model Guild {
   tag          String
   lastSyncedAt DateTime          @default(now())
   memberships  GuildMembership[]
+  compositions Composition[]
 }
 
 model GuildMembership {
@@ -121,6 +123,36 @@ model MechanicEvent {
   actor  String?
 
   @@index([logId])
+}
+
+model Composition {
+  id          String            @id @default(cuid())
+  guildId     String
+  guild       Guild             @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  name        String
+  fightName   String?
+  createdById String
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  slots       CompositionSlot[]
+
+  @@index([guildId])
+}
+
+model CompositionSlot {
+  id            String      @id @default(cuid())
+  compositionId String
+  composition   Composition @relation(fields: [compositionId], references: [id], onDelete: Cascade)
+  subgroup      Int
+  slotIndex     Int
+  role          String
+  profession    String
+  spec          String?
+  buildName     String?
+  buildDetails  String?
+
+  @@unique([compositionId, subgroup, slotIndex])
 }
 
 model UploadJob {

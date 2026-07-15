@@ -1,124 +1,165 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { rankColorForPct, professionColor } from '../data/gw2-data';
-import { rowBg, medalFor } from '../data/derived';
-import { ProfDot, RankPill } from '../components/atoms';
+import { useEffect, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { professionColor, professionIconPath } from '../data/gw2-data';
+import { Card, ParseLegend, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
+const RANK_COLORS = ['var(--gold)', 'oklch(0.7 0.03 85)', 'oklch(0.7 0.03 85)'];
+
 export default function LeaderboardPage() {
+  const [params, setParams] = useSearchParams();
   const { data: encounters, loading: encountersLoading } = useApiQuery(() => api.encounters(), []);
-  const [selected, setSelected] = useState<{ fightName: string; isCm: boolean } | null>(null);
+
+  const encounterKey = params.get('encounter');
+  const isCm = params.get('cm') !== 'false';
+  const role = params.get('role') === 'condi' ? 'condi' : 'power';
 
   useEffect(() => {
-    if (!selected && encounters && encounters.length > 0) {
-      setSelected({ fightName: encounters[0].fightName, isCm: encounters[0].isCm });
+    if (!encounterKey && encounters && encounters.length > 0) {
+      const next = new URLSearchParams(params);
+      next.set('encounter', encounters[0].fightName);
+      next.set('cm', String(encounters[0].isCm));
+      setParams(next, { replace: true });
     }
-  }, [encounters, selected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [encounters, encounterKey]);
 
-  const { data: leaderboard, loading: leaderboardLoading, error } = useApiQuery(
-    () => (selected ? api.leaderboard(selected.fightName, selected.isCm) : Promise.resolve([])),
-    [selected],
+  const selected = useMemo(
+    () => (encounterKey ? { fightName: encounterKey, isCm } : null),
+    [encounterKey, isCm],
   );
 
+  const { data: leaderboard, loading: leaderboardLoading, error } = useApiQuery(
+    () => (selected ? api.leaderboard(selected.fightName, selected.isCm, { role }) : Promise.resolve([])),
+    [selected, role],
+  );
+
+  function selectEncounter(fightName: string, cm: boolean) {
+    const next = new URLSearchParams(params);
+    next.set('encounter', fightName);
+    next.set('cm', String(cm));
+    setParams(next);
+  }
+
+  function selectRole(r: 'power' | 'condi') {
+    const next = new URLSearchParams(params);
+    next.set('role', r);
+    setParams(next);
+  }
+
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '22px 28px 40px' }}>
-      <h1 style={{ font: '800 22px var(--font-sans)', color: 'var(--text)', marginBottom: 16 }}>
-        Global Leaderboards
-      </h1>
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Leaderboards</div>
+          <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)' }}>
+            Top squad-verified DPS across the guild, ranked by encounter and role
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select
+            value={selected ? `${selected.fightName}|${selected.isCm}` : ''}
+            onChange={(e) => {
+              const [fightName, cm] = e.target.value.split('|');
+              selectEncounter(fightName, cm === 'true');
+            }}
+            style={selectStyle}
+          >
+            {encounters?.map((e) => (
+              <option key={`${e.fightName}-${e.isCm}`} value={`${e.fightName}|${e.isCm}`}>
+                {e.fightName}
+                {e.isCm ? ' CM' : ''}
+              </option>
+            ))}
+          </select>
+          <select value={role} onChange={(e) => selectRole(e.target.value === 'condi' ? 'condi' : 'power')} style={selectStyle}>
+            <option value="power">Power DPS</option>
+            <option value="condi">Condition DPS</option>
+          </select>
+        </div>
+      </div>
 
       {encountersLoading && <LoadingState label="Loading encounters…" />}
       {!encountersLoading && encounters?.length === 0 && (
         <EmptyState>No logs have been uploaded yet — leaderboards will appear once the first log comes in.</EmptyState>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-        {encounters?.map((e) => {
-          const active = selected?.fightName === e.fightName && selected?.isCm === e.isCm;
-          return (
-            <button
-              key={`${e.fightName}-${e.isCm}`}
-              onClick={() => setSelected({ fightName: e.fightName, isCm: e.isCm })}
-              style={{
-                padding: '7px 14px',
-                background: active ? 'var(--gold)' : 'var(--bg-chip)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                font: active ? '600 12px var(--font-sans)' : '500 12px var(--font-sans)',
-                color: active ? '#14120f' : 'var(--text-60)',
-              }}
-            >
-              {e.fightName}{e.isCm ? ' CM' : ''} · {e.logCount}
-            </button>
-          );
-        })}
+      <div style={{ marginBottom: 14 }}>
+        <ParseLegend />
       </div>
 
-      {selected && (
-        <>
+      {leaderboardLoading && <LoadingState />}
+      {error && <ErrorState message={error} />}
+
+      {leaderboard && leaderboard.length > 0 && (
+        <Card style={{ overflow: 'hidden' }}>
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '44px 1fr 140px 110px 100px 90px 110px',
-              gap: 10,
-              padding: '0 14px 10px',
-              font: '600 11px var(--font-sans)',
-              color: 'var(--text-40)',
+              gridTemplateColumns: '56px 2fr 1fr 1fr 1.2fr',
+              gap: 8,
+              padding: '12px 20px',
+              font: '700 10.5px var(--font-sans)',
               textTransform: 'uppercase',
-              letterSpacing: '.04em',
+              letterSpacing: '.5px',
+              color: 'var(--text-55)',
+              borderBottom: '1px solid var(--border-soft)',
             }}
           >
-            <div>#</div>
-            <div>Player</div>
-            <div>Profession</div>
-            <div>DPS</div>
-            <div>Duration</div>
             <div>Rank</div>
+            <div>Player</div>
+            <div>Role</div>
+            <div>DPS</div>
             <div>Date</div>
           </div>
+          {leaderboard.map((row, i) => (
+            <Link
+              key={row.logId + row.account}
+              to={`/players/${encodeURIComponent(row.account)}`}
+              style={{
+                position: 'relative',
+                display: 'grid',
+                gridTemplateColumns: '56px 2fr 1fr 1fr 1.2fr',
+                gap: 8,
+                alignItems: 'center',
+                padding: '12px 20px',
+                borderBottom: i === leaderboard.length - 1 ? 'none' : '1px solid var(--border-faint)',
+              }}
+            >
+              <div style={{ font: '800 15px var(--font-sans)', color: i < 3 ? RANK_COLORS[i] : 'var(--text-55)' }}>#{row.rank}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <img src={professionIconPath(row.profession, row.spec)} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
+                  <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <ProfDot color={professionColor(row.profession)} size={6} /> {row.spec}
+                  </div>
+                </div>
+              </div>
+              <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-70)' }}>{row.role === 'power' ? 'Power DPS' : 'Condition DPS'}</div>
+              <div style={{ font: '700 13.5px var(--font-mono)', color: 'var(--gold)' }}>{row.dps.toLocaleString()}</div>
+              <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{new Date(row.date).toLocaleDateString()}</div>
+            </Link>
+          ))}
+        </Card>
+      )}
 
-          {leaderboardLoading && <LoadingState />}
-          {error && <ErrorState message={error} />}
-
-          {leaderboard?.map((row, i) => {
-            const { medal, color } = medalFor(i, row.rank);
-            return (
-              <Link
-                key={row.logId + row.account}
-                to={`/players/${encodeURIComponent(row.account)}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '44px 1fr 140px 110px 100px 90px 110px',
-                  gap: 10,
-                  alignItems: 'center',
-                  padding: '11px 14px',
-                  background: rowBg(i),
-                  borderRadius: 6,
-                  marginBottom: 3,
-                }}
-              >
-                <div style={{ font: '700 13px var(--font-mono)', color }}>{medal}</div>
-                <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{row.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <ProfDot color={professionColor(row.profession)} />
-                  <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-70)' }}>{row.spec}</div>
-                </div>
-                <div style={{ font: '700 13px var(--font-mono)', color: 'var(--text)' }}>{row.dps.toLocaleString()}</div>
-                <div style={{ font: '500 13px var(--font-mono)', color: 'var(--text-60)' }}>
-                  {Math.floor(row.durationMs / 60000)}:{String(Math.round((row.durationMs % 60000) / 1000)).padStart(2, '0')}
-                </div>
-                <div>
-                  <RankPill pct={row.pct} color={rankColorForPct(row.pct)} />
-                </div>
-                <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-40)' }}>
-                  {new Date(row.date).toLocaleDateString()}
-                </div>
-              </Link>
-            );
-          })}
-        </>
+      {leaderboard && leaderboard.length === 0 && !leaderboardLoading && selected && (
+        <EmptyState>No {role === 'power' ? 'power' : 'condition'} DPS parses logged for this encounter yet.</EmptyState>
       )}
     </div>
   );
 }
+
+const selectStyle = {
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  color: 'var(--text-92)',
+  fontSize: 12.5,
+  fontWeight: 600,
+  padding: '9px 12px',
+  borderRadius: 10,
+  fontFamily: 'var(--font-sans)',
+} as const;

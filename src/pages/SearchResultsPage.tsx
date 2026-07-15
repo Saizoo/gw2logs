@@ -65,7 +65,7 @@ export default function SearchResultsPage() {
             {results.bosses.map((b) => (
               <Link
                 key={`${b.fightName}-${b.isCm}`}
-                to={`/encounters/${encodeURIComponent(b.fightName)}${b.isCm ? '' : '?cm=false'}`}
+                to={`/leaderboards?encounter=${encodeURIComponent(b.fightName)}&cm=${b.isCm}`}
                 style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 14px', background: 'var(--bg-row)', borderRadius: 6, marginBottom: 3 }}
               >
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--gold-dim)', flex: 'none' }} />

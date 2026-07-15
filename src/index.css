@@ -1,30 +1,63 @@
 :root {
-  --bg: #0f0d0a;
-  --bg-header: #14120f;
-  --bg-card: #181510;
-  --bg-row: #1c1913;
-  --bg-row-alt: #181510;
-  --bg-chip: #1f1c16;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-soft: rgba(255, 255, 255, 0.06);
-  --gold: #e0b458;
-  --gold-dim: rgba(224, 180, 88, 0.12);
-  --text: #f2ede2;
-  --text-70: rgba(242, 237, 226, 0.7);
-  --text-65: rgba(242, 237, 226, 0.65);
-  --text-60: rgba(242, 237, 226, 0.6);
-  --text-55: rgba(242, 237, 226, 0.55);
-  --text-50: rgba(242, 237, 226, 0.5);
-  --text-45: rgba(242, 237, 226, 0.45);
-  --text-40: rgba(242, 237, 226, 0.4);
-  --text-35: rgba(242, 237, 226, 0.35);
-  --text-30: rgba(242, 237, 226, 0.3);
-  --good: #4caf6d;
-  --good-dim: rgba(76, 175, 109, 0.15);
-  --bad: #f55d4e;
-  --blue: #4a9eff;
+  --bg: oklch(0.15 0.014 250);
+  --bg-page: radial-gradient(1200px 600px at 15% -10%, oklch(0.22 0.03 85 / 8%), transparent),
+    radial-gradient(1000px 500px at 100% 0%, oklch(0.24 0.05 30 / 6%), transparent), oklch(0.15 0.014 250);
+  --bg-nav: oklch(0.16 0.014 250 / 78%);
+  --bg-card: oklch(0.19 0.014 250 / 70%);
+  --bg-input: oklch(0.12 0.014 250);
+  --bg-chip: oklch(1 0 0 / 6%);
+  --bg-hover: oklch(1 0 0 / 3%);
 
-  --font-sans: 'Manrope', system-ui, sans-serif;
+  --border: oklch(1 0 0 / 8%);
+  --border-soft: oklch(1 0 0 / 6%);
+  --border-softer: oklch(1 0 0 / 5%);
+  --border-faint: oklch(1 0 0 / 4%);
+
+  --gold: oklch(0.78 0.14 85);
+  --gold-dim: oklch(0.78 0.14 85 / 16%);
+  --gold-grad: linear-gradient(135deg, oklch(0.78 0.14 85), oklch(0.6 0.12 60));
+  --gold-fg: oklch(0.15 0.02 85);
+
+  --text: oklch(0.95 0.01 90);
+  --text-92: oklch(0.92 0.01 90);
+  --text-85: oklch(0.85 0.01 90);
+  --text-80: oklch(0.8 0.01 90);
+  --text-70: oklch(0.7 0.01 90);
+  --text-65: oklch(0.65 0.015 90);
+  --text-62: oklch(0.62 0.015 90);
+  --text-60: oklch(0.6 0.015 90);
+  --text-58: oklch(0.58 0.015 90);
+  --text-55: oklch(0.55 0.015 90);
+  --text-50: oklch(0.5 0.015 90);
+  --text-45: oklch(0.5 0.015 90);
+  --text-40: oklch(0.55 0.015 90);
+  --text-35: oklch(0.5 0.015 90);
+  --text-30: oklch(0.45 0.015 90);
+
+  /* aliases kept for pages not yet ported to the new component set */
+  --bg-header: var(--bg-nav);
+  --bg-row: var(--bg-card);
+
+  --good: oklch(0.72 0.13 145);
+  --good-dim: oklch(0.72 0.13 145 / 18%);
+  --bad: oklch(0.68 0.16 25);
+  --bad-dim: oklch(0.62 0.18 25 / 18%);
+  --blue: oklch(0.62 0.16 255);
+
+  --parse-99: oklch(0.86 0.19 85);
+  --parse-99-bg: oklch(0.86 0.19 85 / 16%);
+  --parse-95: oklch(0.72 0.22 25);
+  --parse-95-bg: oklch(0.72 0.22 25 / 16%);
+  --parse-75: oklch(0.62 0.19 320);
+  --parse-75-bg: oklch(0.62 0.19 320 / 16%);
+  --parse-50: oklch(0.62 0.16 255);
+  --parse-50-bg: oklch(0.62 0.16 255 / 16%);
+  --parse-25: oklch(0.72 0.15 145);
+  --parse-25-bg: oklch(0.72 0.15 145 / 16%);
+  --parse-0: oklch(0.6 0.015 90);
+  --parse-0-bg: oklch(1 0 0 / 6%);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   color-scheme: dark;
@@ -41,7 +74,7 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--bg-page);
   font-family: var(--font-sans);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -65,8 +98,13 @@ button {
   color: inherit;
 }
 
-input {
+input,
+select {
   font-family: inherit;
+}
+
+input::placeholder {
+  color: var(--text-55);
 }
 
 h1,
@@ -77,8 +115,7 @@ p {
 }
 
 ::selection {
-  background: var(--gold);
-  color: #14120f;
+  background: oklch(0.6 0.13 85 / 30%);
 }
 
 ::-webkit-scrollbar {
@@ -87,10 +124,31 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-header);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-chip);
-  border-radius: 6px;
+  background: oklch(0.32 0.01 250);
+  border-radius: 8px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iconGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px oklch(0.78 0.14 85 / 0%));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px oklch(0.78 0.14 85 / 45%));
+  }
 }
