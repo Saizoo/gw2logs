@@ -4,6 +4,8 @@ import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { getGroupRole as getRole, canManageGroup as canManage } from '../lib/groupAccess.js';
 import { BOSS_WING } from '../lib/bossMeta.js';
+import { encrypt, decrypt } from '../lib/crypto.js';
+import { buildReminderPayload, dueRaidDate, sendWebhook, zonedNow, resolveTimezone } from '../lib/raidReminders.js';
 
 export const groupsRouter = Router();
 
@@ -349,6 +351,96 @@ groupsRouter.get('/:id/clears', requireAuth, asyncHandler(async (req, res) => {
       })),
     })),
   });
+}));
+
+const WEBHOOK_URL_RE = /^https:\/\/(discord\.com|discordapp\.com|ptb\.discord\.com|canary\.discord\.com)\/api\/webhooks\/\d+\/[\w-]+$/;
+
+// Reminder settings, leader/subleader-only in both directions: the raw
+// webhook URL is a channel-posting credential, so reads return only a
+// configured/not-configured flag and the URL itself never leaves the
+// server after being stored.
+groupsRouter.get('/:id/reminders', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!canManage(role)) {
+    res.status(403).json({ error: 'Only leaders and subleaders can view reminder settings' });
+    return;
+  }
+  const group = await prisma.group.findUnique({
+    where: { id: req.params.id },
+    select: { discordWebhookEnc: true, raidReminderMins: true },
+  });
+  if (!group) {
+    res.status(404).json({ error: 'Group not found' });
+    return;
+  }
+  res.json({ webhookConfigured: group.discordWebhookEnc !== null, reminderMins: group.raidReminderMins });
+}));
+
+groupsRouter.put('/:id/reminders', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!canManage(role)) {
+    res.status(403).json({ error: 'Only leaders and subleaders can change reminder settings' });
+    return;
+  }
+
+  const data: { discordWebhookEnc?: string | null; raidReminderMins?: number } = {};
+
+  if (req.body?.webhookUrl === null) {
+    data.discordWebhookEnc = null;
+  } else if (typeof req.body?.webhookUrl === 'string') {
+    const url = req.body.webhookUrl.trim();
+    if (!WEBHOOK_URL_RE.test(url)) {
+      res.status(400).json({ error: 'That does not look like a Discord webhook URL (https://discord.com/api/webhooks/…)' });
+      return;
+    }
+    data.discordWebhookEnc = encrypt(url);
+  }
+
+  if (typeof req.body?.reminderMins === 'number') {
+    if (!Number.isInteger(req.body.reminderMins) || req.body.reminderMins < 5 || req.body.reminderMins > 1440) {
+      res.status(400).json({ error: 'reminderMins must be between 5 and 1440' });
+      return;
+    }
+    data.raidReminderMins = req.body.reminderMins;
+  }
+
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: 'Nothing to update' });
+    return;
+  }
+
+  await prisma.group.update({ where: { id: req.params.id }, data });
+  res.json({ ok: true });
+}));
+
+// Fire the reminder right now, for whichever raid night is nearest —
+// lets a leader confirm the webhook lands in the right channel without
+// waiting for the real window.
+groupsRouter.post('/:id/reminders/test', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!canManage(role)) {
+    res.status(403).json({ error: 'Only leaders and subleaders can send a test reminder' });
+    return;
+  }
+  const group = await prisma.group.findUnique({
+    where: { id: req.params.id },
+    select: { discordWebhookEnc: true, raidDays: true, raidStartTime: true, raidTimezone: true, raidReminderMins: true },
+  });
+  if (!group?.discordWebhookEnc) {
+    res.status(400).json({ error: 'Set a Discord webhook URL first' });
+    return;
+  }
+
+  const due = dueRaidDate(group, new Date());
+  const raidDate = due ?? zonedNow(resolveTimezone(group.raidTimezone)).date;
+  const payload = await buildReminderPayload(req.params.id, raidDate);
+  try {
+    await sendWebhook(decrypt(group.discordWebhookEnc), payload);
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'Webhook delivery failed' });
+    return;
+  }
+  res.json({ ok: true });
 }));
 
 const SIGNUP_STATUSES = new Set(['in', 'late', 'out']);

@@ -43,6 +43,9 @@ services:
       # server/src/routes/auth.ts isBootstrapAdmin. Optional: an empty
       # value just means nobody gets auto-promoted on login.
       ADMIN_DISCORD_IDS: ${ADMIN_DISCORD_IDS:-}
+      # Optional: public site origin used in Discord reminder embeds' links.
+      # Defaults to the origin of DISCORD_REDIRECT_URI when unset.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       DEBUG_PRISMA_QUERIES: ${DEBUG_PRISMA_QUERIES:-}
     ports:
       - '127.0.0.1:4000:4000'

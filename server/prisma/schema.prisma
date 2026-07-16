@@ -212,6 +212,25 @@ model Group {
   raidTimezone     String?
   logs             Log[]
   signups          RaidSignup[]
+  // Discord webhook for raid-night reminders. Encrypted at rest like GW2
+  // API keys — anyone holding the raw URL can post to the channel. Null
+  // means reminders are off; raidReminderMins is how long before the
+  // scheduled start time the reminder fires.
+  discordWebhookEnc String?
+  raidReminderMins  Int               @default(60)
+  reminderLogs      RaidReminderLog[]
+}
+
+// One row per reminder actually sent, so a scheduler tick (or a restart
+// mid-window) can never double-post the same raid night.
+model RaidReminderLog {
+  id      String   @id @default(cuid())
+  groupId String
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  date    String // raid night, YYYY-MM-DD in the group's timezone
+  sentAt  DateTime @default(now())
+
+  @@unique([groupId, date])
 }
 
 // One member's RSVP for one raid night. `date` is a calendar day string

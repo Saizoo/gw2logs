@@ -264,6 +264,8 @@ export default function GroupDetailPage() {
               {inviteError && <div style={{ marginTop: 8, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{inviteError}</div>}
             </Card>
 
+            <DiscordRemindersCard groupId={id} />
+
             <Card style={{ overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
                 Join requests
@@ -636,6 +638,118 @@ function RaidSignupsCard({
             </span>
           );
         })}
+      </div>
+    </Card>
+  );
+}
+
+const REMINDER_LEAD_OPTIONS = [
+  { mins: 30, label: '30 minutes before' },
+  { mins: 60, label: '1 hour before' },
+  { mins: 120, label: '2 hours before' },
+  { mins: 240, label: '4 hours before' },
+  { mins: 720, label: '12 hours before' },
+];
+
+function DiscordRemindersCard({ groupId }: { groupId: string }) {
+  const [nonce, setNonce] = useState(0);
+  const { data: settings } = useApiQuery(() => api.groupReminders(groupId), [groupId, nonce]);
+  const [webhookInput, setWebhookInput] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function run(action: () => Promise<unknown>, successMessage: string) {
+    setBusy(true);
+    try {
+      await action();
+      toast.success(successMessage);
+      setWebhookInput('');
+      setNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Action failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!settings) return null;
+
+  return (
+    <Card style={{ padding: '16px 20px' }}>
+      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 4 }}>Discord Reminders</div>
+      <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)', marginBottom: 12 }}>
+        Posts the signup tally to a channel before each raid night. Create a webhook in Discord under
+        Channel Settings → Integrations, then paste its URL here.
+      </div>
+
+      {settings.webhookConfigured ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '5px 11px',
+              borderRadius: 14,
+              font: '600 11.5px var(--font-sans)',
+              background: 'var(--good-dim)',
+              color: 'var(--good)',
+            }}
+          >
+            ✓ Webhook connected
+          </span>
+          <button
+            className="u-btn-ghost"
+            disabled={busy}
+            onClick={() => run(() => api.testGroupReminder(groupId), 'Test reminder sent — check the channel')}
+            style={smallBtnStyle}
+          >
+            Send test
+          </button>
+          <button
+            className="u-btn-ghost"
+            disabled={busy}
+            onClick={() => run(() => api.setGroupReminders(groupId, { webhookUrl: null }), 'Webhook removed')}
+            style={{ ...smallBtnStyle, color: 'var(--bad)' }}
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <input
+            placeholder="https://discord.com/api/webhooks/…"
+            value={webhookInput}
+            onChange={(e) => setWebhookInput(e.target.value)}
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <GoldButton
+            disabled={busy || !webhookInput.trim()}
+            onClick={() => run(() => api.setGroupReminders(groupId, { webhookUrl: webhookInput.trim() }), 'Webhook saved')}
+          >
+            Save
+          </GoldButton>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-62)' }}>Remind</div>
+        <select
+          value={settings.reminderMins}
+          disabled={busy}
+          onChange={(e) =>
+            run(() => api.setGroupReminders(groupId, { reminderMins: Number(e.target.value) }), 'Reminder time updated')
+          }
+          style={{ ...inputStyle, padding: '7px 10px' }}
+        >
+          {REMINDER_LEAD_OPTIONS.map((o) => (
+            <option key={o.mins} value={o.mins}>
+              {o.label}
+            </option>
+          ))}
+          {!REMINDER_LEAD_OPTIONS.some((o) => o.mins === settings.reminderMins) && (
+            <option value={settings.reminderMins}>{settings.reminderMins} minutes before</option>
+          )}
+        </select>
       </div>
     </Card>
   );

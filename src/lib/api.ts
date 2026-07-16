@@ -577,6 +577,16 @@ export const api = {
   groupRoster: (id: string) => apiFetch<RosterCharacter[]>(`/groups/${encodeURIComponent(id)}/roster`),
   groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
   groupSignups: (id: string) => apiFetch<RaidSignup[]>(`/groups/${encodeURIComponent(id)}/signups`),
+  groupReminders: (id: string) =>
+    apiFetch<{ webhookConfigured: boolean; reminderMins: number }>(`/groups/${encodeURIComponent(id)}/reminders`),
+  setGroupReminders: (id: string, data: { webhookUrl?: string | null; reminderMins?: number }) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/reminders`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  testGroupReminder: (id: string) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/reminders/test`, { method: 'POST' }),
   setSignup: (id: string, date: string, status: SignupStatus | null) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/signups`, {
       method: 'PUT',
