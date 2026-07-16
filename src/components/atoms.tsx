@@ -69,36 +69,42 @@ export function Avatar({
 }: {
   size?: number;
   name?: string;
-  to?: string;
+  // null renders a plain (non-link) avatar — for people with no profile
+  // page to link to, e.g. group members who haven't linked a GW2 account.
+  to?: string | null;
   imgSrc?: string | null;
 }) {
+  const style: CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: 10,
+    background: 'var(--bg-chip)',
+    border: '1px solid oklch(0.78 0.14 85 / 30%)',
+    flex: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'var(--font-sans)',
+    fontWeight: 800,
+    fontSize: size * 0.4,
+    color: 'var(--gold)',
+    overflow: 'hidden',
+  };
+  const inner = imgSrc ? (
+    <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  ) : (
+    (name ?? '?').charAt(0)
+  );
+  if (to === null) {
+    return (
+      <div title={name} className="nav-avatar" style={style}>
+        {inner}
+      </div>
+    );
+  }
   return (
-    <Link
-      to={to}
-      title={name ?? 'Sign in'}
-      className="nav-avatar"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 10,
-        background: 'var(--bg-chip)',
-        border: '1px solid oklch(0.78 0.14 85 / 30%)',
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'var(--font-sans)',
-        fontWeight: 800,
-        fontSize: size * 0.4,
-        color: 'var(--gold)',
-        overflow: 'hidden',
-      }}
-    >
-      {imgSrc ? (
-        <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        (name ?? '?').charAt(0)
-      )}
+    <Link to={to} title={name ?? 'Sign in'} className="nav-avatar" style={style}>
+      {inner}
     </Link>
   );
 }

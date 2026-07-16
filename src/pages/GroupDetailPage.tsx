@@ -128,11 +128,24 @@ export default function GroupDetailPage() {
                 borderBottom: i === group.members.length - 1 ? 'none' : '1px solid var(--border-faint)',
               }}
             >
-              <Avatar size={28} name={m.username} imgSrc={m.avatar} to={`/players/${encodeURIComponent(m.username)}`} />
+              {/* GW2 account name leads (it's also the player-profile key);
+                  Discord stays as a secondary line. Members without a linked
+                  API key fall back to Discord-only with no profile link. */}
+              <Avatar size={28} name={m.account ?? m.username} imgSrc={m.avatar} to={m.account ? `/players/${encodeURIComponent(m.account)}` : null} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <Link to={`/players/${encodeURIComponent(m.username)}`} style={{ font: '600 13px var(--font-sans)' }}>
-                  {m.username}
-                </Link>
+                {m.account ? (
+                  <>
+                    <Link to={`/players/${encodeURIComponent(m.account)}`} style={{ font: '600 13px var(--font-sans)' }}>
+                      {m.account}
+                    </Link>
+                    <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>{m.username}</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ font: '600 13px var(--font-sans)' }}>{m.username}</div>
+                    <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-50)' }}>GW2 account not linked</div>
+                  </>
+                )}
               </div>
               <span
                 style={{
@@ -181,9 +194,9 @@ export default function GroupDetailPage() {
         {group.canManage && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Card style={{ padding: '16px 20px' }}>
-              <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 10 }}>Invite by Discord username</div>
+              <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 10 }}>Invite a member</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input placeholder="Discord username" value={inviteName} onChange={(e) => setInviteName(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                <input placeholder="Discord username or GW2 account (Name.1234)" value={inviteName} onChange={(e) => setInviteName(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
                 <GoldButton onClick={handleInvite}>Invite</GoldButton>
               </div>
               {inviteError && <div style={{ marginTop: 8, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{inviteError}</div>}
@@ -198,8 +211,11 @@ export default function GroupDetailPage() {
               )}
               {requests?.map((r) => (
                 <div key={r.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px', borderBottom: '1px solid var(--border-faint)' }}>
-                  <Avatar size={26} name={r.username} imgSrc={r.avatar} />
-                  <div style={{ flex: 1, font: '600 12.5px var(--font-sans)' }}>{r.username}</div>
+                  <Avatar size={26} name={r.account ?? r.username} imgSrc={r.avatar} to={r.account ? `/players/${encodeURIComponent(r.account)}` : null} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ font: '600 12.5px var(--font-sans)' }}>{r.account ?? r.username}</div>
+                    {r.account && <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-55)' }}>{r.username}</div>}
+                  </div>
                   <button onClick={() => run(() => api.approveJoinRequest(id, r.userId), `${r.username} joined the group`)} className="u-btn-ghost" style={smallBtnStyle}>
                     Approve
                   </button>

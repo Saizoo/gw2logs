@@ -9,7 +9,7 @@ export const groupsRouter = Router();
 const MEMBER_SELECT = {
   role: true,
   joinedAt: true,
-  user: { select: { id: true, discordUsername: true, discordAvatar: true } },
+  user: { select: { id: true, discordUsername: true, discordAvatar: true, gw2AccountName: true } },
 } as const;
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -77,7 +77,7 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
       id: true,
       name: true,
       icon: true,
-      leader: { select: { discordUsername: true } },
+      leader: { select: { discordUsername: true, gw2AccountName: true } },
       ...SCHEDULE_SELECT,
       _count: { select: { members: true } },
     },
@@ -87,7 +87,7 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
       id: g.id,
       name: g.name,
       icon: g.icon,
-      leader: g.leader.discordUsername,
+      leader: g.leader.gw2AccountName ?? g.leader.discordUsername,
       memberCount: g._count.members,
       raidDays: g.raidDays,
       raidStartTime: g.raidStartTime,
@@ -123,7 +123,7 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       name: true,
       icon: true,
       background: true,
-      leader: { select: { discordUsername: true } },
+      leader: { select: { discordUsername: true, gw2AccountName: true } },
       members: { select: MEMBER_SELECT, orderBy: { joinedAt: 'asc' } },
       ...SCHEDULE_SELECT,
     },
@@ -140,10 +140,14 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
     name: group.name,
     icon: group.icon,
     background: group.background,
-    leader: group.leader.discordUsername,
+    leader: group.leader.gw2AccountName ?? group.leader.discordUsername,
     members: group.members.map((m) => ({
       userId: m.user.id,
       username: m.user.discordUsername,
+      // GW2 account name is the primary display identity everywhere else in
+      // the app; null when the member hasn't linked their API key yet, and
+      // the frontend falls back to the Discord username in that case.
+      account: m.user.gw2AccountName,
       avatar: m.user.discordAvatar,
       role: m.role,
       joinedAt: m.joinedAt,
@@ -253,6 +257,7 @@ groupsRouter.get('/:id/roster', requireAuth, asyncHandler(async (req, res) => {
       user: {
         select: {
           discordUsername: true,
+          gw2AccountName: true,
           characters: {
             select: {
               id: true,
@@ -276,7 +281,7 @@ groupsRouter.get('/:id/roster', requireAuth, asyncHandler(async (req, res) => {
         profession: c.profession,
         race: c.race,
         source: c.source,
-        owner: m.user.discordUsername,
+        owner: m.user.gw2AccountName ?? m.user.discordUsername,
         templates: c.templates,
       })),
     ),
@@ -313,12 +318,12 @@ groupsRouter.get('/:id/join-requests', requireAuth, asyncHandler(async (req, res
 
   const requests = await prisma.groupRequest.findMany({
     where: { groupId: req.params.id },
-    select: { userId: true, createdAt: true, user: { select: { discordUsername: true, discordAvatar: true } } },
+    select: { userId: true, createdAt: true, user: { select: { discordUsername: true, discordAvatar: true, gw2AccountName: true } } },
     orderBy: { createdAt: 'asc' },
   });
 
   res.json(
-    requests.map((r) => ({ userId: r.userId, username: r.user.discordUsername, avatar: r.user.discordAvatar, createdAt: r.createdAt })),
+    requests.map((r) => ({ userId: r.userId, username: r.user.discordUsername, account: r.user.gw2AccountName, avatar: r.user.discordAvatar, createdAt: r.createdAt })),
   );
 }));
 
@@ -365,9 +370,20 @@ groupsRouter.post('/:id/members', requireAuth, asyncHandler(async (req, res) => 
     return;
   }
 
-  const target = await prisma.user.findFirst({ where: { discordUsername: username } });
+  // One input, matched against either identity — Discord username or GW2
+  // account name (Name.1234). Case-insensitive on both: Discord usernames
+  // are lowercase-only anyway, and GW2 account names are shown with mixed
+  // case but unique regardless of it.
+  const target = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { discordUsername: { equals: username, mode: 'insensitive' } },
+        { gw2AccountName: { equals: username, mode: 'insensitive' } },
+      ],
+    },
+  });
   if (!target) {
-    res.status(404).json({ error: `No user found with Discord username "${username}"` });
+    res.status(404).json({ error: `No user found with Discord username or GW2 account name "${username}"` });
     return;
   }
 

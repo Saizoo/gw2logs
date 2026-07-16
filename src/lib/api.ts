@@ -220,6 +220,9 @@ export interface GroupSummary {
 export interface GroupMemberData {
   userId: string;
   username: string;
+  // GW2 account name (Name.1234) — the primary display identity. Null when
+  // the member hasn't linked their GW2 API key; fall back to `username`.
+  account: string | null;
   avatar: string | null;
   role: 'leader' | 'subleader' | 'member';
   joinedAt: string;
@@ -243,6 +246,7 @@ export interface GroupDetail {
 export interface GroupJoinRequest {
   userId: string;
   username: string;
+  account: string | null;
   avatar: string | null;
   createdAt: string;
 }
