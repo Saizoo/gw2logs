@@ -29,10 +29,14 @@ export const sampleEiJson: RawEiJson = {
         { Id: 1122, BuffData: [{ Uptime: 8 }] },
       ],
       // Chronomancer generating alacrity for its own subgroup, with no
-      // healing addon data captured — should classify as boon_dps.
+      // healing addon data captured — should classify as boon_dps. Group
+      // buff entries carry `Generation` (share of subgroup uptime this
+      // player is responsible for), not `Uptime` — confirmed against a
+      // real EI 3.25 JSON export, where BuffData[0] has no Uptime key at
+      // all on a GroupBuffs entry.
       GroupBuffs: [
-        { Id: 1187, BuffData: [{ Uptime: 4 }] },
-        { Id: 30328, BuffData: [{ Uptime: 88 }] },
+        { Id: 1187, BuffData: [{ Generation: 4 }] },
+        { Id: 30328, BuffData: [{ Generation: 88 }] },
       ],
     },
     {
@@ -65,8 +69,8 @@ export const sampleEiJson: RawEiJson = {
       // healing-addon data captured showing sustained high outgoing
       // healing — should classify as boon_heal.
       GroupBuffs: [
-        { Id: 1187, BuffData: [{ Uptime: 92 }] },
-        { Id: 30328, BuffData: [{ Uptime: 2 }] },
+        { Id: 1187, BuffData: [{ Generation: 92 }] },
+        { Id: 30328, BuffData: [{ Generation: 2 }] },
       ],
       EXTHealingStats: {
         OutgoingHealing: [{ Hps: 3400, Healing: 513400 }],

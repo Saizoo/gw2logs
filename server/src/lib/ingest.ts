@@ -1,21 +1,34 @@
 // Field names verified against Elite Insights source (GW2EIJSON project,
 // baaron4/GW2-Elite-Insights-Parser@master): JsonLog, JsonActor, JsonPlayer,
 // JsonStatistics (JsonDPS/JsonDefensesAll), JsonBuffsUptime, JsonMechanics,
-// JsonDeathRecap. EI serializes with the C# property names verbatim
-// (PascalCase, no camelCase naming policy found in the source) — camelCase
-// fallbacks are kept below anyway since that costs little and hedges
-// against a version difference. Unlike earlier in this file's history, the
-// raw JSON is no longer persisted after parsing (see persist.ts) — a wrong
-// guess here means re-uploading the source log, not just re-running
-// extraction against a stored copy.
+// JsonDeathRecap. EI 3.25 (built from source and run against a real upload
+// to check this) actually DOES serialize with .NET's built-in camelCase
+// naming policy, contrary to what an earlier version of this comment
+// claimed — "EXTHealingStats" comes out as "extHealingStats", not
+// "eXTHealingStats". Unlike earlier in this file's history, the raw JSON is
+// no longer persisted after parsing (see persist.ts) — a wrong guess here
+// means re-uploading the source log, not just re-running extraction against
+// a stored copy.
 
 export type RawEiJson = Record<string, any>;
+
+// Mirrors .NET's JsonNamingPolicy.CamelCase exactly, not just "lowercase the
+// first letter" — that naive version breaks on any acronym-prefixed name
+// with 2+ leading capitals: it lowercases the whole leading run except the
+// last capital (treated as the start of the next word), e.g.
+// "EXTHealingStats" -> "extHealingStats", "TriggerID" -> "triggerID".
+function toCamelCase(pascalKey: string): string {
+  let i = 0;
+  while (i < pascalKey.length && pascalKey[i] !== pascalKey[i].toLowerCase()) i++;
+  if (i === 0) return pascalKey;
+  if (i === 1 || i === pascalKey.length) return pascalKey.slice(0, i).toLowerCase() + pascalKey.slice(i);
+  return pascalKey.slice(0, i - 1).toLowerCase() + pascalKey.slice(i - 1);
+}
 
 function field(obj: any, pascalKey: string): any {
   if (obj == null) return undefined;
   if (pascalKey in obj) return obj[pascalKey];
-  const camelKey = pascalKey.charAt(0).toLowerCase() + pascalKey.slice(1);
-  return obj[camelKey];
+  return obj[toCamelCase(pascalKey)];
 }
 
 const BOON_IDS: Record<string, number> = {
@@ -125,12 +138,16 @@ function extractPlayerBoons(player: any): Record<string, number> {
   return boons;
 }
 
-// GroupBuffs mirrors BuffUptimes' shape (both are JsonBuffsUptimeData under
-// the hood) but is scoped to what this player *generated* for their 5-person
-// subgroup, rather than what they personally have up. That's the correct
-// signal for "who is the alac/quick provider" — personal uptime doesn't
-// distinguish a support who generates the boon from a squadmate who merely
-// receives it.
+// GroupBuffs entries are NOT the same shape as BuffUptimes despite both
+// being buff-by-id lists — verified against a real EI 3.25 JSON export:
+// BuffUptimes[i].BuffData[0] carries `Uptime` (personal uptime), but
+// GroupBuffs[i].BuffData[0] has no `Uptime` field at all — it carries
+// `Generation` (0-100, this player's share of their 5-person subgroup's
+// total uptime of that boon). Reading `Uptime` here silently returned
+// undefined -> 0 for every player on every log, which meant
+// GROUP_BOON_SUPPORT_THRESHOLD was never met and computeSquadRoles below
+// could never classify anyone as boon_dps/boon_heal — every player always
+// fell back to plain 'dps' regardless of role.
 function extractGroupBoons(player: any): Record<string, number> {
   const groupBuffs: any[] = field(player, 'GroupBuffs') ?? [];
   const boons: Record<string, number> = {};
@@ -138,8 +155,8 @@ function extractGroupBoons(player: any): Record<string, number> {
     const id = BOON_IDS[key];
     const buff = groupBuffs.find((b) => field(b, 'Id') === id);
     const buffData = field(buff, 'BuffData') ?? [];
-    const uptime = field(buffData[0], 'Uptime') ?? 0;
-    boons[key] = Math.round(uptime);
+    const generation = field(buffData[0], 'Generation') ?? 0;
+    boons[key] = Math.round(generation);
   }
   return boons;
 }
