@@ -76,6 +76,37 @@ export const sampleEiJson: RawEiJson = {
         OutgoingHealing: [{ Hps: 3400, Healing: 513400 }],
       },
     },
+    {
+      Name: 'Torvald Rune',
+      Account: 'Torvald.4321',
+      Profession: 'Renegade',
+      Group: 3,
+      DpsAll: [{ Dps: 8100, PowerDps: 5200, CondiDps: 2900 }],
+      Defenses: [{ DamageTaken: 2100, DownCount: 0, DeadCount: 0 }],
+      BuffUptimes: [
+        { Id: 1187, BuffData: [{ Uptime: 20 }] },
+        { Id: 30328, BuffData: [{ Uptime: 90 }] },
+        { Id: 740, BuffData: [{ Uptime: 10 }] },
+        { Id: 725, BuffData: [{ Uptime: 60 }] },
+        { Id: 717, BuffData: [{ Uptime: 80 }] },
+        { Id: 743, BuffData: [{ Uptime: 20 }] },
+        { Id: 1122, BuffData: [{ Uptime: 12 }] },
+      ],
+      // Heal Renegade generating alacrity for its own subgroup, but this
+      // particular kill barely needed healing so measured outgoing HPS
+      // rounds down near zero — should still classify as boon_heal on the
+      // gear-derived Healing Power score alone, confirmed against a real
+      // log with two known healers whose measured output that pull was
+      // likewise near zero.
+      GroupBuffs: [
+        { Id: 1187, BuffData: [{ Generation: 3 }] },
+        { Id: 30328, BuffData: [{ Generation: 76 }] },
+      ],
+      EXTHealingStats: {
+        OutgoingHealing: [{ Hps: 40, Healing: 6040 }],
+      },
+      Healing: 10,
+    },
   ],
   Mechanics: [
     {

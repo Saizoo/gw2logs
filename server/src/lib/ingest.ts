@@ -175,6 +175,18 @@ function extractHealingOutput(player: any): number | null {
   return typeof hps === 'number' ? Math.round(hps) : null;
 }
 
+// JsonActor.Healing — a build/gear-derived "Healing Power score" (verified:
+// two confirmed healers in a real log both read 10 here against 0 for every
+// other player, including the log's other boon supports). This is distinct
+// from EXTHealingStats' measured HPS above, and catches what measured
+// output alone misses: an easy/clean kill where a real healer-built support
+// simply wasn't needed to heal much, so their actual output that fight
+// rounds down near zero despite the build being a dedicated healer.
+function extractHealingPowerScore(player: any): number {
+  const score = field(player, 'Healing');
+  return typeof score === 'number' ? score : 0;
+}
+
 // A player generating a meaningful share of their subgroup's alacrity or
 // quickness uptime is that subgroup's boon support for that boon. Noise
 // floor of 15% filters out incidental generation (e.g. a trait proc) from
@@ -192,7 +204,13 @@ const HEALER_HPS_THRESHOLD = 1500;
 export type SquadRole = 'dps' | 'boon_dps' | 'boon_heal';
 
 function computeSquadRoles(
-  players: { characterName: string; subgroup: number; groupBoons: Record<string, number>; healingOutput: number | null }[],
+  players: {
+    characterName: string;
+    subgroup: number;
+    groupBoons: Record<string, number>;
+    healingOutput: number | null;
+    healingPowerScore: number;
+  }[],
 ): Map<string, SquadRole> {
   const roles = new Map<string, SquadRole>();
   const subgroups = new Set(players.map((p) => p.subgroup));
@@ -214,7 +232,7 @@ function computeSquadRoles(
     for (const p of inGroup) {
       if (!supportCharacters.has(p.characterName)) {
         roles.set(p.characterName, 'dps');
-      } else if (p.healingOutput != null && p.healingOutput >= HEALER_HPS_THRESHOLD) {
+      } else if ((p.healingOutput != null && p.healingOutput >= HEALER_HPS_THRESHOLD) || p.healingPowerScore > 0) {
         roles.set(p.characterName, 'boon_heal');
       } else {
         roles.set(p.characterName, 'boon_dps');
@@ -305,7 +323,10 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
     };
   });
 
-  const squadRoles = computeSquadRoles(normalizedPlayers);
+  const healingPowerScores = new Map(players.map((p) => [field(p, 'Name') ?? 'Unknown', extractHealingPowerScore(p)]));
+  const squadRoles = computeSquadRoles(
+    normalizedPlayers.map((p) => ({ ...p, healingPowerScore: healingPowerScores.get(p.characterName) ?? 0 })),
+  );
   for (const p of normalizedPlayers) {
     p.squadRole = squadRoles.get(p.characterName) ?? 'dps';
   }
