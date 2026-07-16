@@ -75,7 +75,24 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
 
       <div style={{ display: 'grid', gridTemplateColumns: group.canManage ? '1.4fr 1fr' : '1fr', gap: 20, alignItems: 'start' }}>
         <Card style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>Members</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)' }}>
+            <div style={{ font: '700 13.5px var(--font-sans)' }}>Members</div>
+            {group.guild && (
+              <button
+                className="u-btn-ghost"
+                onClick={() =>
+                  run(async () => {
+                    const r = await api.syncGuildRanks(groupId);
+                    toast.success(`Guild ranks synced — ${r.matched} member${r.matched === 1 ? '' : 's'} matched`);
+                  })
+                }
+                title="Pull in-game ranks from the GW2 API (requires the guild leader's linked API key)"
+                style={{ ...smallBtnStyle, marginLeft: 'auto' }}
+              >
+                Sync guild ranks
+              </button>
+            )}
+          </div>
           {group.members.map((m, i) => (
             <div
               key={m.userId}
@@ -106,6 +123,23 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
                   </>
                 )}
               </div>
+              {m.guildRank && (
+                <span
+                  title="In-game guild rank (from rank sync)"
+                  style={{
+                    font: '600 9.5px var(--font-sans)',
+                    letterSpacing: '.3px',
+                    padding: '2px 7px',
+                    borderRadius: 5,
+                    background: 'oklch(0.78 0.14 85 / 10%)',
+                    color: 'oklch(0.8 0.1 85)',
+                    border: '1px solid oklch(0.78 0.14 85 / 25%)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ⚜ {m.guildRank}
+                </span>
+              )}
               <span
                 style={{
                   font: '700 9.5px var(--font-sans)',

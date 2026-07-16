@@ -7,6 +7,7 @@ import { toast } from '../lib/toast';
 import { Card, GoldButton, SubNav } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { ghostBtnStyle } from './group/shared';
+import { GuildBadge } from './MyGroupsPage';
 import OverviewTab from './group/OverviewTab';
 import RosterTab from './group/RosterTab';
 import AttendanceTab from './group/AttendanceTab';
@@ -44,9 +45,17 @@ export default function GroupDetailPage() {
     <div>
       <Card style={{ padding: '28px 32px', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.3px' }}>{group.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.3px' }}>{group.name}</div>
+            {group.guild && <GuildBadge tag={group.guild.tag} />}
+          </div>
           <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>
             Led by {group.leader} · {group.members.length} member{group.members.length === 1 ? '' : 's'}
+            {group.guild && (
+              <span style={{ color: 'var(--text-50)' }}>
+                {' '}· guild roster{group.guild.lastRankSyncAt ? `, ranks synced ${new Date(group.guild.lastRankSyncAt).toLocaleDateString()}` : ', ranks not synced yet'}
+              </span>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

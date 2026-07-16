@@ -203,10 +203,19 @@ export interface CompositionDetail {
   slots: CompositionSlotData[];
 }
 
+export interface GuildRef {
+  id: string;
+  name: string;
+  tag: string;
+}
+
 export interface GroupSummary {
   id: string;
   name: string;
   icon: string | null;
+  // Present on auto-created guild groups only (mine list) — the marker
+  // that separates them from hand-made statics.
+  guild?: GuildRef | null;
   background?: string | null;
   memberCount: number;
   leader?: string;
@@ -220,6 +229,8 @@ export interface GroupSummary {
 export interface GroupMemberData {
   userId: string;
   username: string;
+  // In-game guild rank name, stamped by rank sync on guild groups.
+  guildRank: string | null;
   // GW2 account name (Name.1234) — the primary display identity. Null when
   // the member hasn't linked their GW2 API key; fall back to `username`.
   account: string | null;
@@ -234,6 +245,7 @@ export interface GroupDetail {
   icon: string | null;
   background: string | null;
   leader: string;
+  guild: (GuildRef & { lastRankSyncAt: string | null }) | null;
   members: GroupMemberData[];
   raidDays: string[];
   raidStartTime: string | null;
@@ -343,6 +355,7 @@ export interface CurrentUser {
   isAdmin: boolean;
   // Null until the first-login tour has been completed or skipped.
   onboardedAt: string | null;
+  displayedGuildId: string | null;
   pendingGroupRequests: number;
 }
 
@@ -493,6 +506,19 @@ export const api = {
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
   completeOnboarding: () => apiFetch<{ ok: true }>('/account/onboarding-complete', { method: 'POST' }),
+  accountGuilds: () =>
+    apiFetch<{ displayedGuildId: string | null; guilds: (GuildRef & { isLeader: boolean | null })[] }>('/account/guilds'),
+  setDisplayGuild: (guildId: string | null) =>
+    apiFetch<{ displayedGuild: (GuildRef & { groupId: string }) | null }>('/account/display-guild', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId }),
+    }),
+  syncGuildRanks: (groupId: string) =>
+    apiFetch<{ ok: true; matched: number; updated: number; leaderAccount: string | null }>(
+      `/groups/${encodeURIComponent(groupId)}/sync-guild-ranks`,
+      { method: 'POST' },
+    ),
   importDpsReport: (userToken: string) =>
     apiFetch<DpsReportImportStart>('/account/import-dpsreport', {
       method: 'POST',

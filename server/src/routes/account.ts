@@ -2,8 +2,9 @@ import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
-import { encrypt } from '../lib/crypto.js';
-import { fetchAccount, fetchTokenInfo } from '../lib/gw2Api.js';
+import { encrypt, decrypt } from '../lib/crypto.js';
+import { fetchAccount, fetchAccountGuilds, fetchGuildInfo, fetchTokenInfo } from '../lib/gw2Api.js';
+import { addToGuildGroup, ensureGuildGroup, removeFromGuildGroup } from '../lib/guildGroups.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { fetchDpsReportJson, fetchDpsReportUploads } from '../lib/dpsReportImport.js';
 import { normalizeEiJson } from '../lib/ingest.js';
@@ -59,6 +60,112 @@ accountRouter.post('/link-gw2', async (req, res) => {
     res.status(400).json({ error: message });
   }
 });
+
+// Live list of the guilds on the user's GW2 account (names resolved via
+// the public guild endpoint), for the "which guild do you represent?"
+// picker. isLeader comes from account.guild_leader when the key has the
+// "guilds" permission; null when that can't be determined.
+accountRouter.get('/guilds', asyncHandler(async (req, res) => {
+  if (!req.user!.gw2ApiKeyEnc) {
+    res.status(400).json({ error: 'Link your GW2 API key first' });
+    return;
+  }
+  const apiKey = decrypt(req.user!.gw2ApiKeyEnc);
+  let account;
+  try {
+    account = await fetchAccountGuilds(apiKey);
+  } catch {
+    res.status(502).json({ error: "Couldn't reach the GW2 API — try again in a moment." });
+    return;
+  }
+  const guildIds = account.guilds ?? [];
+  const infos = await Promise.all(
+    guildIds.map((id) =>
+      fetchGuildInfo(id).catch(() => null),
+    ),
+  );
+  res.json({
+    displayedGuildId: req.user!.displayedGuildId,
+    guilds: infos
+      .filter((g): g is NonNullable<typeof g> => g !== null)
+      .map((g) => ({
+        id: g.id,
+        name: g.name,
+        tag: g.tag,
+        isLeader: account.guild_leader ? account.guild_leader.includes(g.id) : null,
+      })),
+  });
+}));
+
+// Sets (or clears, with guildId: null) the guild this user displays. This
+// is what drives guild-group membership: displaying a guild upserts the
+// Guild row, auto-creates its group if needed, and adds the user; clearing
+// or switching removes them from the old guild's group (with leadership
+// handoff). The claim is verified against the account's real guild list.
+accountRouter.post('/display-guild', asyncHandler(async (req, res) => {
+  const guildId = req.body?.guildId;
+  if (guildId !== null && typeof guildId !== 'string') {
+    res.status(400).json({ error: 'guildId must be a guild id string or null' });
+    return;
+  }
+  const previousGuildId = req.user!.displayedGuildId;
+
+  if (guildId === null) {
+    if (previousGuildId) {
+      const oldGroup = await prisma.group.findUnique({ where: { guildId: previousGuildId } });
+      if (oldGroup) await removeFromGuildGroup(oldGroup.id, req.user!.id);
+      await prisma.user.update({ where: { id: req.user!.id }, data: { displayedGuildId: null } });
+    }
+    res.json({ displayedGuild: null });
+    return;
+  }
+
+  if (!req.user!.gw2ApiKeyEnc) {
+    res.status(400).json({ error: 'Link your GW2 API key first' });
+    return;
+  }
+  const apiKey = decrypt(req.user!.gw2ApiKeyEnc);
+  let account;
+  try {
+    account = await fetchAccountGuilds(apiKey);
+  } catch {
+    res.status(502).json({ error: "Couldn't reach the GW2 API — try again in a moment." });
+    return;
+  }
+  if (!(account.guilds ?? []).includes(guildId)) {
+    res.status(400).json({ error: 'That guild is not on your GW2 account' });
+    return;
+  }
+
+  const info = await fetchGuildInfo(guildId);
+  const guild = await prisma.guild.upsert({
+    where: { id: guildId },
+    update: {
+      name: info.name,
+      tag: info.tag,
+      // The in-game leader's key is the only one the GW2 API lets read
+      // members/ranks — remember whose key that is for rank syncs.
+      ...(account.guild_leader?.includes(guildId) ? { syncUserId: req.user!.id } : {}),
+    },
+    create: {
+      id: guildId,
+      name: info.name,
+      tag: info.tag,
+      syncUserId: account.guild_leader?.includes(guildId) ? req.user!.id : null,
+    },
+  });
+
+  const group = await ensureGuildGroup(guild, req.user!.id);
+  await addToGuildGroup(group.id, req.user!.id);
+
+  if (previousGuildId && previousGuildId !== guildId) {
+    const oldGroup = await prisma.group.findUnique({ where: { guildId: previousGuildId } });
+    if (oldGroup) await removeFromGuildGroup(oldGroup.id, req.user!.id);
+  }
+
+  await prisma.user.update({ where: { id: req.user!.id }, data: { displayedGuildId: guildId } });
+  res.json({ displayedGuild: { id: guild.id, name: guild.name, tag: guild.tag, groupId: group.id } });
+}));
 
 // Marks the first-login tour as done (completed or skipped — either way it
 // shouldn't greet the user again). Idempotent; keeps the earliest timestamp.

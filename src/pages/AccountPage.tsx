@@ -268,6 +268,8 @@ export default function AccountPage() {
         {dpsError && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{dpsError}</div>}
       </Card>
 
+      {user.gw2AccountName && <GuildCard />}
+
       <div style={{ textAlign: 'center', marginTop: 22 }}>
         <button
           onClick={() => {
@@ -281,5 +283,108 @@ export default function AccountPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// "Which guild do you represent?" — lists the guilds on the linked GW2
+// account (live from the API). Picking one joins that guild's auto-created
+// group; picking None (or switching) leaves it.
+function GuildCard() {
+  const [nonce, setNonce] = useState(0);
+  const [data, setData] = useState<Awaited<ReturnType<typeof api.accountGuilds>> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [groupId, setGroupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .accountGuilds()
+      .then((d) => !cancelled && setData(d))
+      .catch((err) => !cancelled && setError(err instanceof ApiError ? err.message : 'Failed to load guilds from the GW2 API'));
+    return () => {
+      cancelled = true;
+    };
+  }, [nonce]);
+
+  async function choose(guildId: string | null) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.setDisplayGuild(guildId);
+      setGroupId(res.displayedGuild?.groupId ?? null);
+      setNonce((n) => n + 1);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to update guild');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card style={{ padding: 22, marginTop: 20 }}>
+      <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>Guild</div>
+      <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-60)', marginBottom: 14, lineHeight: 1.5 }}>
+        Pick the guild you represent. You'll join its guild group automatically — schedules, signups, clears and
+        attendance for the whole guild — and switching or choosing None leaves it again.
+      </div>
+
+      {!data && !error && <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)' }}>Loading guilds from the GW2 API…</div>}
+      {error && <div style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)', marginBottom: 10 }}>{error}</div>}
+
+      {data && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {data.guilds.map((g) => {
+            const active = data.displayedGuildId === g.id;
+            return (
+              <button
+                key={g.id}
+                disabled={busy || active}
+                onClick={() => choose(g.id)}
+                className={active ? undefined : 'u-chip'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textAlign: 'left',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: active ? 'oklch(0.78 0.14 85 / 12%)' : 'oklch(1 0 0 / 3%)',
+                  border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 40%)' : 'var(--border)'}`,
+                  cursor: active ? 'default' : 'pointer',
+                }}
+              >
+                <span style={{ font: '800 12px var(--font-mono)', color: 'var(--gold)', flex: 'none' }}>[{g.tag}]</span>
+                <span style={{ font: '600 13px var(--font-sans)', color: 'var(--text-88)' }}>{g.name}</span>
+                {g.isLeader && (
+                  <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: 'var(--gold-dim)', color: 'var(--gold)' }}>
+                    Leader
+                  </span>
+                )}
+                {active && <span style={{ marginLeft: 'auto', font: '600 11px var(--font-sans)', color: 'var(--gold)' }}>✓ Displayed</span>}
+              </button>
+            );
+          })}
+          {data.guilds.length === 0 && (
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)' }}>No guilds found on this GW2 account.</div>
+          )}
+          {data.displayedGuildId && (
+            <button
+              disabled={busy}
+              onClick={() => choose(null)}
+              className="u-btn-ghost"
+              style={{ alignSelf: 'flex-start', font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)' }}
+            >
+              Display no guild
+            </button>
+          )}
+          {groupId && (
+            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--good)' }}>
+              Joined the guild group — <Link to={`/groups/${groupId}`} style={{ color: 'var(--gold)', fontWeight: 600 }}>open it</Link>.
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }

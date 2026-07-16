@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, type GroupSummary } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CountBadge, GoldButton } from '../components/atoms';
@@ -92,30 +92,32 @@ export default function MyGroupsPage() {
 
       {user && (
         <div style={{ marginBottom: 28 }}>
-          <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-            My groups
-          </div>
           {myLoading && <LoadingState label="Loading groups…" />}
           {!myLoading && myGroups?.length === 0 && <EmptyState>You're not in any groups yet — create one or search below.</EmptyState>}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-            {myGroups?.map((g) => (
-              <Link key={g.id} to={`/groups/${g.id}`} style={{ display: 'block' }}>
-                <Card className="u-card-link" style={{ padding: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
-                    <CountBadge count={g.pendingRequestCount ?? 0} />
-                  </div>
-                  <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
-                    {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
-                    {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending request${g.pendingRequestCount === 1 ? '' : 's'}` : ''}
-                  </div>
-                  {formatSchedule(g) && (
-                    <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
-                  )}
-                </Card>
-              </Link>
-            ))}
-          </div>
+
+          {/* Guild groups first (auto-created from displayed guilds), then
+              hand-made statics — same card, different section + badge. */}
+          {(myGroups?.some((g) => g.guild) ?? false) && (
+            <>
+              <div style={{ font: '600 12px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
+                My guild
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 22 }}>
+                {myGroups?.filter((g) => g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
+              </div>
+            </>
+          )}
+
+          {(myGroups?.some((g) => !g.guild) ?? false) && (
+            <>
+              <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
+                My statics
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+                {myGroups?.filter((g) => !g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -214,3 +216,47 @@ const ghostBtnStyle = {
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
 } as const;
+
+export function GuildBadge({ tag }: { tag: string }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        font: '800 9px var(--font-sans)',
+        letterSpacing: '.6px',
+        textTransform: 'uppercase',
+        padding: '2px 7px',
+        borderRadius: 5,
+        color: 'var(--gold)',
+        background: 'oklch(0.78 0.14 85 / 15%)',
+        border: '1px solid oklch(0.78 0.14 85 / 35%)',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      ⚜ Guild · [{tag}]
+    </span>
+  );
+}
+
+function GroupCard({ group: g }: { group: GroupSummary }) {
+  return (
+    <Link to={`/groups/${g.id}`} style={{ display: 'block' }}>
+      <Card className="u-card-link" style={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
+          {g.guild && <GuildBadge tag={g.guild.tag} />}
+          <CountBadge count={g.pendingRequestCount ?? 0} />
+        </div>
+        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
+          {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
+          {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending request${g.pendingRequestCount === 1 ? '' : 's'}` : ''}
+        </div>
+        {formatSchedule(g) && (
+          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
+        )}
+      </Card>
+    </Link>
+  );
+}

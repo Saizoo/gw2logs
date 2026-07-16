@@ -6,11 +6,14 @@ import { getGroupRole as getRole, canManageGroup as canManage } from '../lib/gro
 import { BOSS_WING } from '../lib/bossMeta.js';
 import { encrypt, decrypt } from '../lib/crypto.js';
 import { buildReminderPayload, dueRaidDate, sendWebhook, zonedNow, resolveTimezone } from '../lib/raidReminders.js';
+import { fetchGuildMembers, fetchGuildRanks } from '../lib/gw2Api.js';
+import { applyGuildRanks } from '../lib/guildGroups.js';
 
 export const groupsRouter = Router();
 
 const MEMBER_SELECT = {
   role: true,
+  guildRank: true,
   joinedAt: true,
   user: { select: { id: true, discordUsername: true, discordAvatar: true, gw2AccountName: true } },
 } as const;
@@ -39,7 +42,7 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
       where: { userId: req.user.id },
       select: {
         role: true,
-        group: { select: { id: true, name: true, icon: true, background: true, ...SCHEDULE_SELECT, _count: { select: { members: true, requests: true } } } },
+        group: { select: { id: true, name: true, icon: true, background: true, guild: { select: { id: true, name: true, tag: true } }, ...SCHEDULE_SELECT, _count: { select: { members: true, requests: true } } } },
       },
     });
     res.json(
@@ -48,6 +51,7 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
         name: m.group.name,
         icon: m.group.icon,
         background: m.group.background,
+        guild: m.group.guild,
         memberCount: m.group._count.members,
         raidDays: m.group.raidDays,
         raidStartTime: m.group.raidStartTime,
@@ -128,6 +132,7 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       background: true,
       leader: { select: { discordUsername: true, gw2AccountName: true } },
       members: { select: MEMBER_SELECT, orderBy: { joinedAt: 'asc' } },
+      guild: { select: { id: true, name: true, tag: true, lastRankSyncAt: true } },
       ...SCHEDULE_SELECT,
     },
   });
@@ -144,6 +149,7 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
     icon: group.icon,
     background: group.background,
     leader: group.leader.gw2AccountName ?? group.leader.discordUsername,
+    guild: group.guild,
     members: group.members.map((m) => ({
       userId: m.user.id,
       username: m.user.discordUsername,
@@ -153,6 +159,7 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       account: m.user.gw2AccountName,
       avatar: m.user.discordAvatar,
       role: m.role,
+      guildRank: m.guildRank,
       joinedAt: m.joinedAt,
     })),
     raidDays: group.raidDays,
@@ -448,6 +455,67 @@ groupsRouter.get('/:id/attendance', requireAuth, asyncHandler(async (req, res) =
       signups: n.signups,
     })),
   });
+}));
+
+// Pull in-game ranks into the guild group. The GW2 API only serves guild
+// members/ranks to the in-game leader's key, so this tries the requester's
+// key first and then the key recorded on the Guild row (set when someone
+// the API flags as guild_leader displays the guild). Any member can
+// trigger a sync — it only ever mirrors in-game state.
+groupsRouter.post('/:id/sync-guild-ranks', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to sync ranks' });
+    return;
+  }
+  const group = await prisma.group.findUnique({
+    where: { id: req.params.id },
+    select: { guildId: true, guild: { select: { syncUserId: true } } },
+  });
+  if (!group?.guildId) {
+    res.status(400).json({ error: 'This group is not linked to a guild' });
+    return;
+  }
+
+  const candidateUserIds = [req.user!.id];
+  if (group.guild?.syncUserId && group.guild.syncUserId !== req.user!.id) candidateUserIds.push(group.guild.syncUserId);
+  const candidates = await prisma.user.findMany({
+    where: { id: { in: candidateUserIds }, gw2ApiKeyEnc: { not: null } },
+    select: { id: true, gw2ApiKeyEnc: true },
+  });
+  // Preserve try-order: requester first, recorded leader second.
+  candidates.sort((a, b) => candidateUserIds.indexOf(a.id) - candidateUserIds.indexOf(b.id));
+
+  let synced = null;
+  let workingUserId: string | null = null;
+  for (const c of candidates) {
+    try {
+      const apiKey = decrypt(c.gw2ApiKeyEnc!);
+      const [members, ranks] = await Promise.all([
+        fetchGuildMembers(group.guildId, apiKey),
+        fetchGuildRanks(group.guildId, apiKey),
+      ]);
+      synced = await applyGuildRanks(req.params.id, members, ranks);
+      workingUserId = c.id;
+      break;
+    } catch {
+      // 403 for non-leaders — try the next candidate key.
+    }
+  }
+
+  if (!synced) {
+    res.status(502).json({
+      error:
+        "Couldn't read this guild's roster from the GW2 API — member and rank data is only available to the in-game guild leader. Ask the guild leader to link their API key (with the \"guilds\" permission) and display this guild.",
+    });
+    return;
+  }
+
+  await prisma.guild.update({
+    where: { id: group.guildId },
+    data: { lastRankSyncAt: new Date(), syncUserId: workingUserId },
+  });
+  res.json({ ok: true, ...synced });
 }));
 
 const WEBHOOK_URL_RE = /^https:\/\/(discord\.com|discordapp\.com|ptb\.discord\.com|canary\.discord\.com)\/api\/webhooks\/\d+\/[\w-]+$/;

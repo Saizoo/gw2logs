@@ -59,6 +59,11 @@ model User {
   // Backfilled to the migration timestamp for accounts that existed before
   // the tour did, so it only ever triggers for genuinely new users.
   onboardedAt      DateTime?
+  // The guild this user chose to represent (from the guilds on their GW2
+  // account). Driving membership of the guild's auto-created group; null
+  // means no guild displayed.
+  displayedGuildId String?
+  displayedGuild   Guild?         @relation("DisplayedGuild", fields: [displayedGuildId], references: [id], onDelete: SetNull)
   sessions         Session[]
   player           Player?
   compositions     Composition[]
@@ -196,6 +201,24 @@ model DeathEvent {
 // Ad-hoc raid-planning team, created and joined by request/invite,
 // independent of in-game guild membership — the unit that owns saved
 // squad compositions.
+// One row per in-game guild that at least one user has chosen to display.
+// The GW2 guild UUID is the primary key. Each guild owns exactly one
+// auto-created Group (its "guild group") whose membership is driven by
+// who displays the guild.
+model Guild {
+  id             String    @id
+  name           String
+  tag            String
+  createdAt      DateTime  @default(now())
+  // User whose API key has proven able to read this guild's members and
+  // ranks (the GW2 API restricts those endpoints to the in-game guild
+  // leader) — the key rank syncs run against.
+  syncUserId     String?
+  lastRankSyncAt DateTime?
+  group          Group?
+  displayedBy    User[]    @relation("DisplayedGuild")
+}
+
 model Group {
   id               String         @id @default(cuid())
   name             String
@@ -203,6 +226,11 @@ model Group {
   leader           User           @relation("GroupLeader", fields: [leaderId], references: [id])
   icon             String?
   background       String?
+  // Set on auto-created guild groups only — the marker that separates
+  // them from hand-made statics. Guild groups keep every normal group
+  // feature; membership and roles are additionally synced from the guild.
+  guildId          String?        @unique
+  guild            Guild?         @relation(fields: [guildId], references: [id], onDelete: SetNull)
   createdAt        DateTime       @default(now())
   members          GroupMember[]
   requests         GroupRequest[]
@@ -267,6 +295,9 @@ model GroupMember {
   // with Group.leaderId) and at most one subleader, enforced in the route
   // layer, not the DB.
   role     String   @default("member")
+  // In-game guild rank name (e.g. "Officer"), stamped by rank sync on
+  // guild groups; always null for hand-made statics.
+  guildRank String?
   joinedAt DateTime @default(now())
 
   @@unique([groupId, userId])
