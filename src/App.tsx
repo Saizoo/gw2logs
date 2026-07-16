@@ -33,6 +33,7 @@ export default function App() {
         <Route path="/players/:name" element={<PlayerProfilePage />} />
         <Route path="/groups" element={<MyGroupsPage />} />
         <Route path="/groups/:id" element={<GroupDetailPage />} />
+        <Route path="/groups/:id/:tab" element={<GroupDetailPage />} />
         <Route path="/characters" element={<CharactersPage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />

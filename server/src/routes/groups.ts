@@ -353,6 +353,103 @@ groupsRouter.get('/:id/clears', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// Attendance history: for the group's last raid nights, who actually
+// showed up (appeared in a group log that night, matched member ↔ log
+// player via GW2 account name) and what they RSVP'd. A "night" is any
+// past calendar day (in the group's timezone) that has group logs or
+// signups — scheduled-but-skipped nights with no activity don't appear,
+// since there's nothing to report about them.
+groupsRouter.get('/:id/attendance', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to view attendance' });
+    return;
+  }
+
+  const NIGHTS_LIMIT = 12;
+  const group = await prisma.group.findUnique({
+    where: { id: req.params.id },
+    select: {
+      raidTimezone: true,
+      members: { select: { userId: true, user: { select: { gw2AccountName: true, discordUsername: true } } }, orderBy: { joinedAt: 'asc' } },
+    },
+  });
+  if (!group) {
+    res.status(404).json({ error: 'Group not found' });
+    return;
+  }
+
+  const timeZone = resolveTimezone(group.raidTimezone);
+  const today = zonedNow(timeZone).date;
+
+  const [logs, signups] = await Promise.all([
+    prisma.log.findMany({
+      where: { groupId: req.params.id },
+      select: {
+        success: true,
+        encounterTime: true,
+        players: { select: { player: { select: { account: true } } } },
+      },
+      orderBy: { encounterTime: 'desc' },
+      take: 500,
+    }),
+    prisma.raidSignup.findMany({
+      where: { groupId: req.params.id, date: { lte: today } },
+      select: { userId: true, date: true, status: true },
+    }),
+  ]);
+
+  const userIdByAccount = new Map(
+    group.members.filter((m) => m.user.gw2AccountName).map((m) => [m.user.gw2AccountName!.toLowerCase(), m.userId]),
+  );
+
+  interface Night {
+    date: string;
+    logCount: number;
+    kills: number;
+    attended: Set<string>;
+    signups: Record<string, string>;
+  }
+  const nights = new Map<string, Night>();
+  const nightFor = (date: string): Night => {
+    let n = nights.get(date);
+    if (!n) nights.set(date, (n = { date, logCount: 0, kills: 0, attended: new Set(), signups: {} }));
+    return n;
+  };
+
+  for (const log of logs) {
+    const date = zonedNow(timeZone, log.encounterTime).date;
+    if (date > today) continue;
+    const night = nightFor(date);
+    night.logCount += 1;
+    if (log.success) night.kills += 1;
+    for (const p of log.players) {
+      const userId = userIdByAccount.get(p.player.account.toLowerCase());
+      if (userId) night.attended.add(userId);
+    }
+  }
+  for (const s of signups) {
+    nightFor(s.date).signups[s.userId] = s.status;
+  }
+
+  const sorted = [...nights.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, NIGHTS_LIMIT);
+
+  res.json({
+    members: group.members.map((m) => ({
+      userId: m.userId,
+      name: m.user.gw2AccountName ?? m.user.discordUsername,
+      linked: m.user.gw2AccountName !== null,
+    })),
+    nights: sorted.map((n) => ({
+      date: n.date,
+      logCount: n.logCount,
+      kills: n.kills,
+      attended: [...n.attended],
+      signups: n.signups,
+    })),
+  });
+}));
+
 const WEBHOOK_URL_RE = /^https:\/\/(discord\.com|discordapp\.com|ptb\.discord\.com|canary\.discord\.com)\/api\/webhooks\/\d+\/[\w-]+$/;
 
 // Reminder settings, leader/subleader-only in both directions: the raw

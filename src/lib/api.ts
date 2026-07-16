@@ -271,6 +271,19 @@ export interface RaidSignup {
   status: SignupStatus;
 }
 
+export interface AttendanceNight {
+  date: string; // YYYY-MM-DD in the group's timezone
+  logCount: number;
+  kills: number;
+  attended: string[]; // userIds seen in that night's logs
+  signups: Record<string, SignupStatus>;
+}
+
+export interface GroupAttendance {
+  members: { userId: string; name: string; linked: boolean }[];
+  nights: AttendanceNight[];
+}
+
 export interface RosterCharacter {
   id: string;
   name: string;
@@ -576,6 +589,7 @@ export const api = {
   deleteGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   groupRoster: (id: string) => apiFetch<RosterCharacter[]>(`/groups/${encodeURIComponent(id)}/roster`),
   groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
+  groupAttendance: (id: string) => apiFetch<GroupAttendance>(`/groups/${encodeURIComponent(id)}/attendance`),
   groupSignups: (id: string) => apiFetch<RaidSignup[]>(`/groups/${encodeURIComponent(id)}/signups`),
   groupReminders: (id: string) =>
     apiFetch<{ webhookConfigured: boolean; reminderMins: number }>(`/groups/${encodeURIComponent(id)}/reminders`),
