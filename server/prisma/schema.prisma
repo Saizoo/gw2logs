@@ -54,6 +54,11 @@ model User {
   // first admin exists without manual SQL after a DB reset; promotable/
   // demotable afterward from the admin panel itself.
   isAdmin          Boolean        @default(false)
+  // When the first-login onboarding tour was completed (or skipped). Null
+  // means the user has never seen it — the frontend shows the tour once.
+  // Backfilled to the migration timestamp for accounts that existed before
+  // the tour did, so it only ever triggers for genuinely new users.
+  onboardedAt      DateTime?
   sessions         Session[]
   player           Player?
   compositions     Composition[]

@@ -107,6 +107,7 @@ export function NavHeader() {
                 <Link
                   key={tab.to}
                   to={tab.to}
+                  data-tour={tab.label.toLowerCase()}
                   className={`nav-tab${active ? ' is-active' : ''}`}
                   style={{
                     display: 'flex',
@@ -138,6 +139,7 @@ export function NavHeader() {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link
             to="/upload"
+            data-tour="upload"
             className="u-btn-gold"
             style={{
               flex: 'none',
@@ -198,6 +200,7 @@ export function NavHeader() {
                 <Link
                   key={tab.to}
                   to={tab.to}
+                  data-tour={tab.label.toLowerCase()}
                   className={`nav-tab${active ? ' is-active' : ''}`}
                   style={{
                     display: 'flex',

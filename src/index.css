@@ -187,6 +187,38 @@ p {
   }
 }
 
+/* Onboarding tour */
+@keyframes tourCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tourPulse {
+  0%,
+  100% {
+    border-color: oklch(0.78 0.14 85 / 80%);
+  }
+  50% {
+    border-color: oklch(0.85 0.16 85 / 100%);
+  }
+}
+
+@keyframes tourLogoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 @keyframes iconGlow {
   0%,
   100% {

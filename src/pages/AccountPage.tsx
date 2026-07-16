@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { REPLAY_TOUR_EVENT } from '../components/OnboardingTour';
 import { api, ApiError, type DpsReportImportStatus } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge, Card, GoldButton } from '../components/atoms';
 
 export default function AccountPage() {
+  const navigate = useNavigate();
   const { user, loading, refresh } = useCurrentUser();
   const [apiKey, setApiKey] = useState('');
   const [linking, setLinking] = useState(false);
@@ -265,6 +267,19 @@ export default function AccountPage() {
 
         {dpsError && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{dpsError}</div>}
       </Card>
+
+      <div style={{ textAlign: 'center', marginTop: 22 }}>
+        <button
+          onClick={() => {
+            navigate('/');
+            window.dispatchEvent(new CustomEvent(REPLAY_TOUR_EVENT));
+          }}
+          className="u-btn-ghost"
+          style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', padding: '8px 14px', borderRadius: 8 }}
+        >
+          Replay the site tour
+        </button>
+      </div>
     </div>
   );
 }

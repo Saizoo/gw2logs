@@ -341,6 +341,8 @@ export interface CurrentUser {
   gw2LinkedAt: string | null;
   createdAt: string;
   isAdmin: boolean;
+  // Null until the first-login tour has been completed or skipped.
+  onboardedAt: string | null;
   pendingGroupRequests: number;
 }
 
@@ -490,6 +492,7 @@ export const api = {
       body: JSON.stringify({ apiKey }),
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
+  completeOnboarding: () => apiFetch<{ ok: true }>('/account/onboarding-complete', { method: 'POST' }),
   importDpsReport: (userToken: string) =>
     apiFetch<DpsReportImportStart>('/account/import-dpsreport', {
       method: 'POST',

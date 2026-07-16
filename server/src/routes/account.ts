@@ -60,6 +60,15 @@ accountRouter.post('/link-gw2', async (req, res) => {
   }
 });
 
+// Marks the first-login tour as done (completed or skipped — either way it
+// shouldn't greet the user again). Idempotent; keeps the earliest timestamp.
+accountRouter.post('/onboarding-complete', asyncHandler(async (req, res) => {
+  if (!req.user!.onboardedAt) {
+    await prisma.user.update({ where: { id: req.user!.id }, data: { onboardedAt: new Date() } });
+  }
+  res.json({ ok: true });
+}));
+
 accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
   const userId = req.user!.id;
 

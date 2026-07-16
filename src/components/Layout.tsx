@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { NavHeader } from './NavHeader';
 import { ToastHost } from './ToastHost';
+import { OnboardingTour } from './OnboardingTour';
 
 export function Layout() {
   const location = useLocation();
@@ -11,6 +12,7 @@ export function Layout() {
         <Outlet />
       </main>
       <ToastHost />
+      <OnboardingTour />
     </div>
   );
 }
