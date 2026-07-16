@@ -36,11 +36,7 @@ export default function AccountPage() {
     try {
       const res = await api.linkGw2(apiKey.trim());
       setApiKey('');
-      setResult(
-        res.guildsSynced && res.guilds.length > 0
-          ? `Linked ${res.gw2AccountName} — synced ${res.guilds.length} guild${res.guilds.length === 1 ? '' : 's'}.`
-          : `Linked ${res.gw2AccountName}.`,
-      );
+      setResult(`Linked ${res.gw2AccountName}.`);
       refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to link API key');
@@ -139,7 +135,7 @@ export default function AccountPage() {
             </div>
             <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 4, lineHeight: 1.6 }}>
               Linked {user.gw2LinkedAt ? new Date(user.gw2LinkedAt).toLocaleDateString() : ''}. Logs uploaded from any
-              character on this account are now attributed to your profile, and your guild memberships stay in sync.
+              character on this account are now attributed to your profile.
             </div>
             <button
               onClick={handleUnlink}
@@ -160,13 +156,13 @@ export default function AccountPage() {
         ) : (
           <form onSubmit={handleLink}>
             <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
-              Link your GW2 API key to verify account ownership, attribute uploaded logs to your account name across
-              all your characters, and sync your guild roster. Create a key at{' '}
+              Link your GW2 API key to verify account ownership and attribute uploaded logs to your account name
+              across all your characters. Create a key at{' '}
               <a href="https://account.arena.net/applications" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
                 account.arena.net/applications
               </a>{' '}
-              with only the <strong>account</strong> and <strong>guilds</strong> permissions checked — nothing else is
-              needed, and we never request tradingpost, wallet, or character inventory access.
+              with only the <strong>account</strong> permission checked — nothing else is needed, and we never
+              request tradingpost, wallet, or character inventory access.
             </div>
             <input
               type="text"

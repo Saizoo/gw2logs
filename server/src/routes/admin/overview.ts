@@ -5,12 +5,11 @@ import { asyncHandler } from '../../lib/asyncHandler.js';
 export const adminOverviewRouter = Router();
 
 adminOverviewRouter.get('/', asyncHandler(async (_req, res) => {
-  const [totalLogs, totalUsers, totalPlayers, totalGuilds, totalGroups, totalBuilds, recentUploadJobs, failedUploadsThisWeek] =
+  const [totalLogs, totalUsers, totalPlayers, totalGroups, totalBuilds, recentUploadJobs, failedUploadsThisWeek] =
     await Promise.all([
       prisma.log.count(),
       prisma.user.count(),
       prisma.player.count(),
-      prisma.guild.count(),
       prisma.group.count(),
       prisma.build.count(),
       prisma.uploadJob.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
@@ -23,7 +22,6 @@ adminOverviewRouter.get('/', asyncHandler(async (_req, res) => {
     totalLogs,
     totalUsers,
     totalPlayers,
-    totalGuilds,
     totalGroups,
     totalBuilds,
     failedUploadsThisWeek,

@@ -29,7 +29,7 @@ searchRouter.get('/', asyncHandler(async (req, res) => {
 
   res.json({
     query: q,
-    players: players.map((p) => ({ account: p.account, displayName: p.displayName })),
+    players: players.map((p) => ({ account: p.account })),
     bosses: bosses.map((b) => ({ fightName: b.fightName, isCm: b.isCm, wing: b.wing, logCount: b._count._all })),
   });
 }));

@@ -42,27 +42,26 @@ model Player {
 }
 
 model User {
-  id               String            @id @default(cuid())
-  discordId        String            @unique
+  id               String         @id @default(cuid())
+  discordId        String         @unique
   discordUsername  String
   discordAvatar    String?
-  gw2AccountName   String?           @unique
+  gw2AccountName   String?        @unique
   gw2ApiKeyEnc     String?
   gw2LinkedAt      DateTime?
-  createdAt        DateTime          @default(now())
+  createdAt        DateTime       @default(now())
   // Bootstrapped from ADMIN_DISCORD_IDS on login (see routes/auth.ts) so the
   // first admin exists without manual SQL after a DB reset; promotable/
   // demotable afterward from the admin panel itself.
-  isAdmin          Boolean           @default(false)
+  isAdmin          Boolean        @default(false)
   sessions         Session[]
-  guildMemberships GuildMembership[]
   player           Player?
   compositions     Composition[]
   characters       Character[]
-  groupsLed        Group[]           @relation("GroupLeader")
+  groupsLed        Group[]        @relation("GroupLeader")
   groupMemberships GroupMember[]
   groupRequests    GroupRequest[]
-  uploadedLogs     Log[]             @relation("LogUploader")
+  uploadedLogs     Log[]          @relation("LogUploader")
 }
 
 model Session {
@@ -73,27 +72,6 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId])
-}
-
-model Guild {
-  id           String            @id @default(cuid())
-  gw2GuildId   String            @unique
-  name         String
-  tag          String
-  lastSyncedAt DateTime          @default(now())
-  memberships  GuildMembership[]
-}
-
-model GuildMembership {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guildId   String
-  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
-  isLeader  Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@unique([userId, guildId])
 }
 
 model Log {
@@ -209,10 +187,9 @@ model DeathEvent {
   @@index([logId])
 }
 
-// Ad-hoc raid-planning team, distinct from Guild (which is read-mostly and
-// synced wholesale from a member's GW2 API key). A Group is created,
-// joined by request/invite, and managed independently of in-game guild
-// membership — it's the unit that owns saved squad compositions.
+// Ad-hoc raid-planning team, created and joined by request/invite,
+// independent of in-game guild membership — the unit that owns saved
+// squad compositions.
 model Group {
   id               String         @id @default(cuid())
   name             String

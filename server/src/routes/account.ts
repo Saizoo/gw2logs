@@ -4,7 +4,6 @@ import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { encrypt } from '../lib/crypto.js';
 import { fetchAccount, fetchTokenInfo } from '../lib/gw2Api.js';
-import { syncGuildsForUser } from '../lib/guildSync.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { fetchDpsReportJson, fetchDpsReportUploads } from '../lib/dpsReportImport.js';
 import { normalizeEiJson } from '../lib/ingest.js';
@@ -25,7 +24,7 @@ accountRouter.post('/link-gw2', async (req, res) => {
   try {
     const tokenInfo = await fetchTokenInfo(apiKey);
     if (!tokenInfo.permissions.includes('account')) {
-      res.status(400).json({ error: 'This API key needs at least the "account" permission. Create a new key with "account" and "guilds" checked.' });
+      res.status(400).json({ error: 'This API key needs at least the "account" permission.' });
       return;
     }
 
@@ -54,14 +53,7 @@ accountRouter.post('/link-gw2', async (req, res) => {
       create: { account: account.name, displayName: account.name.split('.')[0], userId: user.id },
     });
 
-    const guildsScoped = tokenInfo.permissions.includes('guilds');
-    const guilds = guildsScoped ? await syncGuildsForUser(user.id, account) : [];
-
-    res.json({
-      gw2AccountName: account.name,
-      guildsSynced: guildsScoped,
-      guilds: guilds.map((g) => ({ name: g.name, tag: g.tag })),
-    });
+    res.json({ gw2AccountName: account.name });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to verify GW2 API key';
     res.status(400).json({ error: message });
@@ -72,7 +64,6 @@ accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
   const userId = req.user!.id;
 
   await prisma.$transaction([
-    prisma.guildMembership.deleteMany({ where: { userId } }),
     prisma.player.updateMany({ where: { userId }, data: { userId: null } }),
     prisma.user.update({
       where: { id: userId },

@@ -113,7 +113,7 @@ encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
       durationMs: true,
       encounterTime: true,
       players: {
-        select: { totalDps: true, characterName: true },
+        select: { totalDps: true, player: { select: { account: true } } },
         orderBy: { totalDps: 'desc' },
         take: 1,
       },
@@ -136,7 +136,7 @@ encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
     fastestKill: fastest
       ? { durationMs: fastest.durationMs, date: fastest.encounterTime }
       : null,
-    topDps: topDpsRow ? { dps: topDpsRow.totalDps, name: topDpsRow.characterName } : null,
+    topDps: topDpsRow ? { dps: topDpsRow.totalDps, name: topDpsRow.player.account } : null,
     clearRate: Math.round((successes.length / logs.length) * 100),
     totalLogs: logs.length,
   });

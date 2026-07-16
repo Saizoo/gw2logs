@@ -80,11 +80,10 @@ export default function PlayerProfilePage() {
           {mainProfession && <img src={professionIconPath(mainProfession)} alt={mainProfession} style={{ width: 56, height: 56, objectFit: 'contain' }} />}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.displayName}</div>
-          <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>
-            {mainProfession ? `${mainProfession} · ` : ''}
-            {player.account}
-          </div>
+          <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.account}</div>
+          {mainProfession && (
+            <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{mainProfession}</div>
+          )}
           <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
             {profileStats.map((s) => (
               <div key={s.label}>

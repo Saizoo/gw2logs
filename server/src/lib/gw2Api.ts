@@ -10,14 +10,6 @@ export interface Gw2Account {
   id: string;
   name: string;
   world: number;
-  guilds?: string[];
-  guild_leader?: string[];
-}
-
-export interface Gw2Guild {
-  id: string;
-  name: string;
-  tag: string;
 }
 
 export interface Gw2Character {
@@ -26,7 +18,6 @@ export interface Gw2Character {
   gender: string;
   profession: string;
   level: number;
-  guild?: string;
   age: number;
   created: string;
   deaths: number;
@@ -65,10 +56,6 @@ export function fetchTokenInfo(apiKey: string): Promise<Gw2TokenInfo> {
 
 export function fetchAccount(apiKey: string): Promise<Gw2Account> {
   return gw2Fetch<Gw2Account>('/account', apiKey);
-}
-
-export function fetchGuild(guildId: string): Promise<Gw2Guild> {
-  return gw2Fetch<Gw2Guild>(`/guild/${guildId}`);
 }
 
 export function fetchCharacters(apiKey: string): Promise<Gw2Character[]> {

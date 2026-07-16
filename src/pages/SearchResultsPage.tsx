@@ -40,8 +40,7 @@ export default function SearchResultsPage() {
               >
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold-dim)', flex: 'none' }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{p.displayName}</div>
-                  <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{p.account}</div>
+                  <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{p.account}</div>
                 </div>
               </Link>
             ))}

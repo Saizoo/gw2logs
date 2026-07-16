@@ -107,7 +107,6 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
 
   res.json({
     account: player.account,
-    displayName: player.displayName,
     totalLogs: logPlayers.length,
     overallScore,
     consistencyScore,

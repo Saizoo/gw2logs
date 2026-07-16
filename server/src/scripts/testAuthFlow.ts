@@ -4,15 +4,8 @@ import { prisma } from '../db.js';
 const realFetch = globalThis.fetch;
 
 const MOCK_DISCORD_USER = { id: 'discord-test-123', username: 'saizu', avatar: 'avatarhash' };
-const MOCK_GW2_TOKENINFO = { id: 'key-id', name: 'gw2logs key', permissions: ['account', 'guilds'] };
-const MOCK_GW2_ACCOUNT = {
-  id: 'acct-uuid',
-  name: 'SaiZu.1234',
-  world: 1001,
-  guilds: ['guild-uuid-1'],
-  guild_leader: ['guild-uuid-1'],
-};
-const MOCK_GW2_GUILD = { id: 'guild-uuid-1', name: 'Vigil of Shadows', tag: 'VoS' };
+const MOCK_GW2_TOKENINFO = { id: 'key-id', name: 'gw2logs key', permissions: ['account'] };
+const MOCK_GW2_ACCOUNT = { id: 'acct-uuid', name: 'SaiZu.1234', world: 1001 };
 
 globalThis.fetch = (async (input: string | URL) => {
   const url = typeof input === 'string' ? input : input.toString();
@@ -27,9 +20,6 @@ globalThis.fetch = (async (input: string | URL) => {
   }
   if (url.includes('api.guildwars2.com/v2/account')) {
     return new Response(JSON.stringify(MOCK_GW2_ACCOUNT), { status: 200 });
-  }
-  if (url.includes('api.guildwars2.com/v2/guild/')) {
-    return new Response(JSON.stringify(MOCK_GW2_GUILD), { status: 200 });
   }
   throw new Error(`Unexpected fetch in test: ${url}`);
 }) as typeof fetch;
@@ -90,7 +80,6 @@ const linkRes = await realFetch(`${base}/api/account/link-gw2`, {
 const linkBody = (await linkRes.json()) as any;
 check('link-gw2 succeeds', linkRes.status === 200);
 check('link-gw2 returns the verified account name', linkBody.gw2AccountName === 'SaiZu.1234');
-check('link-gw2 reports guilds synced', linkBody.guildsSynced === true && linkBody.guilds?.[0]?.tag === 'VoS');
 
 const userAfterLink = await prisma.user.findUnique({ where: { discordId: MOCK_DISCORD_USER.id } });
 check('User.gw2AccountName stored', userAfterLink?.gw2AccountName === 'SaiZu.1234');
@@ -99,24 +88,13 @@ check('User.gw2ApiKeyEnc is encrypted (not the raw key)', Boolean(userAfterLink?
 const linkedPlayer = await prisma.player.findUnique({ where: { account: 'SaiZu.1234' } });
 check('Player row linked to the User', linkedPlayer?.userId === userAfterLink?.id);
 
-const membership = await prisma.guildMembership.findFirst({ where: { userId: userAfterLink!.id }, include: { guild: true } });
-check('GuildMembership created with correct guild + leader flag', membership?.guild.tag === 'VoS' && membership?.isLeader === true);
-
-// --- Step 5: real guild roster endpoint reflects it ---
-const rosterRes = await realFetch(`${base}/api/guilds/VoS`);
-const roster = (await rosterRes.json()) as any;
-check('guild roster endpoint finds the guild by tag', roster.tag === 'VoS' && roster.memberCount === 1);
-check('roster entry shows the linked account', roster.roster?.[0]?.account === 'SaiZu.1234');
-
-// --- Step 6: unlink ---
+// --- Step 5: unlink ---
 const unlinkRes = await realFetch(`${base}/api/account/unlink-gw2`, { method: 'POST', headers: { cookie: sessionCookie } });
 check('unlink-gw2 succeeds', unlinkRes.status === 200);
 const userAfterUnlink = await prisma.user.findUnique({ where: { discordId: MOCK_DISCORD_USER.id } });
 check('gw2AccountName cleared after unlink', userAfterUnlink?.gw2AccountName === null);
-const membershipsAfterUnlink = await prisma.guildMembership.count({ where: { userId: userAfterUnlink!.id } });
-check('guild memberships removed after unlink', membershipsAfterUnlink === 0);
 
-// --- Step 7: logout ---
+// --- Step 6: logout ---
 const logoutRes = await realFetch(`${base}/api/auth/logout`, { method: 'POST', headers: { cookie: sessionCookie } });
 check('logout succeeds', logoutRes.status === 200);
 const meAfterLogout = await realFetch(`${base}/api/auth/me`, { headers: { cookie: sessionCookie } });
@@ -125,7 +103,6 @@ check('session is invalid after logout', meAfterLogout.status === 401);
 // --- cleanup ---
 await prisma.player.deleteMany({ where: { account: 'SaiZu.1234' } });
 await prisma.user.deleteMany({ where: { discordId: MOCK_DISCORD_USER.id } });
-await prisma.guild.deleteMany({ where: { gw2GuildId: 'guild-uuid-1' } });
 
 server.close();
 await prisma.$disconnect();

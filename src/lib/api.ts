@@ -34,7 +34,6 @@ export type SquadRole = 'dps' | 'boon_dps' | 'boon_heal';
 
 export interface PlayerProfile {
   account: string;
-  displayName: string;
   totalLogs: number;
   overallScore: number | null;
   consistencyScore: number | null;
@@ -109,7 +108,6 @@ export interface LogListItem {
 export interface DashboardSummary {
   displayName: string;
   gw2AccountName: string | null;
-  guild: { id: string; tag: string; name: string } | null;
   stats: {
     logsThisWeek: number;
     logsThisWeekDelta: number;
@@ -117,7 +115,6 @@ export interface DashboardSummary {
     avgSquadDpsDelta: number;
     clearsThisWeek: number;
     totalThisWeek: number;
-    guildRank: number | null;
   };
   weeklyActivity: { label: string; count: number }[];
   recentLogs: {
@@ -131,7 +128,6 @@ export interface DashboardSummary {
     profession: string;
     uploadedAt: string;
   }[];
-  guildActivity: { text: string; time: string }[];
 }
 
 export interface CompositionSummary {
@@ -242,7 +238,7 @@ export interface CharacterData {
 
 export interface SearchResults {
   query: string;
-  players: { account: string; displayName: string }[];
+  players: { account: string }[];
   bosses: { fightName: string; isCm: boolean; wing: string | null; logCount: number }[];
 }
 
@@ -290,7 +286,6 @@ export interface AdminOverview {
   totalLogs: number;
   totalUsers: number;
   totalPlayers: number;
-  totalGuilds: number;
   totalGroups: number;
   totalBuilds: number;
   failedUploadsThisWeek: number;
@@ -330,14 +325,6 @@ export interface AdminUserRow {
   createdAt: string;
 }
 
-export interface AdminGuildRow {
-  id: string;
-  name: string;
-  tag: string;
-  lastSyncedAt: string;
-  memberCount: number;
-}
-
 export interface AdminGroupRow {
   id: string;
   name: string;
@@ -349,28 +336,6 @@ export interface AdminGroupRow {
 
 export interface LinkGw2Result {
   gw2AccountName: string;
-  guildsSynced: boolean;
-  guilds: { name: string; tag: string }[];
-}
-
-export interface GuildSummary {
-  tag: string;
-  name: string;
-  memberCount: number;
-}
-
-export interface GuildRoster {
-  tag: string;
-  name: string;
-  memberCount: number;
-  roster: {
-    account: string | null;
-    displayName: string;
-    isLeader: boolean;
-    totalLogs: number;
-    logsThisWeek: number;
-    bestSpec: string | null;
-  }[];
 }
 
 export interface DpsReportImportStart {
@@ -446,8 +411,6 @@ export const api = {
       body: JSON.stringify({ apiKey }),
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
-  guilds: () => apiFetch<GuildSummary[]>('/guilds'),
-  guildRoster: (tag: string) => apiFetch<GuildRoster>(`/guilds/${encodeURIComponent(tag)}`),
   importDpsReport: (userToken: string) =>
     apiFetch<DpsReportImportStart>('/account/import-dpsreport', {
       method: 'POST',
@@ -622,7 +585,6 @@ export const api = {
     }),
   adminForceLogout: (id: string) =>
     apiFetch<{ ok: true; sessionsRevoked: number }>(`/admin/users/${encodeURIComponent(id)}/logout`, { method: 'POST' }),
-  adminGuilds: () => apiFetch<AdminGuildRow[]>('/admin/guilds'),
   adminGroups: () => apiFetch<AdminGroupRow[]>('/admin/groups'),
   adminDeleteGroup: (id: string) => apiFetch<{ ok: true }>(`/admin/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   adminBuilds: () => apiFetch<AdminBuild[]>('/admin/builds'),

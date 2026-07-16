@@ -25,7 +25,7 @@ export function SearchBar({ width = '100%', defaultValue = '' }: { width?: numbe
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search logs, players, guilds…"
+        placeholder="Search logs, players…"
         style={{
           width: '100%',
           background: 'var(--bg-input)',

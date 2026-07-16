@@ -8,7 +8,6 @@ async function loadPlayerRow(logId: string, account: string) {
   return prisma.logPlayer.findFirst({
     where: { logId, player: { account } },
     select: {
-      characterName: true,
       spec: true,
       totalDps: true,
       downCount: true,
@@ -53,8 +52,8 @@ compareRouter.get('/', asyncHandler(async (req, res) => {
   });
 
   res.json({
-    playerA: { name: a.characterName, spec: a.spec, boss: a.log.fightName },
-    playerB: { name: b.characterName, spec: b.spec, boss: b.log.fightName },
+    playerA: { name: accountA, spec: a.spec, boss: a.log.fightName },
+    playerB: { name: accountB, spec: b.spec, boss: b.log.fightName },
     rows,
   });
 }));

@@ -14,15 +14,10 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
     select: {
       discordUsername: true,
       gw2AccountName: true,
-      player: { select: { id: true, displayName: true } },
-      guildMemberships: {
-        take: 1,
-        select: { guild: { select: { id: true, tag: true, name: true } } },
-      },
+      player: { select: { id: true, account: true } },
     },
   });
 
-  const guild = user?.guildMemberships[0]?.guild ?? null;
   const now = new Date();
   const weekStart = new Date(now.getTime() - WEEK_MS);
   const prevWeekStart = new Date(now.getTime() - 2 * WEEK_MS);
@@ -34,11 +29,9 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
     res.json({
       displayName: user?.discordUsername ?? 'there',
       gw2AccountName: null,
-      guild,
-      stats: { logsThisWeek: 0, logsThisWeekDelta: 0, avgSquadDps: 0, avgSquadDpsDelta: 0, clearsThisWeek: 0, totalThisWeek: 0, guildRank: null },
+      stats: { logsThisWeek: 0, logsThisWeekDelta: 0, avgSquadDps: 0, avgSquadDpsDelta: 0, clearsThisWeek: 0, totalThisWeek: 0 },
       weeklyActivity: buildWeekBuckets([]),
       recentLogs: [],
-      guildActivity: [],
     });
     return;
   }
@@ -71,46 +64,9 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
   const lastWeekDps = lastWeekLogs.map((l) => l.log.squadDps);
   const clearsThisWeek = thisWeekLogs.filter((l) => l.log.success).length;
 
-  let guildRank: number | null = null;
-  if (guild) {
-    const ranking = await prisma.$queryRaw<{ guildId: string; logCount: bigint }[]>`
-      SELECT g.id AS "guildId", COUNT(DISTINCT lp."logId") AS "logCount"
-      FROM "Guild" g
-      JOIN "GuildMembership" gm ON gm."guildId" = g.id
-      JOIN "User" u ON u.id = gm."userId"
-      JOIN "Player" p ON p."userId" = u.id
-      JOIN "LogPlayer" lp ON lp."playerId" = p.id
-      JOIN "Log" l ON l.id = lp."logId" AND l."uploadedAt" >= ${weekStart}
-      GROUP BY g.id
-      ORDER BY "logCount" DESC
-    `;
-    const idx = ranking.findIndex((r) => r.guildId === guild.id);
-    guildRank = idx >= 0 ? idx + 1 : null;
-  }
-
-  const guildActivity = guild
-    ? (
-        await prisma.logPlayer.findMany({
-          where: { player: { user: { guildMemberships: { some: { guildId: guild.id } } } } },
-          select: {
-            characterName: true,
-            player: { select: { displayName: true } },
-            log: { select: { id: true, fightName: true, isCm: true, success: true, durationMs: true, uploadedAt: true } },
-          },
-          orderBy: [{ log: { uploadedAt: 'desc' } }, { totalDps: 'desc' }],
-          distinct: ['logId'],
-          take: 6,
-        })
-      ).map((lp) => ({
-        text: `${lp.player.displayName} ${lp.log.success ? 'cleared' : 'wiped on'} ${lp.log.fightName}${lp.log.isCm ? ' (CM)' : ''}${lp.log.success ? ` — ${formatDuration(lp.log.durationMs)}` : ''}`,
-        time: lp.log.uploadedAt,
-      }))
-    : [];
-
   res.json({
-    displayName: user.player.displayName,
+    displayName: user.player.account,
     gw2AccountName: user.gw2AccountName,
-    guild,
     stats: {
       logsThisWeek: thisWeekLogs.length,
       logsThisWeekDelta: thisWeekLogs.length - lastWeekLogs.length,
@@ -118,7 +74,6 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
       avgSquadDpsDelta: avg(thisWeekDps) - avg(lastWeekDps),
       clearsThisWeek,
       totalThisWeek: thisWeekLogs.length,
-      guildRank,
     },
     weeklyActivity: buildWeekBuckets(thisWeekLogs.map((l) => l.log.uploadedAt)),
     recentLogs: recentLogPlayers.map((lp) => ({
@@ -132,16 +87,8 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
       profession: lp.profession,
       uploadedAt: lp.log.uploadedAt,
     })),
-    guildActivity,
   });
 }));
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
 
 function buildWeekBuckets(dates: Date[]): { label: string; count: number }[] {
   const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

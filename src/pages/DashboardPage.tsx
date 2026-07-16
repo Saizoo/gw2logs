@@ -101,7 +101,7 @@ function LoggedOutDashboard() {
                   >
                     <ProfDot color={professionColor(row.profession)} size={9} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: '600 13px var(--font-sans)' }}>{row.name}</div>
+                      <div style={{ font: '600 13px var(--font-sans)' }}>{row.account}</div>
                       <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
                         {row.spec} · {row.boss}
                       </div>
@@ -170,7 +170,6 @@ function SignedInDashboard() {
             Welcome back, <span style={{ color: 'var(--gold)' }}>{dash.displayName}</span>
           </div>
           <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>
-            {dash.guild ? `[${dash.guild.tag}] ${dash.guild.name} · ` : ''}
             {dash.stats.logsThisWeek} log{dash.stats.logsThisWeek === 1 ? '' : 's'} uploaded this week
           </div>
         </div>
@@ -180,7 +179,7 @@ function SignedInDashboard() {
       {!dash.gw2AccountName && (
         <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-80)' }}>
-            Link your Guild Wars 2 account to see personalized stats and guild activity.
+            Link your Guild Wars 2 account to see personalized stats.
           </div>
           <Link to="/account" style={{ font: '700 12px var(--font-sans)', color: 'var(--gold)', flex: 'none' }}>
             Link account →
@@ -192,7 +191,7 @@ function SignedInDashboard() {
         <ParseLegend />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 28 }}>
         <StatCard label="Logs This Week" value={dash.stats.logsThisWeek} delta={dash.stats.logsThisWeekDelta !== 0 ? signed(dash.stats.logsThisWeekDelta) : undefined} />
         <StatCard
           label="Avg Squad DPS"
@@ -200,7 +199,6 @@ function SignedInDashboard() {
           delta={dash.stats.avgSquadDpsDelta !== 0 ? signed(dash.stats.avgSquadDpsDelta) : undefined}
         />
         <StatCard label="Clears" value={`${dash.stats.clearsThisWeek}/${dash.stats.totalThisWeek}`} />
-        <StatCard label="Guild Rank" value={dash.stats.guildRank ? `#${dash.stats.guildRank}` : '—'} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20, alignItems: 'start' }}>
@@ -277,23 +275,6 @@ function SignedInDashboard() {
                 </div>
               ))}
             </div>
-          </Card>
-
-          <Card style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px 4px', font: '700 13.5px var(--font-sans)' }}>Guild Activity</div>
-            {dash.guildActivity.length === 0 && (
-              <div style={{ padding: '10px 20px 18px', font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>
-                {dash.guild ? 'No guild activity this week yet.' : 'Link a guild-synced GW2 account to see this.'}
-              </div>
-            )}
-            {dash.guildActivity.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, padding: '11px 20px', alignItems: 'flex-start' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flex: 'none', background: 'var(--gold)' }} />
-                <div style={{ font: '400 12px var(--font-sans)', lineHeight: 1.45, color: 'var(--text-80)' }}>
-                  {item.text} <span style={{ color: 'var(--text-50)' }}>· {new Date(item.time).toLocaleDateString()}</span>
-                </div>
-              </div>
-            ))}
           </Card>
         </div>
       </div>

@@ -240,12 +240,12 @@ function SquadTab({ log }: { log: LogDetail }) {
             </div>
             {players.map((p) => {
               const barWidth = Math.round((p.total / maxDps) * 100);
-              const candidate = { logId: log.id, account: p.account, label: p.name };
+              const candidate = { logId: log.id, account: p.account, label: p.account };
               return (
-                <div key={p.name} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
+                <div key={p.account} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                   <div style={{ position: 'relative', flex: 'none' }}>
-                    <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />
+                    <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.account} />
                   </div>
                   <img
                     src={professionIconPath(p.profession, p.spec)}
@@ -263,7 +263,7 @@ function SquadTab({ log }: { log: LogDetail }) {
                         style={{ position: 'relative', font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {p.name}
+                        {p.account}
                       </Link>
                       <SquadRoleBadge squadRole={p.squadRole} />
                     </div>
@@ -304,10 +304,10 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
             ))}
           </div>
           {players.map((p) => (
-            <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+            <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
               <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
               <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.name}
+                {p.account}
               </Link>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <ProfDot color={professionColor(p.profession)} />
@@ -414,10 +414,10 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 ))}
               </div>
               {log.players.map((p) => (
-                <div key={p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+                <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
                   <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
                   <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.name}
+                    {p.account}
                   </Link>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <ProfDot color={professionColor(p.profession)} />

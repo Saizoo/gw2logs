@@ -134,9 +134,7 @@ check('force-logout actually revoked the session', remainingSessions === 0);
 const logsListRes = await fetch(`${base}/api/admin/logs`, { headers: { cookie: adminCookie } });
 check('admin logs list succeeds', logsListRes.status === 200);
 
-// --- guilds/groups oversight ---
-const guildsRes = await fetch(`${base}/api/admin/guilds`, { headers: { cookie: adminCookie } });
-check('admin guilds list succeeds', guildsRes.status === 200);
+// --- groups oversight ---
 const groupsRes = await fetch(`${base}/api/admin/groups`, { headers: { cookie: adminCookie } });
 check('admin groups list succeeds', groupsRes.status === 200);
 

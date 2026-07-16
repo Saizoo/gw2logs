@@ -125,7 +125,7 @@ export default function LeaderboardPage() {
             <div>Date</div>
           </div>
           {leaderboard.map((row, i) => {
-            const candidate = { logId: row.logId, account: row.account, label: row.name };
+            const candidate = { logId: row.logId, account: row.account, label: row.account };
             return (
               <div
                 key={row.logId + row.account}
@@ -139,13 +139,13 @@ export default function LeaderboardPage() {
                   borderBottom: i === leaderboard.length - 1 ? 'none' : '1px solid var(--border-faint)',
                 }}
               >
-                <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.name} />
+                <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.account} />
                 <div style={{ font: '800 15px var(--font-sans)', color: i < 3 ? RANK_COLORS[i] : 'var(--text-55)' }}>#{row.rank}</div>
                 <Link to={`/players/${encodeURIComponent(row.account)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                   <img src={professionIconPath(row.profession, row.spec)} alt={row.spec} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
+                      <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.account}</div>
                       <SquadRoleBadge squadRole={row.squadRole} />
                     </div>
                     <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>

@@ -15,7 +15,6 @@ const TABS = [
   { label: 'Leaderboards', to: '/leaderboards' },
   { label: 'Groups', to: '/groups' },
   { label: 'Characters', to: '/characters' },
-  { label: 'Guilds', to: '/guilds' },
   { label: 'Compare', to: '/compare' },
 ];
 

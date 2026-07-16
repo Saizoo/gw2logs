@@ -37,10 +37,14 @@ export async function persistLog(params: {
       // timeout on its own.
       const withIds: { playerId: string; p: NormalizedPlayer }[] = [];
       for (const p of normalized.players) {
+        // displayName is a legacy column, not written to going forward — every
+        // display surface in the app now reads the account name directly
+        // (stable, unlike a character name that changes per fight). Set once
+        // on creation so a fresh row is never blank; never touched again.
         const player = await tx.player.upsert({
           where: { account: p.account },
-          update: { displayName: p.characterName },
-          create: { account: p.account, displayName: p.characterName },
+          update: {},
+          create: { account: p.account, displayName: p.account },
         });
         withIds.push({ playerId: player.id, p });
       }

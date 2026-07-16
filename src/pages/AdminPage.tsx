@@ -11,8 +11,8 @@ import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates'
 
 const PAGE_SIZE = 50;
 
-type Tab = 'Overview' | 'Uploads' | 'Logs' | 'Users' | 'Guilds' | 'Groups' | 'Builds';
-const TABS: Tab[] = ['Overview', 'Uploads', 'Logs', 'Users', 'Guilds', 'Groups', 'Builds'];
+type Tab = 'Overview' | 'Uploads' | 'Logs' | 'Users' | 'Groups' | 'Builds';
+const TABS: Tab[] = ['Overview', 'Uploads', 'Logs', 'Users', 'Groups', 'Builds'];
 
 export default function AdminPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -26,7 +26,7 @@ export default function AdminPage() {
     <div>
       <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Admin Panel</div>
       <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', marginBottom: 20 }}>
-        System oversight — upload/parse health, logs, users, guilds, groups, and the raid-planner build catalog.
+        System oversight — upload/parse health, logs, users, groups, and the raid-planner build catalog.
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -52,7 +52,6 @@ export default function AdminPage() {
       {tab === 'Uploads' && <UploadsTab />}
       {tab === 'Logs' && <LogsTab />}
       {tab === 'Users' && <UsersTab currentUserId={user.id} />}
-      {tab === 'Guilds' && <GuildsTab />}
       {tab === 'Groups' && <GroupsTab />}
       {tab === 'Builds' && <BuildsTab />}
     </div>
@@ -71,7 +70,6 @@ function OverviewTab() {
     { label: 'Total logs', value: data.totalLogs },
     { label: 'Total users', value: data.totalUsers },
     { label: 'Total players', value: data.totalPlayers },
-    { label: 'Total guilds', value: data.totalGuilds },
     { label: 'Total groups', value: data.totalGroups },
     { label: 'Catalog builds', value: data.totalBuilds },
   ];
@@ -315,32 +313,6 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
       {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
       {total != null && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{users.length} of {total}</div>}
     </div>
-  );
-}
-
-// --- Guilds ---
-
-function GuildsTab() {
-  const { data, loading, error } = useApiQuery(() => api.adminGuilds(), []);
-  if (loading) return <LoadingState label="Loading guilds…" />;
-  if (error) return <ErrorState message={error} />;
-  if (!data || data.length === 0) return <EmptyState>No guilds synced yet.</EmptyState>;
-
-  return (
-    <Card style={{ overflow: 'hidden' }}>
-      {data.map((g, i) => (
-        <div key={g.id} style={{ padding: '11px 18px', borderBottom: i === data.length - 1 ? 'none' : '1px solid var(--border-faint)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '600 12.5px var(--font-sans)' }}>
-              [{g.tag}] {g.name}
-            </div>
-            <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
-              {g.memberCount} members · last synced {new Date(g.lastSyncedAt).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      ))}
-    </Card>
   );
 }
 

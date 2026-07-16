@@ -12,7 +12,6 @@ import { searchRouter } from './routes/search.js';
 import { compareRouter } from './routes/compare.js';
 import { authRouter } from './routes/auth.js';
 import { accountRouter } from './routes/account.js';
-import { guildsRouter } from './routes/guilds.js';
 import { homeRouter } from './routes/home.js';
 import { compositionsRouter } from './routes/compositions.js';
 import { dashboardRouter } from './routes/dashboard.js';
@@ -23,7 +22,6 @@ import { adminOverviewRouter } from './routes/admin/overview.js';
 import { adminUploadsRouter } from './routes/admin/uploads.js';
 import { adminLogsRouter } from './routes/admin/logs.js';
 import { adminUsersRouter } from './routes/admin/users.js';
-import { adminGuildsRouter } from './routes/admin/guilds.js';
 import { adminGroupsRouter } from './routes/admin/groups.js';
 import { adminBuildsRouter } from './routes/admin/builds.js';
 
@@ -53,7 +51,6 @@ export function createApp() {
   app.use('/api/compare', compareRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/account', accountRouter);
-  app.use('/api/guilds', guildsRouter);
   app.use('/api/home', homeRouter);
   app.use('/api/compositions', compositionsRouter);
   app.use('/api/dashboard', dashboardRouter);
@@ -70,7 +67,6 @@ export function createApp() {
   adminRouter.use('/uploads', adminUploadsRouter);
   adminRouter.use('/logs', adminLogsRouter);
   adminRouter.use('/users', adminUsersRouter);
-  adminRouter.use('/guilds', adminGuildsRouter);
   adminRouter.use('/groups', adminGroupsRouter);
   adminRouter.use('/builds', adminBuildsRouter);
   app.use('/api/admin', adminRouter);

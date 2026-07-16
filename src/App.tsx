@@ -5,8 +5,6 @@ import LogsPage from './pages/LogsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PlannerPage from './pages/PlannerPage';
 import PlayerProfilePage from './pages/PlayerProfilePage';
-import GuildsIndexPage from './pages/GuildsIndexPage';
-import GuildPage from './pages/GuildPage';
 import ComparePage from './pages/ComparePage';
 import LogDetailPage from './pages/LogDetailPage';
 import UploadPage from './pages/UploadPage';
@@ -29,8 +27,6 @@ export default function App() {
         <Route path="/leaderboards" element={<LeaderboardPage />} />
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/players/:name" element={<PlayerProfilePage />} />
-        <Route path="/guilds" element={<GuildsIndexPage />} />
-        <Route path="/guilds/:tag" element={<GuildPage />} />
         <Route path="/groups" element={<MyGroupsPage />} />
         <Route path="/groups/:id" element={<GroupDetailPage />} />
         <Route path="/characters" element={<CharactersPage />} />
