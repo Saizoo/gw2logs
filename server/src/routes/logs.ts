@@ -28,7 +28,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     ...(groupId ? { groupId } : {}),
   };
 
-  const logs = await prisma.log.findMany({
+  let logs = await prisma.log.findMany({
     where,
     select: {
       id: true,
@@ -51,6 +51,15 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     take: limit,
     skip: offset,
   });
+
+  // The name-only `where` above can't tell 'Deimos'/'Cerus' the raid boss
+  // from 'Deimos'/'Cerus' the Fractal CM boss — both fightName lists contain
+  // them — so it over-fetches those two names under either filter. Drop
+  // whichever ones don't actually belong once squad size can settle it (see
+  // categorizeFight). Every other boss name is unaffected by this pass.
+  if (category === 'raid' || category === 'fractal') {
+    logs = logs.filter((l) => categorizeFight(l.fightName, l._count.players) === category);
+  }
 
   const fightNames = [...new Set(logs.map((l) => l.fightName))];
   const logIds = logs.map((l) => l.id);
@@ -89,7 +98,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
       id: l.id,
       boss: l.fightName,
       wing: l.wing,
-      category: categorizeFight(l.fightName),
+      category: categorizeFight(l.fightName, l._count.players),
       isCm: l.isCm,
       success: l.success,
       durationMs: l.durationMs,

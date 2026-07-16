@@ -80,14 +80,28 @@ export const FRACTAL_CM_BOSSES = new Set<string>([
   'Legendary Whispering Shadow',
 ]);
 
-// 'Deimos' and 'Cerus' were given as both a raid boss and a Fractal CM boss
-// (they really are separate encounters that happen to share a name) — with
-// only fightName to go on, a raid/fractal split can't tell them apart, so
-// ties resolve to "raid" here. Whichever bucket is wrong for a given log,
-// the boss name and CM flag are still shown as-is; only this cheap filter
-// bucket is a guess for those two names specifically.
-export function categorizeFight(fightName: string): 'raid' | 'fractal' | 'other' {
+// 'Deimos' and 'Cerus' each name two distinct encounters — a raid boss and
+// a Fractal CM boss that happen to share the exact fightName. Squad size
+// resolves it: a Fractal CM instance caps at 5 players and a raid squad
+// runs up to 10, and nothing in this game supports a size in between for
+// either, so this is a real signal rather than a guess. Every other boss
+// name only ever means one thing and skips this check entirely.
+const AMBIGUOUS_BOSSES = new Set(['Deimos', 'Cerus']);
+const FRACTAL_SQUAD_SIZE_CAP = 5;
+
+export function categorizeFight(fightName: string, playerCount?: number): 'raid' | 'fractal' | 'other' {
+  if (AMBIGUOUS_BOSSES.has(fightName) && playerCount != null) {
+    return playerCount <= FRACTAL_SQUAD_SIZE_CAP ? 'fractal' : 'raid';
+  }
   if (RAID_BOSSES.has(fightName)) return 'raid';
   if (FRACTAL_CM_BOSSES.has(fightName)) return 'fractal';
   return 'other';
+}
+
+// Same disambiguation for the cosmetic wing label — a Fractal CM Deimos log
+// shouldn't be tagged "Wing 3 — Stronghold of the Faithful" just because it
+// shares a name with the raid boss.
+export function resolveWing(fightName: string, playerCount: number): string | null {
+  if (AMBIGUOUS_BOSSES.has(fightName) && playerCount <= FRACTAL_SQUAD_SIZE_CAP) return null;
+  return BOSS_WING[fightName] ?? null;
 }

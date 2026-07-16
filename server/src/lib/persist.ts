@@ -1,6 +1,6 @@
 import { prisma } from '../db.js';
 import type { NormalizedLog, NormalizedPlayer } from './ingest.js';
-import { BOSS_WING } from './bossMeta.js';
+import { resolveWing } from './bossMeta.js';
 
 export async function persistLog(params: {
   contentHash: string;
@@ -18,7 +18,7 @@ export async function persistLog(params: {
           contentHash,
           fightName: normalized.fightName,
           triggerId: normalized.triggerId,
-          wing: BOSS_WING[normalized.fightName] ?? null,
+          wing: resolveWing(normalized.fightName, normalized.players.length),
           isCm: normalized.isCm,
           success: normalized.success,
           durationMs: normalized.durationMs,
