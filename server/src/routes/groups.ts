@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { getGroupRole as getRole, canManageGroup as canManage } from '../lib/groupAccess.js';
+import { BOSS_WING } from '../lib/bossMeta.js';
 
 export const groupsRouter = Router();
 
@@ -286,6 +287,68 @@ groupsRouter.get('/:id/roster', requireAuth, asyncHandler(async (req, res) => {
       })),
     ),
   );
+}));
+
+// GW2's weekly raid reset: Monday 07:30 UTC. Returns the most recent one.
+function currentWeeklyReset(now = new Date()): Date {
+  const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 30));
+  const daysSinceMonday = (reset.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+  reset.setUTCDate(reset.getUTCDate() - daysSinceMonday);
+  if (reset > now) reset.setUTCDate(reset.getUTCDate() - 7);
+  return reset;
+}
+
+// Weekly clear matrix, built from logs attached to this group. Every raid
+// wing from the canonical catalog is always present (an empty week should
+// show as unchecked boxes, not a missing wing); former-strike maps only
+// appear once the group has actually logged them, so a pure raid static
+// isn't padded with a dozen permanently-empty strike rows.
+groupsRouter.get('/:id/clears', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to view its clears' });
+    return;
+  }
+
+  const weekStart = currentWeeklyReset();
+  const kills = await prisma.log.findMany({
+    where: { groupId: req.params.id, success: true },
+    select: { id: true, fightName: true, isCm: true, encounterTime: true },
+    orderBy: { encounterTime: 'desc' },
+  });
+
+  const thisWeek = new Set<string>();
+  const cmThisWeek = new Set<string>();
+  const lastKill = new Map<string, { logId: string; date: Date; isCm: boolean }>();
+  for (const k of kills) {
+    if (!lastKill.has(k.fightName)) lastKill.set(k.fightName, { logId: k.id, date: k.encounterTime, isCm: k.isCm });
+    if (k.encounterTime >= weekStart) {
+      thisWeek.add(k.fightName);
+      if (k.isCm) cmThisWeek.add(k.fightName);
+    }
+  }
+
+  const isRaidWing = (wing: string) => wing.startsWith('Wing ') || wing === "Guardian's Glade";
+  const wings = new Map<string, string[]>();
+  for (const [boss, wing] of Object.entries(BOSS_WING)) {
+    if (!isRaidWing(wing) && !lastKill.has(boss)) continue;
+    const bosses = wings.get(wing) ?? [];
+    bosses.push(boss);
+    wings.set(wing, bosses);
+  }
+
+  res.json({
+    weekStart,
+    wings: [...wings.entries()].map(([wing, bosses]) => ({
+      wing,
+      encounters: bosses.map((fightName) => ({
+        fightName,
+        killedThisWeek: thisWeek.has(fightName),
+        cmThisWeek: cmThisWeek.has(fightName),
+        lastKill: lastKill.get(fightName) ?? null,
+      })),
+    })),
+  });
 }));
 
 groupsRouter.post('/:id/join-requests', requireAuth, asyncHandler(async (req, res) => {

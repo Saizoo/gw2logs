@@ -251,6 +251,18 @@ export interface GroupJoinRequest {
   createdAt: string;
 }
 
+export interface GroupClearEncounter {
+  fightName: string;
+  killedThisWeek: boolean;
+  cmThisWeek: boolean;
+  lastKill: { logId: string; date: string; isCm: boolean } | null;
+}
+
+export interface GroupClears {
+  weekStart: string;
+  wings: { wing: string; encounters: GroupClearEncounter[] }[];
+}
+
 export interface RosterCharacter {
   id: string;
   name: string;
@@ -555,6 +567,7 @@ export const api = {
     }),
   deleteGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   groupRoster: (id: string) => apiFetch<RosterCharacter[]>(`/groups/${encodeURIComponent(id)}/roster`),
+  groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
   requestToJoinGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests`, { method: 'POST' }),
   groupJoinRequests: (id: string) => apiFetch<GroupJoinRequest[]>(`/groups/${encodeURIComponent(id)}/join-requests`),
   approveJoinRequest: (id: string, userId: string) =>

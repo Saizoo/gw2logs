@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError, type GroupDetail, type LogListItem } from '../lib/api';
+import { api, ApiError, type GroupClears, type GroupDetail, type LogListItem, type RosterCharacter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -8,6 +8,7 @@ import { toast } from '../lib/toast';
 import { Avatar, Card, GoldButton, LoadMoreButton, ParseBadge, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 import { DURATION_OPTIONS_MINS, WEEKDAYS, formatDurationMins, formatSchedule } from '../data/schedule';
+import { CAT, PROF, toBuildEntry, type BuildCategory, type BuildEntry } from '../data/builds';
 
 const LOGS_PAGE_SIZE = 20;
 
@@ -25,6 +26,18 @@ export default function GroupDetailPage() {
   const refetch = () => setReloadNonce((n) => n + 1);
 
   const { data: group, loading, error } = useApiQuery(() => api.group(id), [id, reloadNonce]);
+  // Clears + roster are member-only server-side; don't even ask when the
+  // viewer isn't a member so a public visit stays free of 403 noise.
+  const memberView = group?.myRole != null;
+  const { data: clears } = useApiQuery(
+    () => (memberView ? api.groupClears(id) : Promise.resolve(null)),
+    [id, memberView, reloadNonce],
+  );
+  const { data: roster } = useApiQuery(
+    () => (memberView ? api.groupRoster(id) : Promise.resolve(null)),
+    [id, memberView, reloadNonce],
+  );
+  const { data: buildRows } = useApiQuery(() => (memberView ? api.builds() : Promise.resolve(null)), [memberView]);
   const { data: requests } = useApiQuery(
     () => (group?.canManage ? api.groupJoinRequests(id) : Promise.resolve([])),
     [id, group?.canManage, reloadNonce],
@@ -113,6 +126,18 @@ export default function GroupDetailPage() {
       <div style={{ marginBottom: 20 }}>
         <RaidScheduleCard group={group} groupId={id} canManage={group.canManage} onSaved={refetch} />
       </div>
+
+      {isMember && clears && (
+        <div style={{ marginBottom: 20 }}>
+          <WeeklyClearsCard clears={clears} />
+        </div>
+      )}
+
+      {isMember && roster && buildRows && (
+        <div style={{ marginBottom: 20 }}>
+          <RosterReadinessCard members={group.members} roster={roster} builds={buildRows.map(toBuildEntry)} />
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: group.canManage ? '1.4fr 1fr' : '1fr', gap: 20, alignItems: 'start' }}>
         <Card style={{ overflow: 'hidden' }}>
@@ -409,6 +434,222 @@ function RaidScheduleCard({
       <GoldButton onClick={handleSave} disabled={saving}>
         {saving ? 'Saving…' : 'Save schedule'}
       </GoldButton>
+    </Card>
+  );
+}
+
+// Shorten "Wing 5 — Hall of Chains" to "W5 · Hall of Chains" so the matrix
+// rows don't spend half their width on the word "Wing".
+function shortWing(wing: string): string {
+  const m = wing.match(/^Wing (\d+) — (.+)$/);
+  return m ? `W${m[1]} · ${m[2]}` : wing;
+}
+
+function WeeklyClearsCard({ clears }: { clears: GroupClears }) {
+  const all = clears.wings.flatMap((w) => w.encounters);
+  const done = all.filter((e) => e.killedThisWeek).length;
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Weekly Clears</div>
+        <div style={{ font: '700 12px var(--font-mono)', color: done === all.length && all.length > 0 ? 'var(--good)' : 'var(--gold)' }}>
+          {done}/{all.length}
+        </div>
+        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginLeft: 'auto' }}>
+          Resets Monday 07:30 UTC
+        </div>
+      </div>
+      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {clears.wings.map(({ wing, encounters }) => (
+          <div key={wing} style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ font: '700 11.5px var(--font-sans)', color: 'var(--text-62)', width: 190, flex: 'none' }}>{shortWing(wing)}</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 240 }}>
+              {encounters.map((enc) => {
+                const chip = (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '4px 9px',
+                      borderRadius: 14,
+                      font: '600 11px var(--font-sans)',
+                      background: enc.killedThisWeek ? 'var(--good-dim)' : 'oklch(1 0 0 / 4%)',
+                      color: enc.killedThisWeek ? 'var(--good)' : 'var(--text-50)',
+                      border: `1px solid ${enc.killedThisWeek ? 'color-mix(in oklab, var(--good) 30%, transparent)' : 'var(--border)'}`,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <span aria-hidden style={{ font: '800 10px var(--font-sans)' }}>{enc.killedThisWeek ? '✓' : '·'}</span>
+                    {enc.fightName}
+                    {enc.cmThisWeek && (
+                      <span style={{ font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '1px 4px', borderRadius: 4, background: 'oklch(0.78 0.14 85 / 18%)', color: 'var(--gold)' }}>
+                        CM
+                      </span>
+                    )}
+                  </span>
+                );
+                return enc.lastKill ? (
+                  <Link key={enc.fightName} to={`/logs/${enc.lastKill.logId}`} className="u-chip" title={`Last kill ${new Date(enc.lastKill.date).toLocaleDateString()}`} style={{ borderRadius: 14 }}>
+                    {chip}
+                  </Link>
+                ) : (
+                  <span key={enc.fightName} title="Never killed by this group">{chip}</span>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// Coverage buckets for a standard 10-player squad: two of each boon source
+// and two healers. qdps/qheal both count as quickness sources (same for
+// alacrity) — what matters for comp-building is "who can bring the boon",
+// not whether they do it from a heal or DPS chair.
+const READINESS_BUCKETS: { key: string; label: string; cats: BuildCategory[]; need?: number }[] = [
+  { key: 'quick', label: 'Quickness', cats: ['qdps', 'qheal'], need: 2 },
+  { key: 'alac', label: 'Alacrity', cats: ['adps', 'aheal'], need: 2 },
+  { key: 'heal', label: 'Healer', cats: ['qheal', 'aheal'], need: 2 },
+  { key: 'dps', label: 'DPS', cats: ['pdps', 'cdps'] },
+];
+
+function RosterReadinessCard({
+  members,
+  roster,
+  builds,
+}: {
+  members: GroupDetail['members'];
+  roster: RosterCharacter[];
+  builds: BuildEntry[];
+}) {
+  const buildById = new Map(builds.map((b) => [b.id, b]));
+
+  // owner (account ?? discord) → assigned (character, build) pairs across
+  // every character tab that has a build assigned.
+  const assignedByOwner = new Map<string, { charName: string; build: BuildEntry }[]>();
+  for (const ch of roster) {
+    for (const t of ch.templates) {
+      const build = t.assignedBuildId ? buildById.get(t.assignedBuildId) : undefined;
+      if (!build) continue;
+      const list = assignedByOwner.get(ch.owner) ?? [];
+      list.push({ charName: ch.name, build });
+      assignedByOwner.set(ch.owner, list);
+    }
+  }
+
+  const coverage = READINESS_BUCKETS.map((bucket) => {
+    const providers = members.filter((m) =>
+      (assignedByOwner.get(m.account ?? m.username) ?? []).some((a) => bucket.cats.includes(a.build.cat)),
+    );
+    return { bucket, count: providers.length, short: bucket.need != null && providers.length < bucket.need };
+  });
+
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', flexWrap: 'wrap' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Roster Readiness</div>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {coverage.map(({ bucket, count, short }) => (
+            <span
+              key={bucket.key}
+              title={short ? `A 10-player squad usually needs ${bucket.need} ${bucket.label.toLowerCase()} sources` : undefined}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '3px 9px',
+                borderRadius: 12,
+                font: '600 11px var(--font-sans)',
+                background: short ? 'var(--bad-dim)' : 'var(--good-dim)',
+                color: short ? 'var(--bad)' : 'var(--good)',
+              }}
+            >
+              {bucket.label} {count}
+              {short && ' ⚠'}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 760 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1.1fr 1fr 1fr 1fr 1.4fr',
+              gap: 8,
+              padding: '10px 20px',
+              font: '700 10px var(--font-sans)',
+              textTransform: 'uppercase',
+              letterSpacing: '.5px',
+              color: 'var(--text-55)',
+              borderBottom: '1px solid var(--border-soft)',
+            }}
+          >
+            <div>Member</div>
+            {READINESS_BUCKETS.map((b) => (
+              <div key={b.key}>{b.label}</div>
+            ))}
+          </div>
+          {members.map((m, i) => {
+            const label = m.account ?? m.username;
+            const assigned = assignedByOwner.get(label) ?? [];
+            return (
+              <div
+                key={m.userId}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.1fr 1fr 1fr 1fr 1.4fr',
+                  gap: 8,
+                  alignItems: 'start',
+                  padding: '10px 20px',
+                  borderBottom: i === members.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                }}
+              >
+                <div style={{ font: '600 12.5px var(--font-sans)', paddingTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={label}>
+                  {label}
+                </div>
+                {assigned.length === 0 ? (
+                  <div style={{ gridColumn: 'span 4', font: '400 11.5px var(--font-sans)', color: 'var(--text-50)', paddingTop: 2 }}>
+                    No builds assigned — assign builds on the Characters page to appear here.
+                  </div>
+                ) : (
+                  READINESS_BUCKETS.map((bucket) => (
+                    <div key={bucket.key} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {assigned
+                        .filter((a) => bucket.cats.includes(a.build.cat))
+                        .map((a, j) => (
+                          <span
+                            key={`${a.build.id}-${j}`}
+                            title={`${a.charName} — ${a.build.name} (${CAT[a.build.cat].label})`}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              padding: '3px 8px',
+                              borderRadius: 10,
+                              font: '600 10.5px var(--font-sans)',
+                              background: 'oklch(1 0 0 / 5%)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-80)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: PROF[a.build.p]?.c ?? 'var(--text-55)', flex: 'none' }} />
+                            {a.build.name}
+                          </span>
+                        ))}
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </Card>
   );
 }
