@@ -100,7 +100,7 @@ export default function GroupDetailPage() {
               onClick={() => {
                 if (confirm(`Delete "${group.name}"? This cannot be undone.`)) run(() => api.deleteGroup(id), `Deleted "${group.name}"`);
               }}
-              style={{ ...ghostBtnStyle, color: 'var(--bad)' }}
+              className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}
             >
               Delete group
             </button>
@@ -150,27 +150,27 @@ export default function GroupDetailPage() {
               {group.myRole === 'leader' && m.role !== 'leader' && (
                 <div style={{ display: 'flex', gap: 6 }}>
                   {m.role === 'member' && (
-                    <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'promote'), `Promoted ${m.username} to subleader`)} style={smallBtnStyle}>
+                    <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'promote'), `Promoted ${m.username} to subleader`)} className="u-btn-ghost" style={smallBtnStyle}>
                       Promote
                     </button>
                   )}
                   {m.role === 'subleader' && (
                     <>
-                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'demote'), `Demoted ${m.username} to member`)} style={smallBtnStyle}>
+                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'demote'), `Demoted ${m.username} to member`)} className="u-btn-ghost" style={smallBtnStyle}>
                         Demote
                       </button>
-                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'makeleader'), `${m.username} is now the leader`)} style={smallBtnStyle}>
+                      <button onClick={() => run(() => api.setGroupMemberRole(id, m.userId, 'makeleader'), `${m.username} is now the leader`)} className="u-btn-ghost" style={smallBtnStyle}>
                         Make leader
                       </button>
                     </>
                   )}
-                  <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                  <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} className="u-btn-ghost" style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                     Remove
                   </button>
                 </div>
               )}
               {group.canManage && group.myRole !== 'leader' && m.role === 'member' && (
-                <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                <button onClick={() => run(() => api.removeGroupMember(id, m.userId), `Removed ${m.username}`)} className="u-btn-ghost" style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                   Remove
                 </button>
               )}
@@ -200,10 +200,10 @@ export default function GroupDetailPage() {
                 <div key={r.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px', borderBottom: '1px solid var(--border-faint)' }}>
                   <Avatar size={26} name={r.username} imgSrc={r.avatar} />
                   <div style={{ flex: 1, font: '600 12.5px var(--font-sans)' }}>{r.username}</div>
-                  <button onClick={() => run(() => api.approveJoinRequest(id, r.userId), `${r.username} joined the group`)} style={smallBtnStyle}>
+                  <button onClick={() => run(() => api.approveJoinRequest(id, r.userId), `${r.username} joined the group`)} className="u-btn-ghost" style={smallBtnStyle}>
                     Approve
                   </button>
-                  <button onClick={() => run(() => api.denyJoinRequest(id, r.userId), `Denied ${r.username}'s request`)} style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
+                  <button onClick={() => run(() => api.denyJoinRequest(id, r.userId), `Denied ${r.username}'s request`)} className="u-btn-ghost" style={{ ...smallBtnStyle, color: 'var(--bad)' }}>
                     Deny
                   </button>
                 </div>
@@ -248,6 +248,7 @@ export default function GroupDetailPage() {
               <Link
                 key={log.id}
                 to={`/logs/${log.id}`}
+                className="u-row"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '2.2fr 0.7fr 0.8fr 0.9fr 0.7fr 0.9fr',

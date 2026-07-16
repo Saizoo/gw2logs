@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, type LogListItem } from '../lib/api';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Card, LoadMoreButton, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
+import { Card, LoadMoreButton, PageHeader, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 type Filter = 'all' | 'raid' | 'fractal' | 'kills' | 'mine';
@@ -53,10 +53,7 @@ export default function LogsPage() {
 
   return (
     <div>
-      <div style={{ font: '800 22px var(--font-sans)', marginBottom: 4 }}>Logs</div>
-      <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
-        All uploaded reports across raids and fractal challenge modes
-      </div>
+      <PageHeader title="Logs" subtitle="All uploaded reports across raids and fractal challenge modes" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         {filters.map((f) => {
@@ -65,6 +62,7 @@ export default function LogsPage() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
+              className={active ? undefined : 'u-chip'}
               style={{
                 padding: '7px 14px',
                 borderRadius: 20,
@@ -121,6 +119,7 @@ export default function LogsPage() {
             <Link
               key={log.id}
               to={`/logs/${log.id}`}
+              className="u-row"
               style={{
                 display: 'grid',
                 gridTemplateColumns: '2.2fr 0.9fr 0.7fr 0.8fr 0.9fr 0.7fr 0.9fr',

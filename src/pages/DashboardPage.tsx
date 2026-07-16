@@ -50,6 +50,7 @@ function LoggedOutDashboard() {
           <GoldButton to="/upload">Upload a log</GoldButton>
           <Link
             to="/login"
+            className="u-btn-ghost"
             style={{
               padding: '9px 16px',
               borderRadius: 10,
@@ -91,6 +92,7 @@ function LoggedOutDashboard() {
                   <Link
                     key={row.profession}
                     to={`/logs/${row.logId}`}
+                    className="u-row"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -123,6 +125,7 @@ function LoggedOutDashboard() {
                   <Link
                     key={log.id}
                     to={`/logs/${log.id}`}
+                    className="u-row"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -215,6 +218,7 @@ function SignedInDashboard() {
             <Link
               key={log.logId}
               to={`/logs/${log.logId}`}
+              className="u-row"
               style={{
                 display: 'flex',
                 alignItems: 'center',

@@ -153,6 +153,7 @@ export function SquadRoleBadge({ squadRole, style }: { squadRole: string; style?
 export function LoadMoreButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
   return (
     <button
+      className="u-chip"
       onClick={onClick}
       disabled={loading}
       style={{
@@ -216,14 +217,16 @@ export function ResultPill({ success }: { success: boolean }) {
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function Card({ children, style, className }: { children: ReactNode; style?: CSSProperties; className?: string }) {
   return (
     <div
+      className={className}
       style={{
         background: 'var(--bg-card)',
         backdropFilter: 'blur(10px)',
         border: '1px solid var(--border)',
         borderRadius: 18,
+        boxShadow: '0 1px 2px rgba(0,0,0,.25), 0 12px 32px -18px rgba(0,0,0,.55)',
         ...style,
       }}
     >
@@ -232,7 +235,11 @@ export function Card({ children, style }: { children: ReactNode; style?: CSSProp
   );
 }
 
+// Delta tone is derived from the sign the caller already formatted in
+// ("+3" / "-1,200") — a regression rendering in cheerful green was the
+// old behavior, and it read as a data bug.
 export function StatCard({ label, value, delta }: { label: string; value: ReactNode; delta?: string }) {
+  const negative = delta?.trimStart().startsWith('-') ?? false;
   return (
     <Card style={{ padding: '18px 20px' }}>
       <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-58)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
@@ -240,9 +247,32 @@ export function StatCard({ label, value, delta }: { label: string; value: ReactN
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
         <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.5px' }}>{value}</div>
-        {delta && <div style={{ font: '600 12px var(--font-sans)', color: 'var(--good)' }}>{delta}</div>}
+        {delta && (
+          <div style={{ font: '600 12px var(--font-sans)', color: negative ? 'var(--bad)' : 'var(--good)' }}>
+            <span aria-hidden style={{ fontSize: 9, marginRight: 2, verticalAlign: '1px' }}>
+              {negative ? '▼' : '▲'}
+            </span>
+            {delta}
+          </div>
+        )}
       </div>
     </Card>
+  );
+}
+
+// One consistent page title block — several pages hand-rolled the same
+// title/subtitle pair with slightly different sizes and margins; this
+// pins them all to a single rhythm and gives an optional right-hand
+// actions slot.
+export function PageHeader({ title, subtitle, actions }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 22 }}>
+      <div>
+        <h1 style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px' }}>{title}</h1>
+        {subtitle && <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginTop: 5 }}>{subtitle}</div>}
+      </div>
+      {actions && <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{actions}</div>}
+    </div>
   );
 }
 
@@ -305,13 +335,13 @@ export function GoldButton({
   };
   if (to) {
     return (
-      <Link to={to} style={style}>
+      <Link to={to} className="u-btn-gold" style={style}>
         {children}
       </Link>
     );
   }
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={style}>
+    <button type={type} onClick={onClick} disabled={disabled} className={disabled ? undefined : 'u-btn-gold'} style={style}>
       {children}
     </button>
   );

@@ -115,6 +115,7 @@ export default function LogDetailPage() {
             <button
               onClick={handleClaim}
               disabled={claiming}
+              className={claiming ? undefined : 'u-chip'}
               style={{
                 font: '600 11px var(--font-sans)',
                 padding: '4px 10px',
@@ -142,6 +143,7 @@ export default function LogDetailPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
+            className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
               borderRadius: 9,
@@ -242,7 +244,7 @@ function SquadTab({ log }: { log: LogDetail }) {
               const barWidth = Math.round((p.total / maxDps) * 100);
               const candidate = { logId: log.id, account: p.account, label: p.name };
               return (
-                <div key={p.account} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
+                <div key={p.account} className="u-row" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                   <div style={{ position: 'relative', flex: 'none' }}>
                     <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />

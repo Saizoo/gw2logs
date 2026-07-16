@@ -97,6 +97,7 @@ export function NavHeader() {
                 <Link
                   key={tab.to}
                   to={tab.to}
+                  className={`nav-tab${active ? ' is-active' : ''}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -126,6 +127,7 @@ export function NavHeader() {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link
             to="/upload"
+            className="u-btn-gold"
             style={{
               flex: 'none',
               padding: '9px 16px',
@@ -162,6 +164,7 @@ export function NavHeader() {
             backdropFilter: 'blur(16px) saturate(140%)',
             borderBottom: '1px solid var(--border)',
             boxShadow: '0 16px 32px rgba(0,0,0,.4)',
+            animation: 'fadeIn 0.18s ease both',
           }}
         >
           <div style={{ marginBottom: 14 }}>
@@ -175,6 +178,7 @@ export function NavHeader() {
                 <Link
                   key={tab.to}
                   to={tab.to}
+                  className={`nav-tab${active ? ' is-active' : ''}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

@@ -34,6 +34,7 @@ export default function AdminPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
+            className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
               borderRadius: 9,
@@ -107,7 +108,7 @@ function UploadsTab() {
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         {['', 'success', 'failed', 'parsing', 'queued'].map((s) => (
-          <button key={s} onClick={() => setStatus(s)} style={pillStyle(status === s)}>
+          <button key={s} onClick={() => setStatus(s)} className={status === s ? undefined : 'u-chip'} style={pillStyle(status === s)}>
             {s || 'All'}
           </button>
         ))}
@@ -211,7 +212,7 @@ function LogsTab() {
                   {l.playerCount} players · {l.squadDps.toLocaleString()} squad dps · {new Date(l.uploadedAt).toLocaleString()}
                 </div>
               </div>
-              <button onClick={() => handleDelete(l.id, l.boss)} style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
+              <button onClick={() => handleDelete(l.id, l.boss)} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
                 Delete
               </button>
             </div>
@@ -295,14 +296,14 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                   {u.gw2AccountName ?? 'Not linked'} {u.linkedPlayerAccount ? `· ${u.linkedPlayerAccount}` : ''} · joined {new Date(u.createdAt).toLocaleDateString()}
                 </div>
               </div>
-              <button onClick={() => forceLogout(u.id, u.discordUsername)} style={ghostBtnStyle}>
+              <button onClick={() => forceLogout(u.id, u.discordUsername)} className="u-btn-ghost" style={ghostBtnStyle}>
                 Force logout
               </button>
               <button
                 onClick={() => toggleAdmin(u.id, u.discordUsername, !u.isAdmin)}
                 disabled={u.id === currentUserId && u.isAdmin}
                 title={u.id === currentUserId && u.isAdmin ? "You can't remove your own admin access" : undefined}
-                style={{ ...ghostBtnStyle, opacity: u.id === currentUserId && u.isAdmin ? 0.5 : 1 }}
+                className="u-btn-ghost" style={{ ...ghostBtnStyle, opacity: u.id === currentUserId && u.isAdmin ? 0.5 : 1 }}
               >
                 {u.isAdmin ? 'Demote' : 'Promote'}
               </button>
@@ -353,7 +354,7 @@ function GroupsTab() {
                 Led by {g.leader} · {g.memberCount} members · {g.compositionCount} compositions
               </div>
             </div>
-            <button onClick={() => handleDelete(g.id, g.name)} style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
+            <button onClick={() => handleDelete(g.id, g.name)} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
               Delete
             </button>
           </div>
@@ -431,10 +432,10 @@ function BuildsTab() {
               <a href={b.url} target="_blank" rel="noreferrer" style={{ font: '600 11px var(--font-sans)', color: 'var(--gold)' }}>
                 Guide →
               </a>
-              <button onClick={() => setEditing(b)} style={ghostBtnStyle}>
+              <button onClick={() => setEditing(b)} className="u-btn-ghost" style={ghostBtnStyle}>
                 Edit
               </button>
-              <button onClick={() => handleDelete(b)} style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
+              <button onClick={() => handleDelete(b)} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
                 Delete
               </button>
             </div>
@@ -495,7 +496,7 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
       {saveError && <div style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{saveError}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <GoldButton onClick={handleSave}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Create build'}</GoldButton>
-        <button onClick={onCancel} style={ghostBtnStyle}>
+        <button onClick={onCancel} className="u-btn-ghost" style={ghostBtnStyle}>
           Cancel
         </button>
       </div>

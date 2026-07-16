@@ -83,6 +83,9 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Every data table/stat in the app benefits from digits that line up;
+     both Inter and JetBrains Mono ship tabular figures. */
+  font-variant-numeric: tabular-nums;
 }
 
 #root {
@@ -191,5 +194,130 @@ p {
   }
   50% {
     filter: drop-shadow(0 0 10px oklch(0.78 0.14 85 / 45%));
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Interaction layer.                                                  */
+/* The app styles everything inline, which can't express :hover /     */
+/* :active — these utility classes carry the interactive states that  */
+/* inline styles physically cannot. Base visual styling stays inline  */
+/* on each element; classes here add ONLY state feedback, so they can */
+/* be dropped onto any existing element without changing its resting  */
+/* look.                                                               */
+/* ------------------------------------------------------------------ */
+
+/* Clickable rows inside cards (log lists, leaderboards, search hits). */
+.u-row {
+  transition: background 0.15s ease;
+}
+.u-row:hover {
+  background: oklch(1 0 0 / 4%);
+}
+
+/* Filter pills / secondary chip buttons. */
+.u-chip {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.u-chip:hover {
+  background: oklch(1 0 0 / 9%);
+  color: var(--text-85);
+  border-color: oklch(1 0 0 / 16%);
+}
+.u-chip:active {
+  transform: translateY(1px);
+}
+
+/* Primary gold call-to-action buttons/links. */
+.u-btn-gold {
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+.u-btn-gold:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 4px 18px oklch(0.78 0.14 85 / 28%);
+}
+.u-btn-gold:active {
+  transform: translateY(1px);
+  filter: brightness(0.97);
+}
+
+/* Quiet bordered buttons (sign out, unlink, ghost actions). */
+.u-btn-ghost {
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.u-btn-ghost:hover {
+  background: oklch(1 0 0 / 6%);
+  border-color: oklch(1 0 0 / 18%);
+}
+.u-btn-ghost:active {
+  transform: translateY(1px);
+}
+
+/* Whole cards that navigate somewhere (best parses, group tiles). */
+.u-card-link {
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.u-card-link:hover {
+  border-color: oklch(1 0 0 / 15%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* Nav tabs: hover only affects the inactive ones — the active tab is
+   already filled gold and shouldn't shift under the cursor. */
+.nav-tab {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-tab:not(.is-active):hover {
+  background: oklch(1 0 0 / 7%);
+  color: var(--text-85);
+}
+
+/* Loading skeletons (see QueryStates.tsx). */
+.u-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    oklch(1 0 0 / 4%) 40%,
+    oklch(1 0 0 / 9%) 50%,
+    oklch(1 0 0 / 4%) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.42 0.01 250);
+}
+
+/* Anyone who asked their OS for less motion gets it: transitions and
+   animations collapse to near-instant instead of playing out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

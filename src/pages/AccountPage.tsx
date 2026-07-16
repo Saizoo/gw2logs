@@ -111,6 +111,7 @@ export default function AccountPage() {
         </div>
         <button
           onClick={handleLogout}
+          className="u-btn-ghost"
           style={{
             marginLeft: 'auto',
             font: '600 12px var(--font-sans)',
@@ -140,6 +141,7 @@ export default function AccountPage() {
             <button
               onClick={handleUnlink}
               disabled={unlinking}
+              className={unlinking ? undefined : 'u-btn-ghost'}
               style={{
                 marginTop: 14,
                 font: '600 12px var(--font-sans)',

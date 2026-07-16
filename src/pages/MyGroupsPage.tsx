@@ -100,7 +100,7 @@ export default function MyGroupsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
             {myGroups?.map((g) => (
               <Link key={g.id} to={`/groups/${g.id}`} style={{ display: 'block' }}>
-                <Card style={{ padding: 16 }}>
+                <Card className="u-card-link" style={{ padding: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
                     <CountBadge count={g.pendingRequestCount ?? 0} />
@@ -148,6 +148,7 @@ export default function MyGroupsPage() {
               <button
                 key={d}
                 onClick={() => toggleDay(d)}
+                className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '5px 11px',
                   borderRadius: 20,
@@ -172,7 +173,7 @@ export default function MyGroupsPage() {
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
           {searchResults?.map((g) => (
-            <Card key={g.id} style={{ padding: 16 }}>
+            <Card key={g.id} className="u-card-link" style={{ padding: 16 }}>
               <Link to={`/groups/${g.id}`}>
                 <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
                 <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
@@ -183,7 +184,7 @@ export default function MyGroupsPage() {
                 )}
               </Link>
               {user && (
-                <button onClick={() => handleRequestJoin(g.id)} style={{ ...ghostBtnStyle, marginTop: 10 }}>
+                <button className="u-btn-ghost" onClick={() => handleRequestJoin(g.id)} style={{ ...ghostBtnStyle, marginTop: 10 }}>
                   Request to join
                 </button>
               )}

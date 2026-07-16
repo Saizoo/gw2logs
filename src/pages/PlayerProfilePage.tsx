@@ -131,7 +131,7 @@ export default function PlayerProfilePage() {
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
           {player.bestParses.map((bp) => (
-            <Card key={bp.logId} style={{ padding: 14 }}>
+            <Card key={bp.logId} className="u-card-link" style={{ padding: 14 }}>
               <Link to={`/logs/${bp.logId}`} style={{ display: 'block' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <ProfDot color={professionColor(professionForSpec(bp.spec))} />
@@ -162,6 +162,7 @@ export default function PlayerProfilePage() {
           <Link
             key={r.logId}
             to={`/logs/${r.logId}`}
+            className="u-row"
             style={{
               display: 'flex',
               alignItems: 'center',

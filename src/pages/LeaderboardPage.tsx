@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
+import { Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
@@ -59,14 +59,11 @@ export default function LeaderboardPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Leaderboards</div>
-          <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)' }}>
-            Top squad-verified DPS across the guild, ranked by encounter and role
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <PageHeader
+        title="Leaderboards"
+        subtitle="Top squad-verified DPS across the guild, ranked by encounter and role"
+        actions={
+          <>
           <select
             value={selected ? `${selected.fightName}|${selected.isCm}` : ''}
             onChange={(e) => {
@@ -86,8 +83,9 @@ export default function LeaderboardPage() {
             <option value="power">Power DPS</option>
             <option value="condi">Condition DPS</option>
           </select>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {encountersLoading && <LoadingState label="Loading encounters…" />}
       {!encountersLoading && encounters?.length === 0 && (
@@ -129,6 +127,7 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={row.logId + row.account}
+                className="u-row"
                 style={{
                   position: 'relative',
                   display: 'grid',

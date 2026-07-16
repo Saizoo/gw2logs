@@ -143,7 +143,7 @@ export default function PlannerPage() {
                 selectExpansion(e.id);
                 updateEncounterParams({ exp: e.id, wing: e.wings[0].id, enc: e.wings[0].encs[0].id });
               }}
-              style={pillStyle(e.id === expId)}
+              className={e.id === expId ? undefined : "u-chip"} style={pillStyle(e.id === expId)}
             >
               {e.name}
             </button>
@@ -160,7 +160,7 @@ export default function PlannerPage() {
                 selectWing(w.id);
                 updateEncounterParams({ wing: w.id, enc: w.encs[0].id });
               }}
-              style={pillStyle(w.id === wingId)}
+              className={w.id === wingId ? undefined : "u-chip"} style={pillStyle(w.id === wingId)}
             >
               {w.name}
             </button>
@@ -177,7 +177,7 @@ export default function PlannerPage() {
                 setEncId(e.id);
                 updateEncounterParams({ enc: e.id });
               }}
-              style={pillStyle(e.id === encId)}
+              className={e.id === encId ? undefined : "u-chip"} style={pillStyle(e.id === encId)}
             >
               {e.name}
             </button>
@@ -301,7 +301,7 @@ export default function PlannerPage() {
         </select>
         {canEdit && <GoldButton onClick={() => setCreating((c) => !c)}>New</GoldButton>}
         {composition && canEdit && (
-          <button onClick={handleDelete} style={ghostBtnStyle}>
+          <button onClick={handleDelete} className="u-btn-ghost" style={ghostBtnStyle}>
             Delete
           </button>
         )}
@@ -499,10 +499,10 @@ function SlotRow({
     return (
       <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-faint)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={() => setTab('catalog')} style={pillStyle(tab === 'catalog')}>
+          <button onClick={() => setTab('catalog')} className={tab === 'catalog' ? undefined : 'u-chip'} style={pillStyle(tab === 'catalog')}>
             Catalog build
           </button>
-          <button onClick={() => setTab('character')} style={pillStyle(tab === 'character')}>
+          <button onClick={() => setTab('character')} className={tab === 'character' ? undefined : 'u-chip'} style={pillStyle(tab === 'character')}>
             Group character ({roster.length})
           </button>
         </div>
@@ -558,8 +558,8 @@ function SlotRow({
         )}
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setEditing(false)} style={ghostBtnStyle}>Cancel</button>
-          {slot && <button onClick={handleClear} style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>Clear slot</button>}
+          <button onClick={() => setEditing(false)} className="u-btn-ghost" style={ghostBtnStyle}>Cancel</button>
+          {slot && <button onClick={handleClear} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>Clear slot</button>}
           {saveError && <span style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{saveError}</span>}
         </div>
       </div>
@@ -582,7 +582,7 @@ function SlotRow({
           {slot.buildDetails && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{slot.buildDetails}</div>}
         </div>
         {canEdit && (
-          <button onClick={() => setEditing(true)} style={{ position: 'relative', font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--text-85)', border: '1px solid var(--border)', flex: 'none' }}>
+          <button onClick={() => setEditing(true)} className="u-chip" style={{ position: 'relative', font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--text-85)', border: '1px solid var(--border)', flex: 'none' }}>
             CHANGE
           </button>
         )}
@@ -598,7 +598,7 @@ function SlotRow({
         <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)' }}>Choose a build or character</div>
       </div>
       {canEdit && (
-        <button onClick={() => setEditing(true)} style={{ font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 8, background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid var(--gold-dim)', flex: 'none' }}>
+        <button onClick={() => setEditing(true)} className="u-chip" style={{ font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 8, background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid var(--gold-dim)', flex: 'none' }}>
           PICK
         </button>
       )}

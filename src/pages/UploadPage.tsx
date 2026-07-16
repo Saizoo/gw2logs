@@ -97,6 +97,8 @@ export default function UploadPage() {
             textAlign: 'center',
             background: dragOver ? 'oklch(0.7 0.15 85 / 8%)' : 'oklch(0.7 0.15 85 / 4%)',
             cursor: 'pointer',
+            transition: 'border-color .18s ease, background .18s ease, transform .18s ease',
+            transform: dragOver ? 'scale(1.008)' : 'none',
           }}
         >
           <div
@@ -160,7 +162,7 @@ export default function UploadPage() {
                     <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-55)' }}>
                       {item.status === 'uploading' && 'Uploading & parsing…'}
                       {item.status === 'failed' && item.error}
-                      {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)' }}>View log →</Link>}
+                      {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)', fontWeight: 700 }}>View log →</Link>}
                     </div>
                   </div>
                 </div>

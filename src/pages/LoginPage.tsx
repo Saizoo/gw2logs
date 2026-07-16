@@ -60,6 +60,7 @@ export default function LoginPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <a
             href="/api/auth/discord"
+            className="u-btn-gold"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
               background: '#5865F2', borderRadius: 10,
@@ -78,6 +79,7 @@ export default function LoginPage() {
 
         <Link
           to="/upload"
+          className="u-btn-ghost"
           style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 10, textAlign: 'center', display: 'block' }}
         >
           <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload without an account</span>

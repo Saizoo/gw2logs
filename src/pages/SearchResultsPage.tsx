@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
-import { Card, SectionLabel } from '../components/atoms';
+import { Card, PageHeader, SectionLabel } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 export default function SearchResultsPage() {
@@ -11,10 +11,14 @@ export default function SearchResultsPage() {
 
   return (
     <div style={{ maxWidth: 1040 }}>
-      <div style={{ font: '800 22px var(--font-sans)', marginBottom: 4 }}>Search</div>
-      <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
-        Results for "<span style={{ color: 'var(--gold)' }}>{query}</span>" across players and bosses
-      </div>
+      <PageHeader
+        title="Search"
+        subtitle={
+          <>
+            Results for "<span style={{ color: 'var(--gold)' }}>{query}</span>" across players and bosses
+          </>
+        }
+      />
 
       {loading && <LoadingState label="Searching…" />}
       {error && <ErrorState message={error} />}
@@ -28,6 +32,7 @@ export default function SearchResultsPage() {
           <Card style={{ overflow: 'hidden' }}>
             {results.players.map((p, i) => (
               <Link
+                className="u-row"
                 key={p.account}
                 to={`/players/${encodeURIComponent(p.account)}`}
                 style={{
@@ -54,6 +59,7 @@ export default function SearchResultsPage() {
           <Card style={{ overflow: 'hidden' }}>
             {results.bosses.map((b, i) => (
               <Link
+                className="u-row"
                 key={`${b.fightName}-${b.isCm}`}
                 to={`/leaderboards?encounter=${encodeURIComponent(b.fightName)}&cm=${b.isCm}`}
                 style={{

@@ -80,7 +80,7 @@ export default function CharactersPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <GoldButton onClick={handleSync}>{syncing ? 'Syncing…' : 'Sync from GW2'}</GoldButton>
-          <button onClick={() => setAdding((a) => !a)} style={ghostBtnStyle}>
+          <button onClick={() => setAdding((a) => !a)} className="u-btn-ghost" style={ghostBtnStyle}>
             Add manually
           </button>
         </div>
@@ -168,7 +168,7 @@ function CharacterCard({
           </div>
         </div>
         {character.source === 'manual' && (
-          <button onClick={onDelete} style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
+          <button onClick={onDelete} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
             Delete
           </button>
         )}
