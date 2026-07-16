@@ -4,9 +4,9 @@ import { api, ApiError, type CharacterData } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
-import { professionColor, professionIconPath } from '../data/gw2-data';
+import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
 import { CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
-import { Card, GoldButton } from '../components/atoms';
+import { ArtImg, Card, GoldButton } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 type FilterTab = 'all' | 'assigned';
@@ -247,10 +247,11 @@ function CharacterRow({
         boxShadow: '0 10px 26px -18px rgba(0,0,0,.6)',
       }}
     >
-      {/* Profession-color wash */}
+      {/* Spec banner art under a profession-color wash */}
       <div style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden' }} aria-hidden>
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, oklch(0.15 0.014 250) 55%)` }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 78%)' }} />
+        <ArtImg src={specBgPath(character.profession, spec)} style={{ opacity: 0.5 }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 55%, transparent) 0%, oklch(0.15 0.014 250 / 55%) 45%, oklch(0.15 0.014 250 / 96%) 70%)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 45%)' }} />
       </div>
 
       {/* Glowing profession/spec emblem */}
