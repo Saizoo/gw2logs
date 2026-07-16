@@ -27,7 +27,7 @@ async function main() {
   const assertions: [string, boolean][] = [
     ['fightName is Dhuum', reloaded?.fightName === 'Dhuum'],
     ['isCm is true', reloaded?.isCm === true],
-    ['wing enriched from bossMeta', reloaded?.wing === 'Wing 4 — Bastion of the Penitent'],
+    ['wing enriched from bossMeta', reloaded?.wing === 'Wing 5 — Hall of Chains'],
     ['squadDps is sum of all three players', reloaded?.squadDps === 26800 + 21200 + 8100],
     ['3 players persisted', reloaded?.players.length === 3],
     ['Sai Zu profession resolved to Mesmer', reloaded?.players.find((p) => p.characterName === 'Sai Zu')?.profession === 'Mesmer'],
