@@ -351,6 +351,79 @@ groupsRouter.get('/:id/clears', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+const SIGNUP_STATUSES = new Set(['in', 'late', 'out']);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function todayUtcDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Upcoming RSVPs for every member, all raid nights from today forward.
+// Past nights are history the page doesn't show, so they're filtered here
+// (kept in the table, though — they're the raw material for a future
+// attendance view).
+groupsRouter.get('/:id/signups', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to view signups' });
+    return;
+  }
+
+  const signups = await prisma.raidSignup.findMany({
+    where: { groupId: req.params.id, date: { gte: todayUtcDate() } },
+    select: { userId: true, date: true, status: true },
+    orderBy: { date: 'asc' },
+  });
+  res.json(signups);
+}));
+
+// Set (or clear, with status: null) the caller's own RSVP for one night.
+// Anyone can only ever write their own row — there's deliberately no
+// "leader marks people" path; an RSVP is a personal statement.
+groupsRouter.put('/:id/signups', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to sign up' });
+    return;
+  }
+
+  const date = typeof req.body?.date === 'string' ? req.body.date : '';
+  if (!DATE_RE.test(date) || Number.isNaN(Date.parse(date))) {
+    res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+    return;
+  }
+  if (date < todayUtcDate()) {
+    res.status(400).json({ error: 'Cannot RSVP for a past date' });
+    return;
+  }
+  // Bound how far ahead rows can be created — an unbounded date would let
+  // a stray client fill the table with signups for the year 9999.
+  const horizon = new Date();
+  horizon.setUTCDate(horizon.getUTCDate() + 60);
+  if (date > horizon.toISOString().slice(0, 10)) {
+    res.status(400).json({ error: 'Cannot RSVP more than 60 days ahead' });
+    return;
+  }
+
+  const status = req.body?.status;
+  if (status === null) {
+    await prisma.raidSignup.deleteMany({ where: { groupId: req.params.id, userId: req.user!.id, date } });
+    res.json({ ok: true });
+    return;
+  }
+  if (typeof status !== 'string' || !SIGNUP_STATUSES.has(status)) {
+    res.status(400).json({ error: 'status must be "in", "late", "out", or null to clear' });
+    return;
+  }
+
+  await prisma.raidSignup.upsert({
+    where: { groupId_userId_date: { groupId: req.params.id, userId: req.user!.id, date } },
+    update: { status },
+    create: { groupId: req.params.id, userId: req.user!.id, date, status },
+  });
+  res.json({ ok: true });
+}));
+
 groupsRouter.post('/:id/join-requests', requireAuth, asyncHandler(async (req, res) => {
   const group = await prisma.group.findUnique({ where: { id: req.params.id } });
   if (!group) {

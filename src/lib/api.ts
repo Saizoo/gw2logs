@@ -263,6 +263,14 @@ export interface GroupClears {
   wings: { wing: string; encounters: GroupClearEncounter[] }[];
 }
 
+export type SignupStatus = 'in' | 'late' | 'out';
+
+export interface RaidSignup {
+  userId: string;
+  date: string; // YYYY-MM-DD
+  status: SignupStatus;
+}
+
 export interface RosterCharacter {
   id: string;
   name: string;
@@ -568,6 +576,13 @@ export const api = {
   deleteGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   groupRoster: (id: string) => apiFetch<RosterCharacter[]>(`/groups/${encodeURIComponent(id)}/roster`),
   groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
+  groupSignups: (id: string) => apiFetch<RaidSignup[]>(`/groups/${encodeURIComponent(id)}/signups`),
+  setSignup: (id: string, date: string, status: SignupStatus | null) =>
+    apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/signups`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, status }),
+    }),
   requestToJoinGroup: (id: string) => apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests`, { method: 'POST' }),
   groupJoinRequests: (id: string) => apiFetch<GroupJoinRequest[]>(`/groups/${encodeURIComponent(id)}/join-requests`),
   approveJoinRequest: (id: string, userId: string) =>

@@ -61,6 +61,7 @@ model User {
   groupsLed        Group[]        @relation("GroupLeader")
   groupMemberships GroupMember[]
   groupRequests    GroupRequest[]
+  raidSignups      RaidSignup[]
   uploadedLogs     Log[]          @relation("LogUploader")
 }
 
@@ -210,6 +211,26 @@ model Group {
   raidDurationMins Int?
   raidTimezone     String?
   logs             Log[]
+  signups          RaidSignup[]
+}
+
+// One member's RSVP for one raid night. `date` is a calendar day string
+// (YYYY-MM-DD) rather than a timestamp on purpose: the group's schedule
+// stores its timezone as free text ("EST"), so there's no reliable instant
+// to anchor to — but everyone agrees on which *day* "Tuesday's raid" is.
+// String form sorts correctly and sidesteps timezone drift entirely.
+model RaidSignup {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String
+  status    String // in | late | out
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, userId, date])
+  @@index([groupId, date])
 }
 
 model GroupMember {

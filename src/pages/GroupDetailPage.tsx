@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError, type GroupClears, type GroupDetail, type LogListItem, type RosterCharacter } from '../lib/api';
+import { api, ApiError, type GroupClears, type GroupDetail, type LogListItem, type RaidSignup, type RosterCharacter, type SignupStatus } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -38,6 +38,13 @@ export default function GroupDetailPage() {
     [id, memberView, reloadNonce],
   );
   const { data: buildRows } = useApiQuery(() => (memberView ? api.builds() : Promise.resolve(null)), [memberView]);
+  // Signups get their own reload nonce so an RSVP click refreshes just
+  // this data instead of re-fetching the whole page.
+  const [signupNonce, setSignupNonce] = useState(0);
+  const { data: signups } = useApiQuery(
+    () => (memberView ? api.groupSignups(id) : Promise.resolve(null)),
+    [id, memberView, signupNonce],
+  );
   const { data: requests } = useApiQuery(
     () => (group?.canManage ? api.groupJoinRequests(id) : Promise.resolve([])),
     [id, group?.canManage, reloadNonce],
@@ -133,9 +140,39 @@ export default function GroupDetailPage() {
         </div>
       )}
 
+      {isMember && signups && user && (
+        <div style={{ marginBottom: 20 }}>
+          <RaidSignupsCard
+            group={group}
+            signups={signups}
+            myUserId={user.id}
+            onSet={async (date, status) => {
+              try {
+                await api.setSignup(id, date, status);
+                setSignupNonce((n) => n + 1);
+              } catch (err) {
+                toast.error(err instanceof ApiError ? err.message : 'Failed to update signup');
+              }
+            }}
+          />
+        </div>
+      )}
+
       {isMember && roster && buildRows && (
         <div style={{ marginBottom: 20 }}>
-          <RosterReadinessCard members={group.members} roster={roster} builds={buildRows.map(toBuildEntry)} />
+          <RosterReadinessCard
+            members={group.members}
+            roster={roster}
+            builds={buildRows.map(toBuildEntry)}
+            nextNight={(() => {
+              const next = upcomingRaidDates(group.raidDays, 1)[0];
+              if (!next || !signups) return null;
+              const confirmed = new Set(
+                signups.filter((s) => s.date === next && s.status !== 'out').map((s) => s.userId),
+              );
+              return confirmed.size > 0 ? { date: next, confirmed } : null;
+            })()}
+          />
         </div>
       )}
 
@@ -438,6 +475,172 @@ function RaidScheduleCard({
   );
 }
 
+// Next `count` raid-night dates (YYYY-MM-DD, local calendar) derived from
+// the group's recurring raidDays. The schedule's timezone is free text, so
+// nights are identified by calendar day rather than an exact instant —
+// "Tuesday's raid" is unambiguous to the people signing up for it.
+function upcomingRaidDates(raidDays: string[], count: number): string[] {
+  if (raidDays.length === 0) return [];
+  const dates: string[] = [];
+  const cursor = new Date();
+  for (let i = 0; i < 21 && dates.length < count; i++) {
+    const weekday = cursor.toLocaleDateString('en-US', { weekday: 'short' });
+    if (raidDays.includes(weekday)) {
+      const y = cursor.getFullYear();
+      const m = String(cursor.getMonth() + 1).padStart(2, '0');
+      const d = String(cursor.getDate()).padStart(2, '0');
+      dates.push(`${y}-${m}-${d}`);
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function signupDateLabel(date: string): string {
+  // Parse as local calendar day — new Date('YYYY-MM-DD') would read it as
+  // UTC midnight and shift the weekday for anyone west of Greenwich.
+  const [y, m, d] = date.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const today = new Date();
+  const isToday = dt.getFullYear() === today.getFullYear() && dt.getMonth() === today.getMonth() && dt.getDate() === today.getDate();
+  const label = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  return isToday ? `Tonight — ${label}` : label;
+}
+
+const SIGNUP_META: Record<SignupStatus, { label: string; color: string; bg: string }> = {
+  in: { label: 'In', color: 'var(--good)', bg: 'var(--good-dim)' },
+  late: { label: 'Late', color: 'var(--gold)', bg: 'oklch(0.78 0.14 85 / 15%)' },
+  out: { label: 'Out', color: 'var(--bad)', bg: 'var(--bad-dim)' },
+};
+
+function RaidSignupsCard({
+  group,
+  signups,
+  myUserId,
+  onSet,
+}: {
+  group: GroupDetail;
+  signups: RaidSignup[];
+  myUserId: string;
+  onSet: (date: string, status: SignupStatus | null) => void;
+}) {
+  const dates = upcomingRaidDates(group.raidDays, 3);
+  const [openDate, setOpenDate] = useState<string | null>(null);
+  const shown = openDate && dates.includes(openDate) ? openDate : dates[0];
+
+  if (dates.length === 0) {
+    return (
+      <Card style={{ padding: '16px 20px' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>Raid Signups</div>
+        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)' }}>
+          Set raid days in the schedule above and members can RSVP for each raid night here.
+        </div>
+      </Card>
+    );
+  }
+
+  const byUser = new Map(signups.filter((s) => s.date === shown).map((s) => [s.userId, s.status]));
+  const counts = { in: 0, late: 0, out: 0 } as Record<SignupStatus, number>;
+  for (const status of byUser.values()) counts[status]++;
+  const noReply = group.members.length - byUser.size;
+  const mine = byUser.get(myUserId) ?? null;
+
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', flexWrap: 'wrap' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Raid Signups</div>
+        {group.raidStartTime && (
+          <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)' }}>
+            {group.raidStartTime}
+            {group.raidTimezone ? ` ${group.raidTimezone}` : ''}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {dates.map((d) => {
+            const active = d === shown;
+            return (
+              <button
+                key={d}
+                onClick={() => setOpenDate(d)}
+                className={active ? undefined : 'u-chip'}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 14,
+                  font: '600 11.5px var(--font-sans)',
+                  background: active ? 'oklch(0.78 0.14 85 / 18%)' : 'oklch(1 0 0 / 4%)',
+                  color: active ? 'var(--gold)' : 'var(--text-60)',
+                  border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
+                }}
+              >
+                {signupDateLabel(d)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: '1px solid var(--border-faint)', flexWrap: 'wrap' }}>
+        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-62)' }}>Your status:</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(Object.keys(SIGNUP_META) as SignupStatus[]).map((s) => {
+            const meta = SIGNUP_META[s];
+            const active = mine === s;
+            return (
+              <button
+                key={s}
+                onClick={() => onSet(shown, active ? null : s)}
+                title={active ? 'Click again to clear your RSVP' : undefined}
+                className={active ? undefined : 'u-chip'}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 16,
+                  font: '700 12px var(--font-sans)',
+                  background: active ? meta.bg : 'oklch(1 0 0 / 4%)',
+                  color: active ? meta.color : 'var(--text-60)',
+                  border: `1px solid ${active ? `color-mix(in oklab, ${meta.color} 40%, transparent)` : 'var(--border)'}`,
+                }}
+              >
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginLeft: 'auto' }}>
+          {counts.in} in · {counts.late} late · {counts.out} out · {noReply} no reply
+        </div>
+      </div>
+
+      <div style={{ padding: '10px 20px 14px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {group.members.map((m) => {
+          const status = byUser.get(m.userId);
+          const meta = status ? SIGNUP_META[status] : null;
+          return (
+            <span
+              key={m.userId}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 14,
+                font: '600 11px var(--font-sans)',
+                background: meta ? meta.bg : 'oklch(1 0 0 / 3%)',
+                color: meta ? meta.color : 'var(--text-50)',
+                border: `1px solid ${meta ? `color-mix(in oklab, ${meta.color} 30%, transparent)` : 'var(--border)'}`,
+              }}
+            >
+              {m.account ?? m.username}
+              <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', opacity: 0.85 }}>
+                {meta ? meta.label : '—'}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 // Shorten "Wing 5 — Hall of Chains" to "W5 · Hall of Chains" so the matrix
 // rows don't spend half their width on the word "Wing".
 function shortWing(wing: string): string {
@@ -517,14 +720,20 @@ const READINESS_BUCKETS: { key: string; label: string; cats: BuildCategory[]; ne
 ];
 
 function RosterReadinessCard({
-  members,
+  members: allMembers,
   roster,
   builds,
+  nextNight,
 }: {
   members: GroupDetail['members'];
   roster: RosterCharacter[];
   builds: BuildEntry[];
+  // Present when the next raid night has RSVPs — enables the
+  // "confirmed only" filter (in + late count as attending).
+  nextNight: { date: string; confirmed: Set<string> } | null;
 }) {
+  const [confirmedOnly, setConfirmedOnly] = useState(false);
+  const members = confirmedOnly && nextNight ? allMembers.filter((m) => nextNight.confirmed.has(m.userId)) : allMembers;
   const buildById = new Map(builds.map((b) => [b.id, b]));
 
   // owner (account ?? discord) → assigned (character, build) pairs across
@@ -551,6 +760,12 @@ function RosterReadinessCard({
     <Card style={{ overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', flexWrap: 'wrap' }}>
         <div style={{ font: '700 13.5px var(--font-sans)' }}>Roster Readiness</div>
+        {nextNight && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11.5px var(--font-sans)', color: 'var(--text-62)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={confirmedOnly} onChange={(e) => setConfirmedOnly(e.target.checked)} />
+            Confirmed for {signupDateLabel(nextNight.date)} only
+          </label>
+        )}
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
           {coverage.map(({ bucket, count, short }) => (
             <span
