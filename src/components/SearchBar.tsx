@@ -26,15 +26,17 @@ export function SearchBar({ width = '100%', defaultValue = '' }: { width?: numbe
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Search logs, players…"
+        className="nav-search"
         style={{
           width: '100%',
-          background: 'var(--bg-input)',
+          background: 'oklch(0.1 0.012 250 / 70%)',
           border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '9px 14px 9px 36px',
+          borderRadius: 20,
+          padding: '9px 14px 9px 38px',
           color: 'var(--text)',
           fontSize: 13,
           fontFamily: 'var(--font-sans)',
+          outline: 'none',
         }}
       />
     </form>

@@ -7,17 +7,18 @@ export function Logo() {
     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <div
         style={{
-          width: 30,
-          height: 30,
-          borderRadius: 8,
-          background: 'var(--gold-grad)',
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          background: 'linear-gradient(135deg, oklch(0.8 0.15 85), oklch(0.58 0.1 45))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 800,
           fontSize: 15,
-          color: 'var(--gold-fg)',
+          color: 'oklch(0.16 0.02 85)',
           flex: 'none',
+          boxShadow: '0 3px 12px oklch(0.7 0.14 85 / 35%), 0 0 0 1px oklch(1 0 0 / 12%) inset',
         }}
       >
         H
@@ -45,12 +46,13 @@ export function Avatar({
     <Link
       to={to}
       title={name ?? 'Sign in'}
+      className="nav-avatar"
       style={{
         width: size,
         height: size,
-        borderRadius: 8,
+        borderRadius: 10,
         background: 'var(--bg-chip)',
-        border: '1px solid var(--border)',
+        border: '1px solid oklch(0.78 0.14 85 / 30%)',
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
@@ -68,6 +70,23 @@ export function Avatar({
         (name ?? '?').charAt(0)
       )}
     </Link>
+  );
+}
+
+// Decorative art layer (spec banners, raid backgrounds). Purely visual:
+// hidden from screen readers, and if the asset file isn't shipped yet the
+// image hides itself so the element's plain background shows instead.
+export function ArtImg({ src, style }: { src: string; style?: CSSProperties }) {
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden
+      onError={(e) => {
+        e.currentTarget.style.display = 'none';
+      }}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', ...style }}
+    />
   );
 }
 
@@ -94,7 +113,7 @@ export function ParseBadge({ pct, style }: { pct: number; style?: CSSProperties 
         font: '800 11px var(--font-mono)',
         color: tier.color,
         background: tier.bg,
-        border: `1px solid ${tier.color}`,
+        border: `1px solid color-mix(in oklab, ${tier.color} 35%, transparent)`,
         ...style,
       }}
     >
@@ -209,7 +228,7 @@ export function ResultPill({ success }: { success: boolean }) {
         borderRadius: 5,
         background: success ? 'var(--good-dim)' : 'var(--bad-dim)',
         color: success ? 'var(--good)' : 'var(--bad)',
-        border: `1px solid ${success ? 'var(--good)' : 'var(--bad)'}`,
+        border: `1px solid color-mix(in oklab, ${success ? 'var(--good)' : 'var(--bad)'} 30%, transparent)`,
       }}
     >
       {success ? 'KILL' : 'WIPE'}

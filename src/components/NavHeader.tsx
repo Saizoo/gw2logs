@@ -33,17 +33,19 @@ export function NavHeader() {
   const tabs = [...TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
 
   return (
-    <div style={{ position: 'sticky', top: 0, zIndex: 50 }}>
+    <div style={{ position: 'sticky', top: 0, zIndex: 50, padding: '14px 20px 0' }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 24,
-          padding: '0 32px',
-          height: 64,
-          background: 'var(--bg-nav)',
+          gap: 20,
+          padding: '0 22px',
+          height: 60,
+          borderRadius: 18,
+          background: 'linear-gradient(180deg, oklch(0.2 0.017 250 / 97%), oklch(0.15 0.014 250 / 97%))',
           backdropFilter: 'blur(16px) saturate(140%)',
-          borderBottom: '1px solid var(--border)',
+          border: '1px solid oklch(1 0 0 / 9%)',
+          boxShadow: '0 1px 0 oklch(1 0 0 / 8%) inset, 0 20px 44px -20px rgba(0,0,0,.65)',
         }}
       >
         <Logo />
@@ -77,14 +79,14 @@ export function NavHeader() {
           )}
         </button>
 
-        <div className="nav-collapsible" style={{ display: 'flex', alignItems: 'center', gap: 24, flex: 1, minWidth: 0 }}>
+        <div className="nav-collapsible" style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1, minWidth: 0 }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-soft)',
+              gap: 3,
+              background: 'oklch(0.12 0.014 250 / 65%)',
+              border: '1px solid oklch(1 0 0 / 7%)',
               borderRadius: 12,
               padding: 4,
               overflowX: 'auto',
@@ -108,6 +110,7 @@ export function NavHeader() {
                     whiteSpace: 'nowrap',
                     background: active ? 'var(--gold-grad)' : 'transparent',
                     color: active ? 'var(--gold-fg)' : 'var(--text-65)',
+                    boxShadow: active ? '0 4px 16px oklch(0.7 0.14 85 / 30%)' : undefined,
                   }}
                 >
                   {tab.label}
@@ -130,14 +133,21 @@ export function NavHeader() {
             className="u-btn-gold"
             style={{
               flex: 'none',
-              padding: '9px 16px',
-              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '9px 16px 9px 13px',
+              borderRadius: 20,
               font: '700 12.5px var(--font-sans)',
               whiteSpace: 'nowrap',
               background: 'var(--gold-grad)',
               color: 'var(--gold-fg)',
+              boxShadow: '0 4px 16px oklch(0.7 0.14 85 / 32%)',
             }}
           >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 4v16M4 12h16" stroke="oklch(0.15 0.02 85)" strokeWidth="2.6" strokeLinecap="round" />
+            </svg>
             Upload
           </Link>
           {user && (
@@ -156,15 +166,17 @@ export function NavHeader() {
         <div
           style={{
             position: 'absolute',
-            top: 64,
-            left: 0,
-            right: 0,
+            top: 78,
+            left: 20,
+            right: 20,
             padding: 16,
-            background: 'var(--bg-nav)',
+            borderRadius: 16,
+            background: 'oklch(0.16 0.014 250 / 99%)',
             backdropFilter: 'blur(16px) saturate(140%)',
-            borderBottom: '1px solid var(--border)',
-            boxShadow: '0 16px 32px rgba(0,0,0,.4)',
+            border: '1px solid oklch(1 0 0 / 9%)',
+            boxShadow: '0 20px 44px rgba(0,0,0,.5)',
             animation: 'fadeIn 0.18s ease both',
+            zIndex: 60,
           }}
         >
           <div style={{ marginBottom: 14 }}>
@@ -188,6 +200,7 @@ export function NavHeader() {
                     font: '600 13px var(--font-sans)',
                     background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
                     color: active ? 'var(--gold-fg)' : 'var(--text-70)',
+                    boxShadow: active ? '0 4px 16px oklch(0.7 0.14 85 / 30%)' : undefined,
                   }}
                 >
                   {tab.label}

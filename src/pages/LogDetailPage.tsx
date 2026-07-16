@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
-import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
+import { bossBgPath, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
 import { api, ApiError, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
@@ -62,11 +62,22 @@ export default function LogDetailPage() {
           overflow: 'hidden',
           padding: '36px 32px',
           marginBottom: 22,
-          background:
-            'radial-gradient(700px 300px at 15% 0%, oklch(0.4 0.1 55 / 25%), transparent), linear-gradient(135deg, oklch(0.2 0.02 260), oklch(0.13 0.015 250))',
+          borderRadius: 20,
+          border: '1px solid oklch(1 0 0 / 10%)',
+          boxShadow: '0 24px 60px -24px rgba(0,0,0,.65)',
+          background: 'linear-gradient(135deg, oklch(0.22 0.024 260), oklch(0.13 0.015 250))',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+        {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.55 }} />}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(100deg, oklch(0.13 0.015 250 / 92%) 0%, oklch(0.13 0.015 250 / 55%) 45%, oklch(0.13 0.015 250 / 35%) 100%), radial-gradient(700px 300px at 15% 0%, oklch(0.4 0.1 55 / 25%), transparent)',
+          }}
+        />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               {log.wing && (
@@ -93,7 +104,7 @@ export default function LogDetailPage() {
             <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-60)' }}>squad dps</div>
           </div>
         </div>
-        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ position: 'relative', marginTop: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
             {log.uploadedBy ? (
               <>
@@ -205,6 +216,13 @@ function DpsOverTimeChart({ points, durationLabel }: { points: DpsChartPoint[]; 
             <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.35" />
             <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
           </linearGradient>
+          <filter id="dpsGlow">
+            <feGaussianBlur stdDeviation="3.2" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
         <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
           <line x1="0" y1="20" x2="720" y2="20" />
@@ -213,7 +231,7 @@ function DpsOverTimeChart({ points, durationLabel }: { points: DpsChartPoint[]; 
           <line x1="0" y1="158" x2="720" y2="158" />
         </g>
         <path d={areaPath} fill="url(#dpsFill)" />
-        <path d={linePath} fill="none" stroke="var(--gold)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path d={linePath} fill="none" stroke="var(--gold)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter="url(#dpsGlow)" />
       </svg>
     </Card>
   );
@@ -245,6 +263,8 @@ function SquadTab({ log }: { log: LogDetail }) {
               const candidate = { logId: log.id, account: p.account, label: p.name };
               return (
                 <div key={p.account} className="u-row" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
+                  <ArtImg src={specBgPath(p.profession, p.spec)} style={{ opacity: 0.32 }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 88%) 0%, oklch(0.13 0.014 250 / 55%) 55%, oklch(0.13 0.014 250 / 88%) 100%)' }} />
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                   <div style={{ position: 'relative', flex: 'none' }}>
                     <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />

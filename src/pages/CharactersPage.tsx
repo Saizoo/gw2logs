@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { api, ApiError, type CharacterData } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
-import { Card, GoldButton, ProfDot } from '../components/atoms';
+import { Card, GoldButton } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
+
+type FilterTab = 'all' | 'assigned';
 
 export default function CharactersPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -16,6 +18,7 @@ export default function CharactersPage() {
   const { data: characters, loading, error } = useApiQuery(() => api.myCharacters(), [reloadNonce]);
   const { data: buildsRaw } = useApiQuery(() => api.builds(), []);
   const builds = useMemo(() => (buildsRaw ?? []).map(toBuildEntry), [buildsRaw]);
+  const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
@@ -23,6 +26,12 @@ export default function CharactersPage() {
   const [newName, setNewName] = useState('');
   const [newProf, setNewProf] = useState<string>(PROF_ORDER.map((k) => PROF[k].name)[0]);
   const [addError, setAddError] = useState<string | null>(null);
+
+  const visible = useMemo(() => {
+    if (!characters) return characters;
+    if (filterTab === 'all') return characters;
+    return characters.filter((c) => c.templates.some((t) => t.assignedBuildId));
+  }, [characters, filterTab]);
 
   if (userLoading) return <LoadingState label="Loading…" />;
   if (!user) return <Navigate to="/login" replace />;
@@ -68,32 +77,91 @@ export default function CharactersPage() {
     }
   }
 
+  const linked = Boolean(user.gw2AccountName);
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>My Characters</div>
-          <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', maxWidth: 560, lineHeight: 1.5 }}>
-            Connect your GW2 account to import your characters and build tabs, or add them manually. Assign each
-            build tab to a catalog build so group leaders can pull you into the Raid Planner.
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <GoldButton onClick={handleSync}>{syncing ? 'Syncing…' : 'Sync from GW2'}</GoldButton>
-          <button onClick={() => setAdding((a) => !a)} className="u-btn-ghost" style={ghostBtnStyle}>
-            Add manually
-          </button>
-        </div>
+      {/* Underline tab strip (design: All Characters / Assigned) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+        {(
+          [
+            { key: 'all', label: 'All Characters' },
+            { key: 'assigned', label: 'Assigned' },
+          ] as { key: FilterTab; label: string }[]
+        ).map((t) => {
+          const active = filterTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setFilterTab(t.key)}
+              style={{
+                padding: '12px 2px',
+                marginBottom: -1,
+                font: '700 13.5px var(--font-sans)',
+                borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
+                color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+                borderRadius: 0,
+                transition: 'color .15s ease, border-color .15s ease',
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {!user.gw2AccountName && (
-        <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-80)' }}>
-            Link your GW2 API key from the Account page before syncing — it needs the "characters" and "builds"
-            permissions.
+      {/* Status + action pills */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        {linked ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              font: '700 12.5px var(--font-sans)',
+              padding: '9px 16px',
+              borderRadius: 20,
+              background: 'oklch(0.95 0.01 90)',
+              color: 'oklch(0.15 0.02 250)',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 2l7 4v6c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-4z" stroke="oklch(0.15 0.02 250)" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+            API Key Connected
           </div>
-        </Card>
-      )}
+        ) : (
+          <Link
+            to="/account"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              font: '700 12.5px var(--font-sans)',
+              padding: '9px 16px',
+              borderRadius: 20,
+              background: 'var(--bad-dim)',
+              color: 'var(--bad)',
+              border: '1px solid color-mix(in oklab, var(--bad) 30%, transparent)',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 2l7 4v6c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+            API Key Not Linked — link it →
+          </Link>
+        )}
+        <button className="u-btn-ghost" onClick={handleSync} disabled={syncing} style={pillBtnStyle}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M4 4v5h5M20 20v-5h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {syncing ? 'Syncing…' : 'Sync Characters'}
+        </button>
+        <button className="u-btn-ghost" onClick={() => setAdding((a) => !a)} style={pillBtnStyle}>
+          + Add Manually
+        </button>
+      </div>
+
       {syncError && <div style={{ marginBottom: 16, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{syncError}</div>}
       {syncResult && <div style={{ marginBottom: 16, font: '500 12px var(--font-sans)', color: 'var(--good)' }}>{syncResult}</div>}
 
@@ -114,20 +182,24 @@ export default function CharactersPage() {
 
       {loading && <LoadingState label="Loading characters…" />}
       {error && <ErrorState message={error} />}
-      {!loading && !error && characters?.length === 0 && (
-        <EmptyState>No characters yet — sync from GW2 or add one manually.</EmptyState>
+      {!loading && !error && visible?.length === 0 && (
+        <EmptyState>
+          {filterTab === 'assigned'
+            ? 'No characters with an assigned build yet — pick a build tab and hit “+ Assign”.'
+            : 'No characters yet — sync from GW2 or add one manually.'}
+        </EmptyState>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {characters?.map((c) => (
-          <CharacterCard key={c.id} character={c} builds={builds} onChanged={refetch} onDelete={() => handleDelete(c.name, c.id)} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {visible?.map((c) => (
+          <CharacterRow key={c.id} character={c} builds={builds} onChanged={refetch} onDelete={() => handleDelete(c.name, c.id)} />
         ))}
       </div>
     </div>
   );
 }
 
-function CharacterCard({
+function CharacterRow({
   character,
   builds,
   onChanged,
@@ -138,100 +210,237 @@ function CharacterCard({
   onChanged: () => void;
   onDelete: () => void;
 }) {
-  const profKey = PROF_BY_API[character.profession];
   const color = professionColor(character.profession);
+  const profKey = PROF_BY_API[character.profession];
+  const templates = character.templates;
+  const activeTemplate = templates.find((t) => t.isActive) ?? templates[0];
+  const [selectedTab, setSelectedTab] = useState<number | null>(activeTemplate?.tab ?? null);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const selected = templates.find((t) => t.tab === selectedTab) ?? activeTemplate;
+  const spec = selected?.spec && selected.spec !== character.profession ? selected.spec : null;
+  const assigned = selected?.assignedBuildId ? builds.find((b) => b.id === selected.assignedBuildId) : undefined;
+  const options = profKey ? builds.filter((b) => b.p === profKey) : [];
+
+  async function handleAssign(buildId: string | null) {
+    if (!selected) return;
+    try {
+      await api.assignCharacterBuild(character.id, selected.tab, buildId);
+      setAssignOpen(false);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update assignment');
+    }
+  }
 
   return (
-    <Card style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: '1px solid var(--border-soft)' }}>
-        <img src={professionIconPath(character.profession)} alt={character.profession} style={{ width: 32, height: 32, objectFit: 'contain', flex: 'none' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ font: '700 14px var(--font-sans)' }}>{character.name}</div>
-            <span
+    <div
+      className="u-card-link"
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '14px 20px',
+        borderRadius: 14,
+        border: '1px solid oklch(1 0 0 / 7%)',
+        boxShadow: '0 10px 26px -18px rgba(0,0,0,.6)',
+      }}
+    >
+      {/* Profession-color wash */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden' }} aria-hidden>
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, oklch(0.15 0.014 250) 55%)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 78%)' }} />
+      </div>
+
+      {/* Glowing profession/spec emblem */}
+      <div
+        style={{
+          position: 'relative',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          flex: 'none',
+          border: `2px solid ${color}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'oklch(0.13 0.01 250 / 80%)',
+          boxShadow: `0 0 10px ${color}`,
+        }}
+      >
+        <img src={professionIconPath(character.profession, spec)} alt={character.profession} style={{ width: 22, height: 22, objectFit: 'contain' }} />
+      </div>
+
+      {/* Identity */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none', maxWidth: 420, overflow: 'hidden' }}>
+        <div style={{ font: '700 14px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={character.name}>
+          {character.name}
+        </div>
+        <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-60)', whiteSpace: 'nowrap', flex: 'none' }}>
+          {character.source === 'gw2' ? `Level 80${character.race ? ` ${character.race}` : ''}` : character.race || 'Manual'}
+        </div>
+        {spec && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, font: '700 11px var(--font-sans)', color, whiteSpace: 'nowrap', flex: 'none' }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill={color} aria-hidden>
+              <path d="M13 2L4 14h6l-1 8 9-12h-6z" />
+            </svg>
+            {spec}
+          </div>
+        )}
+      </div>
+
+      {/* Build-tab chips */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, overflowX: 'auto' }}>
+        <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.5px', color: 'var(--text-55)', flex: 'none' }}>BUILDS</div>
+        {templates.map((t) => {
+          const isSelected = t.tab === selected?.tab;
+          return (
+            <button
+              key={t.tab}
+              onClick={() => {
+                setSelectedTab(t.tab);
+                setAssignOpen(false);
+              }}
+              title={`${t.name ?? `Build ${t.tab}`}${t.spec ? ` — ${t.spec}` : ''}${t.isActive ? ' (active in game)' : ''}`}
+              className={isSelected ? undefined : 'u-chip'}
               style={{
-                font: '700 9.5px var(--font-sans)',
-                letterSpacing: '.4px',
-                textTransform: 'uppercase',
-                padding: '2px 7px',
-                borderRadius: 5,
-                background: character.source === 'gw2' ? 'var(--gold-dim)' : 'var(--bg-chip)',
-                color: character.source === 'gw2' ? 'var(--gold)' : 'var(--text-70)',
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                font: '700 11px var(--font-sans)',
+                flex: 'none',
+                ...(isSelected
+                  ? { background: 'oklch(0.95 0.01 90)', color: 'oklch(0.13 0.01 250)', boxShadow: '0 0 0 1px oklch(1 0 0 / 30%)' }
+                  : { background: 'oklch(1 0 0 / 6%)', color: 'var(--text-65)', border: '1px solid oklch(1 0 0 / 10%)' }),
               }}
             >
-              {character.source === 'gw2' ? 'GW2 Synced' : 'Manual'}
-            </span>
-          </div>
-          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <ProfDot color={color} size={6} /> {character.profession}
-            {character.race ? ` · ${character.race}` : ''}
-          </div>
-        </div>
+              {t.tab}
+            </button>
+          );
+        })}
+        {templates.length === 0 && <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-50)' }}>No build tabs</div>}
+      </div>
+
+      {/* Assignment area for the selected tab */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
+        {assignOpen && selected ? (
+          <>
+            <select
+              autoFocus
+              value={selected.assignedBuildId ?? ''}
+              onChange={(e) => handleAssign(e.target.value || null)}
+              style={{ ...selectStyle, minWidth: 240 }}
+            >
+              <option value="">— assign a build to tab {selected.tab} —</option>
+              {options.map((b) => (
+                <option key={b.id} value={b.id}>
+                  [{CAT[b.cat].label}] {b.name} — {b.weapons}
+                </option>
+              ))}
+            </select>
+            <button onClick={() => setAssignOpen(false)} title="Cancel" style={{ font: '600 13px var(--font-sans)', color: 'var(--text-55)', padding: '0 2px' }}>
+              ×
+            </button>
+          </>
+        ) : assigned && selected ? (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 14px',
+                borderRadius: 10,
+                background: 'oklch(1 0 0 / 6%)',
+                border: '1px solid oklch(1 0 0 / 9%)',
+              }}
+            >
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 6,
+                  background: color,
+                  color: 'oklch(0.13 0.01 250)',
+                  font: '800 11px var(--font-sans)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 'none',
+                }}
+              >
+                {selected.tab}
+              </div>
+              <div>
+                <div style={{ font: '700 12.5px var(--font-sans)', whiteSpace: 'nowrap' }}>{assigned.name}</div>
+                <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-58)', whiteSpace: 'nowrap' }}>
+                  {CAT[assigned.cat].label} · {assigned.weapons} ·{' '}
+                  <a href={assigned.url} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)', fontWeight: 600 }}>
+                    Guide ↗
+                  </a>
+                </div>
+              </div>
+              <button onClick={() => handleAssign(null)} title={`Clear assignment for tab ${selected.tab}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text-55)', padding: '0 2px' }}>
+                ×
+              </button>
+            </div>
+            <button className="u-chip" onClick={() => setAssignOpen(true)} style={assignBtnStyle}>
+              Change
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-50)', whiteSpace: 'nowrap' }}>No build assigned</div>
+            {selected && (
+              <button className="u-chip" onClick={() => setAssignOpen(true)} style={assignBtnStyle}>
+                + Assign
+              </button>
+            )}
+          </>
+        )}
         {character.source === 'manual' && (
-          <button onClick={onDelete} className="u-btn-ghost" style={{ ...ghostBtnStyle, color: 'var(--bad)' }}>
+          <button
+            onClick={onDelete}
+            title={`Delete ${character.name}`}
+            className="u-btn-ghost"
+            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--bad)', padding: '8px 12px', borderRadius: 20, border: '1px solid oklch(1 0 0 / 10%)', whiteSpace: 'nowrap' }}
+          >
             Delete
           </button>
         )}
       </div>
-      {character.templates.map((t) => (
-        <TemplateRow key={t.id} character={character} template={t} profKey={profKey} builds={builds} onChanged={onChanged} />
-      ))}
-    </Card>
-  );
-}
-
-function TemplateRow({
-  character,
-  template,
-  profKey,
-  builds,
-  onChanged,
-}: {
-  character: CharacterData;
-  template: CharacterData['templates'][number];
-  profKey: string | undefined;
-  builds: BuildEntry[];
-  onChanged: () => void;
-}) {
-  const options = profKey ? builds.filter((b) => b.p === profKey) : [];
-  const assigned = template.assignedBuildId ? builds.find((b) => b.id === template.assignedBuildId) : undefined;
-
-  async function handleAssign(buildId: string) {
-    await api.assignCharacterBuild(character.id, template.tab, buildId || null);
-    onChanged();
-  }
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: '1px solid var(--border-faint)' }}>
-      <div style={{ width: 70, flex: 'none' }}>
-        <div style={{ font: '700 10px var(--font-sans)', color: 'var(--text-50)', textTransform: 'uppercase' }}>Tab {template.tab}</div>
-        {template.isActive && <div style={{ font: '600 9.5px var(--font-sans)', color: 'var(--gold)' }}>Active</div>}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ font: '600 12.5px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {template.name ?? `Build ${template.tab}`}
-        </div>
-        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{template.spec ?? 'Core'}</div>
-      </div>
-      <select value={template.assignedBuildId ?? ''} onChange={(e) => handleAssign(e.target.value)} style={{ ...selectStyle, minWidth: 220 }}>
-        <option value="">— assign a build —</option>
-        {options.map((b) => (
-          <option key={b.id} value={b.id}>
-            [{CAT[b.cat].label}] {b.name} — {b.weapons}
-          </option>
-        ))}
-      </select>
-      {assigned && (
-        <a href={assigned.url} target="_blank" rel="noreferrer" style={{ font: '600 11px var(--font-sans)', color: 'var(--gold)', flex: 'none' }}>
-          Guide →
-        </a>
-      )}
     </div>
   );
 }
 
+const pillBtnStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 7,
+  font: '600 12.5px var(--font-sans)',
+  padding: '9px 16px',
+  borderRadius: 20,
+  background: 'oklch(1 0 0 / 6%)',
+  color: 'var(--text-85)',
+  border: '1px solid oklch(1 0 0 / 9%)',
+} as const;
+
+const assignBtnStyle = {
+  font: '700 12px var(--font-sans)',
+  padding: '9px 16px',
+  borderRadius: 20,
+  background: 'oklch(1 0 0 / 8%)',
+  color: 'var(--text-92)',
+  border: '1px solid oklch(1 0 0 / 10%)',
+  whiteSpace: 'nowrap',
+} as const;
+
 const selectStyle = {
-  background: 'var(--bg-card)',
+  background: 'var(--bg-input)',
   border: '1px solid var(--border)',
   color: 'var(--text-92)',
   fontSize: 12.5,
@@ -249,13 +458,4 @@ const inputStyle = {
   padding: '8px 12px',
   borderRadius: 8,
   fontFamily: 'var(--font-sans)',
-} as const;
-
-const ghostBtnStyle = {
-  font: '600 12px var(--font-sans)',
-  padding: '9px 14px',
-  borderRadius: 10,
-  background: 'var(--bg-chip)',
-  color: 'var(--text-80)',
-  border: '1px solid var(--border)',
 } as const;

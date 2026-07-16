@@ -293,6 +293,26 @@ p {
   color: var(--text-85);
 }
 
+/* Floating-pill nav search: rounded field whose border warms to gold on
+   focus (the focus treatment from the GW2 Stats Platform design). */
+.nav-search {
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.nav-search:focus {
+  border-color: oklch(0.78 0.14 85 / 50%);
+  background: oklch(0.1 0.012 250 / 90%);
+}
+
+/* Account avatar in the nav: gold halo ring that grows on hover. */
+.nav-avatar {
+  box-shadow: 0 0 0 3px oklch(0.78 0.14 85 / 8%);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.nav-avatar:hover {
+  box-shadow: 0 0 0 4px oklch(0.78 0.14 85 / 16%);
+  transform: translateY(-1px);
+}
+
 /* Loading skeletons (see QueryStates.tsx). */
 .u-skeleton {
   border-radius: 8px;

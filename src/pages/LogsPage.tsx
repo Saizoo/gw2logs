@@ -67,9 +67,9 @@ export default function LogsPage() {
                 padding: '7px 14px',
                 borderRadius: 20,
                 font: '600 12px var(--font-sans)',
-                background: active ? 'var(--gold-dim)' : 'var(--bg-chip)',
+                background: active ? 'oklch(0.78 0.14 85 / 18%)' : 'oklch(1 0 0 / 5%)',
                 color: active ? 'var(--gold)' : 'var(--text-65)',
-                border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
               }}
             >
               {f.label}

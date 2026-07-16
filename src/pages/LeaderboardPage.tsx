@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
-import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
+import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
@@ -130,14 +130,21 @@ export default function LeaderboardPage() {
                 className="u-row"
                 style={{
                   position: 'relative',
+                  // New stacking context so the art layers can sit at
+                  // z-index -1: behind every grid cell (positioned or not)
+                  // but still in front of the card behind the row.
+                  isolation: 'isolate',
                   display: 'grid',
                   gridTemplateColumns: '24px 32px 2fr 1fr 1fr 0.7fr 1fr',
                   gap: 8,
                   alignItems: 'center',
                   padding: '12px 20px',
                   borderBottom: i === leaderboard.length - 1 ? 'none' : '1px solid var(--border-faint)',
+                  overflow: 'hidden',
                 }}
               >
+                <ArtImg src={specBgPath(row.profession, row.spec)} style={{ opacity: 0.22, zIndex: -1 }} />
+                <div style={{ position: 'absolute', inset: 0, zIndex: -1, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 90%) 0%, oklch(0.13 0.014 250 / 60%) 55%, oklch(0.13 0.014 250 / 90%) 100%)' }} />
                 <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.name} />
                 <div style={{ font: '800 15px var(--font-sans)', color: i < 3 ? RANK_COLORS[i] : 'var(--text-55)' }}>#{row.rank}</div>
                 <Link to={`/players/${encodeURIComponent(row.account)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>

@@ -50,6 +50,69 @@ export function professionIconPath(profession: string, spec?: string | null): st
   return `/professions/${key.toLowerCase()}.png`;
 }
 
+// Specialization banner art (the faded backdrop behind player rows, from
+// the GW2 Stats Platform design). Elite specs use their own art; a core
+// build falls back to the profession's core art. Files live in
+// /public/assets/specializations (+ /core) — rows that reference a file
+// that isn't shipped yet hide the <img> via onError, leaving the plain
+// row background, so a missing asset degrades invisibly.
+export function specBgPath(profession: string, spec?: string | null): string {
+  const isElite = Boolean(spec && spec.trim() && spec !== profession);
+  return isElite
+    ? `/assets/specializations/${spec!.toLowerCase().replace(/\s+/g, '')}.png`
+    : `/assets/specializations/core/${profession.toLowerCase()}.png`;
+}
+
+// Encounter background art keyed by fightName (Fight Report hero + log
+// thumbnails). Only bosses with a known wing/strike/fractal map entry get
+// art; anything unmapped returns null and the caller keeps its plain
+// gradient — exactly the fallback the design handoff specifies.
+const BOSS_BG: Record<string, string> = {
+  // Raids by wing
+  'Vale Guardian': 'spiritvale.png',
+  'Gorseval the Multifarious': 'spiritvale.png',
+  'Sabetha the Saboteur': 'spiritvale.png',
+  Slothasor: 'salvationpass.png',
+  'Matthias Gabrel': 'salvationpass.png',
+  'Keep Construct': 'strongholdofthefaithful.png',
+  Xera: 'strongholdofthefaithful.png',
+  'Cairn the Indomitable': 'bastionofthepenitent.png',
+  'Mursaat Overseer': 'bastionofthepenitent.png',
+  Samarog: 'bastionofthepenitent.png',
+  Deimos: 'bastionofthepenitent.png',
+  'Soulless Horror': 'hallofchains.png',
+  Dhuum: 'hallofchains.png',
+  'Conjured Amalgamate': 'mythwrightgambit.png',
+  'Twin Largos': 'mythwrightgambit.png',
+  Qadim: 'mythwrightgambit.png',
+  'Cardinal Adina': 'thekeyofahdashim.png',
+  'Cardinal Sabir': 'thekeyofahdashim.png',
+  'Qadim the Peerless': 'thekeyofahdashim.png',
+  'Greer the Blightbringer': 'mountbalrior.png',
+  'Decima the Stormsinger': 'mountbalrior.png',
+  'Ura the Steamshrieker': 'mountbalrior.png',
+  'Kela Seneschal of Waves': 'guardiansglade.png',
+  // Former strikes (now raids in-game; still raid-category here)
+  'Legendary Icebrood Construct': 'shiverpeakspass.png',
+  'The Voice and the Claw': 'voiceofthefallenandclawofthefallen.png',
+  'Fraenir of Jormag': 'fraenirofjormag.png',
+  Boneskinner: 'boneskinner.png',
+  'Whisper of Jormag': 'whisperofjormag.png',
+  'Ancient Forgeman': 'forgingsteel.png',
+  'Minister of Morale': 'coldwar.png',
+  'Mai Trin': 'aetherbladehideout.png',
+  Ankka: 'xunlaijadejunkyard.png',
+  'Minister Li': 'kainengoverlook.png',
+  'The Dragonvoid': 'harvesttemple.png',
+  Dagda: 'cosmicobservatory.png',
+  Cerus: 'templeoffebe.png',
+};
+
+export function bossBgPath(fightName: string): string | null {
+  const file = BOSS_BG[fightName];
+  return file ? `/assets/raid_backgrounds/${file}` : null;
+}
+
 export interface Boss {
   name: string;
   wing: string;

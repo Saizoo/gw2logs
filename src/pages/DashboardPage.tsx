@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, GoldButton, ParseLegend, ProfDot, ResultPill, StatCard } from '../components/atoms';
+import { bossBgPath, professionColor, professionIconPath } from '../data/gw2-data';
+import { ArtImg, Card, GoldButton, ParseLegend, ProfDot, ResultPill, StatCard } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
 function formatDuration(ms: number): string {
@@ -229,17 +229,20 @@ function SignedInDashboard() {
             >
               <div
                 style={{
+                  position: 'relative',
                   width: 44,
                   height: 44,
                   borderRadius: 10,
                   flex: 'none',
+                  overflow: 'hidden',
                   background: `linear-gradient(135deg, ${professionColor(log.profession)}, oklch(0.16 0.01 250))`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <img src={professionIconPath(log.profession)} alt={log.profession} style={{ width: 28, height: 28, objectFit: 'contain' }} />
+                {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.6 }} />}
+                <img src={professionIconPath(log.profession)} alt={log.profession} style={{ position: 'relative', width: 28, height: 28, objectFit: 'contain' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
