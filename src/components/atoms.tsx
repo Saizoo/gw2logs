@@ -53,9 +53,9 @@ export function Logo() {
       >
         H
       </div>
-      <div style={{ font: '700 15px var(--font-sans)', letterSpacing: '.2px' }}>
+      <div style={{ font: '700 15px var(--font-sans)', letterSpacing: '.2px', whiteSpace: 'nowrap' }}>
         Hero<span style={{ color: 'var(--gold)' }}>Panel</span>
-        <span style={{ color: 'var(--text-55)', fontWeight: 500 }}> GW2</span>
+        <span className="nav-logo-sub" style={{ color: 'var(--text-55)', fontWeight: 500 }}> GW2</span>
       </div>
     </Link>
   );

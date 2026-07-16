@@ -156,6 +156,16 @@ p {
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
+  /* Tighten the floating nav pill so the avatar isn't clipped: smaller
+     paddings/gaps, and the logo's "GW2" suffix goes — the wordmark alone
+     identifies the site. */
+  .nav-bar-inner {
+    padding: 0 14px !important;
+    gap: 10px !important;
+  }
+  .nav-logo-sub {
+    display: none !important;
+  }
 }
 
 ::selection {

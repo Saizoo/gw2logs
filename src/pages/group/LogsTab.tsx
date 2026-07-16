@@ -34,6 +34,9 @@ export default function LogsTab({ groupId, groupName }: { groupId: string; group
       )}
         {groupLogs && groupLogs.length > 0 && (
           <Card style={{ overflow: 'hidden' }}>
+            {/* Wide row grid scrolls inside the card on phones. */}
+            <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 600 }}>
             <div
               style={{
                 display: 'grid',
@@ -81,6 +84,8 @@ export default function LogsTab({ groupId, groupName }: { groupId: string; group
                 <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-55)' }}>{new Date(log.date).toLocaleDateString()}</div>
               </Link>
             ))}
+            </div>
+            </div>
           </Card>
         )}
         {logsHasMore && <LoadMoreButton onClick={loadMoreLogs} loading={logsLoadingMore} />}

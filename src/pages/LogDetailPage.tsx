@@ -252,7 +252,9 @@ function SquadTab({ log }: { log: LogDetail }) {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(subgroups.length, 2) || 1}, 1fr)`, gap: 20 }}>
+      {/* auto-fit + 300px floor: two columns on desktop, stacked on phones —
+          squad rows overlap their DPS numbers when squeezed below ~300px. */}
+      <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 20 }}>
         {subgroups.map(([sub, players]) => (
           <Card key={sub} style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid var(--border-soft)' }}>

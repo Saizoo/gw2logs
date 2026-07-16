@@ -40,6 +40,9 @@ export default function BenchmarksPage() {
           </Card>
 
           <Card style={{ overflow: 'hidden' }}>
+            {/* Wide row grid scrolls inside the card on phones. */}
+            <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 660 }}>
             <div
               style={{
                 display: 'grid',
@@ -125,6 +128,8 @@ export default function BenchmarksPage() {
                 </div>
               );
             })}
+            </div>
+            </div>
           </Card>
         </>
       )}

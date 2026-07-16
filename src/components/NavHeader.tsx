@@ -43,6 +43,7 @@ export function NavHeader() {
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 50, padding: '14px 20px 0' }}>
       <div
+        className="nav-bar-inner"
         style={{
           display: 'flex',
           alignItems: 'center',

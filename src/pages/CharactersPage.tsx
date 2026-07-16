@@ -240,6 +240,10 @@ function CharacterRow({
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
+        // Wrapping keeps the row usable on phones: identity stays on the
+        // first line, build chips and the assignment area flow below it
+        // instead of getting clipped off the card's right edge.
+        flexWrap: 'wrap',
         gap: 16,
         padding: '14px 20px',
         borderRadius: 14,
@@ -326,8 +330,9 @@ function CharacterRow({
         {templates.length === 0 && <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-50)' }}>No build tabs</div>}
       </div>
 
-      {/* Assignment area for the selected tab */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
+      {/* Assignment area for the selected tab. flexWrap + maxWidth 100% let
+          it drop to its own line and shrink on phones. */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none', flexWrap: 'wrap', maxWidth: '100%' }}>
         {assignOpen && selected ? (
           <>
             <select

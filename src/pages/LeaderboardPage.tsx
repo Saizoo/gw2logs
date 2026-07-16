@@ -103,6 +103,10 @@ export default function LeaderboardPage() {
 
       {leaderboard && leaderboard.length > 0 && (
         <Card style={{ overflow: 'hidden' }}>
+          {/* Wide row grid scrolls inside the card on phones instead of
+              overlapping name/badge/DPS columns. */}
+          <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: 680 }}>
           <div
             style={{
               display: 'grid',
@@ -168,6 +172,8 @@ export default function LeaderboardPage() {
               </div>
             );
           })}
+          </div>
+          </div>
         </Card>
       )}
       <ComparePickerBar selected={picker.selected} onClear={picker.clear} />

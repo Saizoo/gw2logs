@@ -96,6 +96,10 @@ export default function LogsPage() {
 
       {logs && logs.length > 0 && (
         <Card style={{ overflow: 'hidden' }}>
+          {/* Wide row grid scrolls inside the card on phones instead of
+              crushing every column to a letter. */}
+          <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: 640 }}>
           <div
             style={{
               display: 'grid',
@@ -145,6 +149,8 @@ export default function LogsPage() {
               <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-55)' }}>{new Date(log.date).toLocaleDateString()}</div>
             </Link>
           ))}
+          </div>
+          </div>
         </Card>
       )}
       {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
