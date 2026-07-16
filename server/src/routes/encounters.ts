@@ -2,8 +2,164 @@ import { Router } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { BOSS_WING, categorizeFight } from '../lib/bossMeta.js';
 
 export const encountersRouter = Router();
+
+// Canonical ordering for the Encounters overview, derived from BOSS_WING's
+// declaration order: wings appear in release order, bosses in wing order.
+const BOSS_ORDER = new Map(Object.keys(BOSS_WING).map((name, i) => [name, i]));
+const WING_ORDER = new Map<string, number>();
+for (const wing of Object.values(BOSS_WING)) {
+  if (!WING_ORDER.has(wing)) WING_ORDER.set(wing, WING_ORDER.size);
+}
+
+interface OverviewRecentLog {
+  id: string;
+  isCm: boolean;
+  success: boolean;
+  squadDps: number;
+  durationMs: number;
+  date: Date;
+}
+
+interface OverviewEncounter {
+  fightName: string;
+  hasCm: boolean;
+  logCount: number;
+  kills: number;
+  bestSquadDps: number;
+  fastestKillMs: number | null;
+  lastDate: Date;
+  recent: OverviewRecentLog[];
+}
+
+// Recent logs regrouped wing → boss for the Encounters page. Wing labels
+// are re-derived from fightName (not the stored `wing` column) so logs
+// ingested before a mapping fix still land in the right wing; fractal CMs
+// get their own bucket since they have no wing, and anything unmapped
+// falls into "Other".
+encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
+  const logs = await prisma.log.findMany({
+    select: {
+      id: true,
+      fightName: true,
+      isCm: true,
+      success: true,
+      durationMs: true,
+      squadDps: true,
+      encounterTime: true,
+      wing: true,
+      _count: { select: { players: true } },
+    },
+    orderBy: { encounterTime: 'desc' },
+    take: 2000,
+  });
+
+  const RECENT_PER_BOSS = 3;
+  const wings = new Map<string, Map<string, OverviewEncounter>>();
+  for (const log of logs) {
+    const wing =
+      categorizeFight(log.fightName, log._count.players) === 'fractal'
+        ? 'Fractal CMs'
+        : BOSS_WING[log.fightName] ?? log.wing ?? 'Other';
+    let bosses = wings.get(wing);
+    if (!bosses) wings.set(wing, (bosses = new Map()));
+    let enc = bosses.get(log.fightName);
+    if (!enc) {
+      bosses.set(log.fightName, (enc = {
+        fightName: log.fightName,
+        hasCm: false,
+        logCount: 0,
+        kills: 0,
+        bestSquadDps: 0,
+        fastestKillMs: null,
+        lastDate: log.encounterTime, // logs arrive newest-first
+        recent: [],
+      }));
+    }
+    enc.logCount += 1;
+    enc.hasCm ||= log.isCm;
+    if (log.success) {
+      enc.kills += 1;
+      if (enc.fastestKillMs === null || log.durationMs < enc.fastestKillMs) enc.fastestKillMs = log.durationMs;
+    }
+    if (log.squadDps > enc.bestSquadDps) enc.bestSquadDps = log.squadDps;
+    if (enc.recent.length < RECENT_PER_BOSS) {
+      enc.recent.push({
+        id: log.id,
+        isCm: log.isCm,
+        success: log.success,
+        squadDps: log.squadDps,
+        durationMs: log.durationMs,
+        date: log.encounterTime,
+      });
+    }
+  }
+
+  const wingRank = (name: string) =>
+    name === 'Fractal CMs' ? 1e6 : name === 'Other' ? 1e6 + 1 : WING_ORDER.get(name) ?? 1e5;
+  const bossRank = (name: string) => BOSS_ORDER.get(name) ?? 1e5;
+
+  res.json(
+    [...wings.entries()]
+      .sort((a, b) => wingRank(a[0]) - wingRank(b[0]))
+      .map(([wing, bosses]) => ({
+        wing,
+        encounters: [...bosses.values()].sort((a, b) => bossRank(a.fightName) - bossRank(b.fightName)),
+      })),
+  );
+}));
+
+interface BenchmarkRawRow {
+  logId: string;
+  characterName: string;
+  profession: string;
+  spec: string;
+  totalDps: number;
+  powerDps: number;
+  condiDps: number;
+  squadRole: string;
+  account: string;
+  fightName: string;
+  isCm: boolean;
+  encounterTime: Date;
+}
+
+// Best parse ever logged on each elite specialization, kills only. Core
+// builds are excluded (spec equals profession for those rows) — the
+// Benchmarks page is explicitly an elite-spec ranking.
+encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
+  const rows = await prisma.$queryRaw<BenchmarkRawRow[]>`
+    SELECT DISTINCT ON (lp.spec)
+           lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
+           lp."squadRole", p.account, l."fightName", l."isCm", l."encounterTime"
+    FROM "LogPlayer" lp
+    JOIN "Log" l ON lp."logId" = l.id
+    JOIN "Player" p ON lp."playerId" = p.id
+    WHERE l.success = true AND lp.spec <> lp.profession
+    ORDER BY lp.spec, lp."totalDps" DESC
+  `;
+
+  res.json(
+    rows
+      .sort((a, b) => b.totalDps - a.totalDps)
+      .map((r, i) => ({
+        rank: i + 1,
+        logId: r.logId,
+        name: r.characterName,
+        account: r.account,
+        profession: r.profession,
+        spec: r.spec,
+        dps: r.totalDps,
+        role: r.powerDps >= r.condiDps ? 'power' : 'condi',
+        squadRole: r.squadRole,
+        fightName: r.fightName,
+        isCm: r.isCm,
+        date: r.encounterTime,
+      })),
+  );
+}));
 
 encountersRouter.get('/', asyncHandler(async (_req, res) => {
   const bosses = await prisma.log.groupBy({

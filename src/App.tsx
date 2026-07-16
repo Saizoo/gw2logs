@@ -12,6 +12,8 @@ import LoginPage from './pages/LoginPage';
 import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import CharactersPage from './pages/CharactersPage';
+import EncountersPage from './pages/EncountersPage';
+import BenchmarksPage from './pages/BenchmarksPage';
 import MyGroupsPage from './pages/MyGroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
 import AdminPage from './pages/AdminPage';
@@ -23,7 +25,9 @@ export default function App() {
 
       <Route element={<Layout />}>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/encounters" element={<EncountersPage />} />
         <Route path="/logs" element={<LogsPage />} />
+        <Route path="/benchmarks" element={<BenchmarksPage />} />
         <Route path="/leaderboards" element={<LeaderboardPage />} />
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/players/:name" element={<PlayerProfilePage />} />

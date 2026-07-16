@@ -1,6 +1,36 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { PARSE_LEGEND, parseTier } from '../data/gw2-data';
+
+// Underline tab strip for sibling pages within a nav section (Encounters /
+// All Logs, Benchmarks / Leaderboard) — same treatment as the Characters
+// page's filter tabs, but routing links instead of local state.
+export function SubNav({ tabs }: { tabs: { label: string; to: string }[] }) {
+  const location = useLocation();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+      {tabs.map((t) => {
+        const active = location.pathname === t.to;
+        return (
+          <Link
+            key={t.to}
+            to={t.to}
+            style={{
+              padding: '12px 2px',
+              marginBottom: -1,
+              font: '700 13.5px var(--font-sans)',
+              borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
+              color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+              transition: 'color .15s ease, border-color .15s ease',
+            }}
+          >
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export function Logo() {
   return (

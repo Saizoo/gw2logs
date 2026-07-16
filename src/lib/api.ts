@@ -12,6 +12,46 @@ export interface EncounterStats {
   totalLogs: number;
 }
 
+export interface OverviewRecentLog {
+  id: string;
+  isCm: boolean;
+  success: boolean;
+  squadDps: number;
+  durationMs: number;
+  date: string;
+}
+
+export interface OverviewEncounter {
+  fightName: string;
+  hasCm: boolean;
+  logCount: number;
+  kills: number;
+  bestSquadDps: number;
+  fastestKillMs: number | null;
+  lastDate: string;
+  recent: OverviewRecentLog[];
+}
+
+export interface OverviewWing {
+  wing: string;
+  encounters: OverviewEncounter[];
+}
+
+export interface SpecBenchmark {
+  rank: number;
+  logId: string;
+  name: string;
+  account: string;
+  profession: string;
+  spec: string;
+  dps: number;
+  role: 'power' | 'condi';
+  squadRole: SquadRole;
+  fightName: string;
+  isCm: boolean;
+  date: string;
+}
+
 export interface LeaderboardRow {
   rank: number;
   pct: number;
@@ -377,6 +417,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   stats: () => apiFetch<{ totalLogs: number; totalPlayers: number }>('/stats'),
   encounters: () => apiFetch<EncounterSummary[]>('/encounters'),
+  encountersOverview: () => apiFetch<OverviewWing[]>('/encounters/overview'),
+  specBenchmarks: () => apiFetch<SpecBenchmark[]>('/encounters/benchmarks'),
   leaderboard: (fightName: string, isCm: boolean, opts: { profession?: string; role?: 'power' | 'condi' } = {}) => {
     const params = new URLSearchParams({ cm: String(isCm) });
     if (opts.profession) params.set('profession', opts.profession);

@@ -1,22 +1,47 @@
-// Wing labels for the raid bosses the design doc already named — cosmetic
-// enrichment only. Any boss Elite Insights reports that isn't in this list
-// still ingests fine with wing left null.
+// Wing / map labels keyed by fightName — cosmetic enrichment only. Any
+// boss Elite Insights reports that isn't in this list still ingests fine
+// with wing left null. Declaration order here is canonical: the Encounters
+// overview derives both wing ordering and boss-within-wing ordering from
+// the order keys appear in this map.
 export const BOSS_WING: Record<string, string> = {
+  // Raid wings
   'Vale Guardian': 'Wing 1 — Spirit Vale',
+  'Gorseval the Multifarious': 'Wing 1 — Spirit Vale',
   'Sabetha the Saboteur': 'Wing 1 — Spirit Vale',
+  Slothasor: 'Wing 2 — Salvation Pass',
   'Matthias Gabrel': 'Wing 2 — Salvation Pass',
-  Xera: 'Wing 2 — Salvation Pass',
-  'Cairn the Indomitable': 'Wing 3 — Stronghold of the Faithful',
-  Samarog: 'Wing 3 — Stronghold of the Faithful',
-  Deimos: 'Wing 3 — Stronghold of the Faithful',
-  'Soulless Horror': 'Wing 4 — Bastion of the Penitent',
-  Dhuum: 'Wing 4 — Bastion of the Penitent',
-  'Conjured Amalgamate': 'Wing 5 — Hall of Chains',
-  'Twin Largos': 'Wing 5 — Hall of Chains',
-  Qadim: 'Wing 5 — Hall of Chains',
-  'Cardinal Adina': 'Wing 6 — Mythwright Gambit',
-  'Cardinal Sabir': 'Wing 6 — Mythwright Gambit',
-  'Qadim the Peerless': 'Wing 6 — Mythwright Gambit',
+  'Keep Construct': 'Wing 3 — Stronghold of the Faithful',
+  Xera: 'Wing 3 — Stronghold of the Faithful',
+  'Cairn the Indomitable': 'Wing 4 — Bastion of the Penitent',
+  'Mursaat Overseer': 'Wing 4 — Bastion of the Penitent',
+  Samarog: 'Wing 4 — Bastion of the Penitent',
+  Deimos: 'Wing 4 — Bastion of the Penitent',
+  'Soulless Horror': 'Wing 5 — Hall of Chains',
+  Dhuum: 'Wing 5 — Hall of Chains',
+  'Conjured Amalgamate': 'Wing 6 — Mythwright Gambit',
+  'Twin Largos': 'Wing 6 — Mythwright Gambit',
+  Qadim: 'Wing 6 — Mythwright Gambit',
+  'Cardinal Adina': 'Wing 7 — The Key of Ahdashim',
+  'Cardinal Sabir': 'Wing 7 — The Key of Ahdashim',
+  'Qadim the Peerless': 'Wing 7 — The Key of Ahdashim',
+  'Greer the Blightbringer': 'Wing 8 — Mount Balrior',
+  'Decima the Stormsinger': 'Wing 8 — Mount Balrior',
+  'Ura the Steamshrieker': 'Wing 8 — Mount Balrior',
+  'Kela Seneschal of Waves': "Guardian's Glade",
+  // Former strikes, folded into raids in-game — grouped by their map
+  'Legendary Icebrood Construct': 'Shiverpeaks Pass',
+  'The Voice and the Claw': 'Voice of the Fallen and Claw of the Fallen',
+  'Fraenir of Jormag': 'Fraenir of Jormag',
+  Boneskinner: 'Boneskinner',
+  'Whisper of Jormag': 'Whisper of Jormag',
+  'Ancient Forgeman': 'Forging Steel',
+  'Minister of Morale': 'Cold War',
+  'Mai Trin': 'Aetherblade Hideout',
+  Ankka: 'Xunlai Jade Junkyard',
+  'Minister Li': 'Kaineng Overlook',
+  'The Dragonvoid': 'Harvest Temple',
+  Dagda: 'Cosmic Observatory',
+  Cerus: 'Temple of Febe',
 };
 
 // Named, verified boss lists (user-supplied) for the Logs page category

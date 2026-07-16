@@ -4,7 +4,8 @@ import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
 import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
-import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge } from '../components/atoms';
+import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge, SubNav } from '../components/atoms';
+import { BENCH_SUBNAV } from './BenchmarksPage';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
@@ -60,7 +61,7 @@ export default function LeaderboardPage() {
   return (
     <div>
       <PageHeader
-        title="Leaderboards"
+        title="Leaderboard"
         subtitle="Top squad-verified DPS across the guild, ranked by encounter and role"
         actions={
           <>
@@ -86,6 +87,7 @@ export default function LeaderboardPage() {
           </>
         }
       />
+      <SubNav tabs={BENCH_SUBNAV} />
 
       {encountersLoading && <LoadingState label="Loading encounters…" />}
       {!encountersLoading && encounters?.length === 0 && (

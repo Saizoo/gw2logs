@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { api, type LogListItem } from '../lib/api';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Card, LoadMoreButton, PageHeader, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
+import { Card, LoadMoreButton, PageHeader, ParseBadge, ParseLegend, ResultPill, SubNav } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
+import { LOGS_SUBNAV } from './EncountersPage';
 
 type Filter = 'all' | 'raid' | 'fractal' | 'kills' | 'mine';
 
@@ -53,7 +54,8 @@ export default function LogsPage() {
 
   return (
     <div>
-      <PageHeader title="Logs" subtitle="All uploaded reports across raids and fractal challenge modes" />
+      <PageHeader title="All Logs" subtitle="Every uploaded report across raids and fractal challenge modes" />
+      <SubNav tabs={LOGS_SUBNAV} />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         {filters.map((f) => {

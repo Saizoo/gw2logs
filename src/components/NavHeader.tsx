@@ -9,14 +9,22 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 // the "Open Raid Planner" button on that group's page instead of a global
 // tab. The /planner route itself still works standalone (falls back to a
 // group picker) for anyone with an old bookmark.
-const TABS = [
+// `match` lists extra path prefixes that keep a tab highlighted — the
+// Encounters and Benchmarks sections each own a sub-page that lives on a
+// different top-level route (/logs, /leaderboards).
+const TABS: { label: string; to: string; match?: string[] }[] = [
   { label: 'Dashboard', to: '/' },
-  { label: 'Logs', to: '/logs' },
-  { label: 'Leaderboards', to: '/leaderboards' },
+  { label: 'Encounters', to: '/encounters', match: ['/encounters', '/logs'] },
+  { label: 'Benchmarks', to: '/benchmarks', match: ['/benchmarks', '/leaderboards'] },
   { label: 'Groups', to: '/groups' },
   { label: 'Characters', to: '/characters' },
   { label: 'Compare', to: '/compare' },
 ];
+
+function isTabActive(tab: { to: string; match?: string[] }, pathname: string): boolean {
+  if (tab.to === '/') return pathname === '/';
+  return (tab.match ?? [tab.to]).some((prefix) => pathname.startsWith(prefix));
+}
 
 export function NavHeader() {
   const location = useLocation();
@@ -93,7 +101,7 @@ export function NavHeader() {
             }}
           >
             {tabs.map((tab) => {
-              const active = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to);
+              const active = isTabActive(tab, location.pathname);
               const badgeCount = tab.to === '/groups' ? user?.pendingGroupRequests ?? 0 : 0;
               return (
                 <Link
@@ -184,7 +192,7 @@ export function NavHeader() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {tabs.map((tab) => {
-              const active = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to);
+              const active = isTabActive(tab, location.pathname);
               const badgeCount = tab.to === '/groups' ? user?.pendingGroupRequests ?? 0 : 0;
               return (
                 <Link
