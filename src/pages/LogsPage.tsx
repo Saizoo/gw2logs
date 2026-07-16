@@ -6,16 +6,22 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, LoadMoreButton, ParseBadge, ParseLegend, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
-type Filter = 'all' | 'raid' | 'other' | 'kills' | 'mine';
+type Filter = 'all' | 'raid' | 'fractal' | 'kills' | 'mine';
 
 const PAGE_SIZE = 50;
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'raid', label: 'Raids' },
-  { key: 'other', label: 'Strikes & Fractals' },
+  { key: 'fractal', label: 'Fractal CMs' },
   { key: 'kills', label: 'Kills only' },
 ];
+
+const CATEGORY_LABELS: Record<LogListItem['category'], string> = {
+  raid: 'Raid',
+  fractal: 'Fractal CM',
+  other: 'Other',
+};
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
@@ -33,7 +39,7 @@ export default function LogsPage() {
     (offset) =>
       api
         .logs({
-          category: filter === 'raid' ? 'raid' : filter === 'other' ? 'other' : undefined,
+          category: filter === 'raid' ? 'raid' : filter === 'fractal' ? 'fractal' : undefined,
           killsOnly: filter === 'kills',
           mine: filter === 'mine',
           limit: PAGE_SIZE,
@@ -49,7 +55,7 @@ export default function LogsPage() {
     <div>
       <div style={{ font: '800 22px var(--font-sans)', marginBottom: 4 }}>Logs</div>
       <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-60)', marginBottom: 20 }}>
-        All uploaded reports across raids, strikes and fractals
+        All uploaded reports across raids and fractal challenge modes
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
@@ -128,7 +134,7 @@ export default function LogsPage() {
                 {log.boss}
                 {log.isCm ? ' CM' : ''}
               </div>
-              <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-62)', textTransform: 'capitalize' }}>{log.category}</div>
+              <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-62)' }}>{CATEGORY_LABELS[log.category]}</div>
               <div style={{ font: '400 12px var(--font-mono)', color: 'var(--text-70)' }}>{formatDuration(log.durationMs)}</div>
               <div>
                 <ResultPill success={log.success} />

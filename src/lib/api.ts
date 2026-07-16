@@ -95,7 +95,7 @@ export interface LogListItem {
   id: string;
   boss: string;
   wing: string | null;
-  category: 'raid' | 'other';
+  category: 'raid' | 'fractal' | 'other';
   isCm: boolean;
   success: boolean;
   durationMs: number;
@@ -423,7 +423,7 @@ export const api = {
   dashboard: () => apiFetch<DashboardSummary>('/dashboard'),
   logs: (
     params: {
-      category?: 'raid' | 'other';
+      category?: 'raid' | 'fractal';
       killsOnly?: boolean;
       mine?: boolean;
       groupId?: string;

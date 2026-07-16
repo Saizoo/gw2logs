@@ -2,15 +2,10 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
+import { RAID_BOSSES, FRACTAL_CM_BOSSES, categorizeFight } from '../lib/bossMeta.js';
 
 export const logsRouter = Router();
 
-// Only "Raid" (wing is set, from the verified BOSS_WING table) vs "Other" is
-// reliably derivable from the data we have. A Strikes/Fractals-CM split
-// would need either a hardcoded boss-name list or arcdps triggerID ranges
-// neither of which I could verify against a live source — guessing that
-// badly once already caused real damage this session (the profession
-// mapping mess), so this stays a two-way split rather than a guessed one.
 logsRouter.get('/', asyncHandler(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
   const killsOnly = req.query.killsOnly === 'true';
@@ -20,7 +15,11 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
   const where = {
-    ...(category === 'raid' ? { wing: { not: null } } : category === 'other' ? { wing: null } : {}),
+    ...(category === 'raid'
+      ? { fightName: { in: [...RAID_BOSSES] } }
+      : category === 'fractal'
+        ? { fightName: { in: [...FRACTAL_CM_BOSSES] } }
+        : {}),
     ...(killsOnly ? { success: true } : {}),
     // req.user is undefined for a signed-out request — that's an empty
     // result set for ?mine=true rather than every anonymous log, since
@@ -90,7 +89,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
       id: l.id,
       boss: l.fightName,
       wing: l.wing,
-      category: l.wing ? 'raid' : 'other',
+      category: categorizeFight(l.fightName),
       isCm: l.isCm,
       success: l.success,
       durationMs: l.durationMs,
