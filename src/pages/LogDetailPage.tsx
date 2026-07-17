@@ -274,14 +274,20 @@ function SquadTab({ log }: { log: LogDetail }) {
             </div>
             {players.map((p) => {
               const barWidth = Math.round((p.total / maxDps) * 100);
-              const candidate = { logId: log.id, account: p.account, label: p.name };
+              // Hidden-name players can't be picked for compare (no account
+              // to key on) — the checkbox is simply absent for them.
+              const candidate = p.account ? { logId: log.id, account: p.account, label: p.name } : null;
               return (
-                <div key={p.account} className="u-row" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
+                <div key={p.account ?? p.name} className="u-row" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
                   <ArtImg src={specBgPath(p.profession, p.spec)} style={{ opacity: 0.32 }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 88%) 0%, oklch(0.13 0.014 250 / 55%) 55%, oklch(0.13 0.014 250 / 88%) 100%)' }} />
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                   <div style={{ position: 'relative', flex: 'none' }}>
-                    <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />
+                    {candidate ? (
+                      <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={p.name} />
+                    ) : (
+                      <div style={{ width: 18 }} />
+                    )}
                   </div>
                   <img
                     src={professionIconPath(p.profession, p.spec)}
@@ -339,7 +345,7 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
             ))}
           </div>
           {players.map((p) => (
-            <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+            <div key={p.account ?? p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
               <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
               <PlayerLink name={p.name} account={p.account} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -447,7 +453,7 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 ))}
               </div>
               {log.players.map((p) => (
-                <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+                <div key={p.account ?? p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
                   <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
                   <PlayerLink name={p.name} account={p.account} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
