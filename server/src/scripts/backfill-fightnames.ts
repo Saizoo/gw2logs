@@ -4,12 +4,14 @@
 // Insights' raw names ("Cairn CM", "Aetherblade Hideout", "Siax the
 // Unclean"), which the category/wing/art lookups don't recognize.
 //
-// Safe to run repeatedly — rows already canonical are skipped. Run with:
-//   npx tsx scripts/backfill-fightnames.ts
-// against the same DATABASE_URL the server uses.
+// Lives under src/ so it compiles into dist/ and ships in the production
+// image. Safe to run repeatedly — rows already canonical are skipped.
+//
+//   Dev:  npx tsx src/scripts/backfill-fightnames.ts
+//   Prod: docker compose exec api node dist/scripts/backfill-fightnames.js
 
-import { prisma } from '../src/db.js';
-import { canonicalFightName, resolveWing } from '../src/lib/bossMeta.js';
+import { prisma } from '../db.js';
+import { canonicalFightName, resolveWing } from '../lib/bossMeta.js';
 
 async function main() {
   const logs = await prisma.log.findMany({
