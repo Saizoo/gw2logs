@@ -11,6 +11,8 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   const killsOnly = req.query.killsOnly === 'true';
   const mine = req.query.mine === 'true';
   const groupId = typeof req.query.groupId === 'string' ? req.query.groupId : undefined;
+  // Exact fightName filter — the Encounters page links each boss card here.
+  const boss = typeof req.query.boss === 'string' && req.query.boss ? req.query.boss : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
@@ -26,6 +28,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     // there's no session to own them.
     ...(mine ? { uploadedBy: req.user?.id ?? '__none__' } : {}),
     ...(groupId ? { groupId } : {}),
+    ...(boss ? { fightName: boss } : {}),
   };
 
   let logs = await prisma.log.findMany({

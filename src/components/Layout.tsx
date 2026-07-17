@@ -2,12 +2,14 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { NavHeader } from './NavHeader';
 import { ToastHost } from './ToastHost';
 import { OnboardingTour } from './OnboardingTour';
+import { AnnouncementBanner } from './AnnouncementBanner';
 
 export function Layout() {
   const location = useLocation();
   return (
     <div style={{ minHeight: '100vh' }}>
       <NavHeader />
+      <AnnouncementBanner />
       <main key={location.pathname} style={{ animation: 'fadeIn 0.35s ease both', maxWidth: 1280, margin: '0 auto', padding: '32px 32px 80px' }}>
         <Outlet />
       </main>

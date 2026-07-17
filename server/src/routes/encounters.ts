@@ -14,6 +14,14 @@ for (const wing of Object.values(BOSS_WING)) {
   if (!WING_ORDER.has(wing)) WING_ORDER.set(wing, WING_ORDER.size);
 }
 
+interface OverviewTopParse {
+  dps: number;
+  pct: number;
+  spec: string;
+  profession: string;
+  account: string;
+}
+
 interface OverviewRecentLog {
   id: string;
   isCm: boolean;
@@ -21,6 +29,16 @@ interface OverviewRecentLog {
   squadDps: number;
   durationMs: number;
   date: Date;
+  topParse: OverviewTopParse | null;
+}
+
+interface OverviewBestParse {
+  logId: string;
+  dps: number;
+  spec: string;
+  profession: string;
+  account: string;
+  isCm: boolean;
 }
 
 interface OverviewEncounter {
@@ -32,6 +50,7 @@ interface OverviewEncounter {
   fastestKillMs: number | null;
   lastDate: Date;
   recent: OverviewRecentLog[];
+  bestParse: OverviewBestParse | null;
 }
 
 // Recent logs regrouped wing → boss for the Encounters page. Wing labels
@@ -76,6 +95,7 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
         fastestKillMs: null,
         lastDate: log.encounterTime, // logs arrive newest-first
         recent: [],
+        bestParse: null,
       }));
     }
     enc.logCount += 1;
@@ -93,7 +113,88 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
         squadDps: log.squadDps,
         durationMs: log.durationMs,
         date: log.encounterTime,
+        topParse: null,
       });
+    }
+  }
+
+  // Parse enrichment: each recent log's top performer with their percentile
+  // against the whole population for that boss+CM (same convention as the
+  // All Logs badges), plus the single best individual parse ever recorded
+  // on each boss (kills only).
+  const allEncounters = [...wings.values()].flatMap((bosses) => [...bosses.values()]);
+  const recentIds = allEncounters.flatMap((enc) => enc.recent.map((r) => r.id));
+  const fightNames = allEncounters.map((enc) => enc.fightName);
+  if (recentIds.length > 0) {
+    const [topPlayers, population, bestRows] = await Promise.all([
+      prisma.$queryRaw<{ logId: string; totalDps: number; spec: string; profession: string; account: string }[]>`
+        SELECT DISTINCT ON (lp."logId") lp."logId", lp."totalDps", lp.spec, lp.profession, p.account
+        FROM "LogPlayer" lp
+        JOIN "Player" p ON lp."playerId" = p.id
+        WHERE lp."logId" = ANY(${recentIds})
+        ORDER BY lp."logId", lp."totalDps" DESC
+      `,
+      prisma.$queryRaw<{ fightName: string; isCm: boolean; totalDps: number }[]>`
+        SELECT l."fightName", l."isCm", lp."totalDps"
+        FROM "LogPlayer" lp
+        JOIN "Log" l ON lp."logId" = l.id
+        WHERE l."fightName" = ANY(${fightNames})
+      `,
+      prisma.$queryRaw<{ fightName: string; logId: string; totalDps: number; spec: string; profession: string; account: string; isCm: boolean }[]>`
+        SELECT DISTINCT ON (l."fightName") l."fightName", lp."logId", lp."totalDps", lp.spec, lp.profession, p.account, l."isCm"
+        FROM "LogPlayer" lp
+        JOIN "Log" l ON lp."logId" = l.id
+        JOIN "Player" p ON lp."playerId" = p.id
+        WHERE l.success = true AND l."fightName" = ANY(${fightNames})
+        ORDER BY l."fightName", lp."totalDps" DESC
+      `,
+    ]);
+
+    const populationByKey = new Map<string, number[]>();
+    for (const row of population) {
+      const key = `${row.fightName}|${row.isCm}`;
+      const list = populationByKey.get(key) ?? [];
+      list.push(row.totalDps);
+      populationByKey.set(key, list);
+    }
+    for (const list of populationByKey.values()) list.sort((a, b) => a - b);
+    // Percentile of `dps` within its sorted population — matches the
+    // PERCENT_RANK convention the All Logs route uses (single-row
+    // populations read as 100th, not 0th).
+    const pctOf = (key: string, dps: number): number => {
+      const list = populationByKey.get(key);
+      if (!list || list.length <= 1) return 100;
+      let below = 0;
+      while (below < list.length && list[below] < dps) below++;
+      return Math.round((below / (list.length - 1)) * 100);
+    };
+
+    const topByLogId = new Map(topPlayers.map((t) => [t.logId, t]));
+    const bestByFight = new Map(bestRows.map((b) => [b.fightName, b]));
+    for (const enc of allEncounters) {
+      const best = bestByFight.get(enc.fightName);
+      if (best) {
+        enc.bestParse = {
+          logId: best.logId,
+          dps: best.totalDps,
+          spec: best.spec,
+          profession: best.profession,
+          account: best.account,
+          isCm: best.isCm,
+        };
+      }
+      for (const recent of enc.recent) {
+        const top = topByLogId.get(recent.id);
+        if (top) {
+          recent.topParse = {
+            dps: top.totalDps,
+            pct: pctOf(`${enc.fightName}|${recent.isCm}`, top.totalDps),
+            spec: top.spec,
+            profession: top.profession,
+            account: top.account,
+          };
+        }
+      }
     }
   }
 
@@ -158,6 +259,78 @@ encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
         isCm: r.isCm,
         date: r.encounterTime,
       })),
+  );
+}));
+
+// Full DPS distribution per elite specialization (kills only, core builds
+// excluded): the box-plot Benchmarks page needs the spread, not just the
+// single best. Quantiles are computed here rather than in SQL so the exact
+// method (linear interpolation) is one obvious piece of code.
+encountersRouter.get('/benchmarks/distribution', asyncHandler(async (_req, res) => {
+  const rows = await prisma.$queryRaw<{ spec: string; profession: string; totalDps: number }[]>`
+    SELECT lp.spec, lp.profession, lp."totalDps"
+    FROM "LogPlayer" lp
+    JOIN "Log" l ON lp."logId" = l.id
+    WHERE l.success = true AND lp.spec <> lp.profession
+  `;
+  const bestRows = await prisma.$queryRaw<
+    { spec: string; logId: string; totalDps: number; characterName: string; account: string; fightName: string; isCm: boolean; encounterTime: Date }[]
+  >`
+    SELECT DISTINCT ON (lp.spec)
+           lp.spec, lp."logId", lp."totalDps", lp."characterName", p.account, l."fightName", l."isCm", l."encounterTime"
+    FROM "LogPlayer" lp
+    JOIN "Log" l ON lp."logId" = l.id
+    JOIN "Player" p ON lp."playerId" = p.id
+    WHERE l.success = true AND lp.spec <> lp.profession
+    ORDER BY lp.spec, lp."totalDps" DESC
+  `;
+
+  const bySpec = new Map<string, { profession: string; values: number[] }>();
+  for (const row of rows) {
+    let entry = bySpec.get(row.spec);
+    if (!entry) bySpec.set(row.spec, (entry = { profession: row.profession, values: [] }));
+    entry.values.push(row.totalDps);
+  }
+  const bestBySpec = new Map(bestRows.map((b) => [b.spec, b]));
+
+  const quantile = (sorted: number[], q: number): number => {
+    if (sorted.length === 1) return sorted[0];
+    const pos = (sorted.length - 1) * q;
+    const lo = Math.floor(pos);
+    const hi = Math.ceil(pos);
+    return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo));
+  };
+
+  res.json(
+    [...bySpec.entries()]
+      .map(([spec, { profession, values }]) => {
+        values.sort((a, b) => a - b);
+        const best = bestBySpec.get(spec);
+        return {
+          spec,
+          profession,
+          count: values.length,
+          min: values[0],
+          p5: quantile(values, 0.05),
+          q1: quantile(values, 0.25),
+          median: quantile(values, 0.5),
+          q3: quantile(values, 0.75),
+          p95: quantile(values, 0.95),
+          max: values[values.length - 1],
+          best: best
+            ? {
+                logId: best.logId,
+                dps: best.totalDps,
+                name: best.characterName,
+                account: best.account,
+                fightName: best.fightName,
+                isCm: best.isCm,
+                date: best.encounterTime,
+              }
+            : null,
+        };
+      })
+      .sort((a, b) => b.median - a.median),
   );
 }));
 

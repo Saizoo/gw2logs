@@ -4,6 +4,7 @@ import { prisma } from '../db.js';
 import { discordAuthorizeUrl, discordAvatarUrl, exchangeCodeForToken, fetchDiscordUser } from '../lib/discord.js';
 import { clearSessionCookie, createSession, destroySession, setSessionCookie } from '../lib/session.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { getConfigBool } from '../lib/appConfig.js';
 
 export const authRouter = Router();
 
@@ -46,6 +47,18 @@ authRouter.get('/discord/callback', async (req, res) => {
     const discordUser = await fetchDiscordUser(accessToken);
 
     const bootstrapAdmin = isBootstrapAdmin(discordUser.id);
+
+    // Invite-only mode: existing accounts sign in normally, but brand-new
+    // Discord users are turned away (bootstrap admins always get through,
+    // or a fresh deploy could lock itself out).
+    if (!bootstrapAdmin && (await getConfigBool('inviteOnly'))) {
+      const existing = await prisma.user.findUnique({ where: { discordId: discordUser.id }, select: { id: true } });
+      if (!existing) {
+        res.status(403).send('Registration is currently invite-only. Ask an existing member or admin to open sign-ups, then try again.');
+        return;
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { discordId: discordUser.id },
       update: {

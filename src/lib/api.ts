@@ -12,6 +12,14 @@ export interface EncounterStats {
   totalLogs: number;
 }
 
+export interface OverviewTopParse {
+  dps: number;
+  pct: number;
+  spec: string;
+  profession: string;
+  account: string;
+}
+
 export interface OverviewRecentLog {
   id: string;
   isCm: boolean;
@@ -19,6 +27,16 @@ export interface OverviewRecentLog {
   squadDps: number;
   durationMs: number;
   date: string;
+  topParse: OverviewTopParse | null;
+}
+
+export interface OverviewBestParse {
+  logId: string;
+  dps: number;
+  spec: string;
+  profession: string;
+  account: string;
+  isCm: boolean;
 }
 
 export interface OverviewEncounter {
@@ -30,6 +48,48 @@ export interface OverviewEncounter {
   fastestKillMs: number | null;
   lastDate: string;
   recent: OverviewRecentLog[];
+  bestParse: OverviewBestParse | null;
+}
+
+export interface SpecDistribution {
+  spec: string;
+  profession: string;
+  count: number;
+  min: number;
+  p5: number;
+  q1: number;
+  median: number;
+  q3: number;
+  p95: number;
+  max: number;
+  best: {
+    logId: string;
+    dps: number;
+    name: string;
+    account: string;
+    fightName: string;
+    isCm: boolean;
+    date: string;
+  } | null;
+}
+
+export interface Announcement {
+  id: string;
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+  expiresAt: string | null;
+}
+
+export interface AdminAnnouncement extends Announcement {
+  createdAt: string;
+  createdBy: string;
+  expired: boolean;
+}
+
+export interface AppSettings {
+  uploadsPaused: string;
+  inviteOnly: string;
+  defaultReminderMins: string;
 }
 
 export interface OverviewWing {
@@ -571,6 +631,8 @@ export const api = {
   encounters: () => apiFetch<EncounterSummary[]>('/encounters'),
   encountersOverview: () => apiFetch<OverviewWing[]>('/encounters/overview'),
   specBenchmarks: () => apiFetch<SpecBenchmark[]>('/encounters/benchmarks'),
+  specBenchmarkDistribution: () => apiFetch<SpecDistribution[]>('/encounters/benchmarks/distribution'),
+  activeAnnouncements: () => apiFetch<Announcement[]>('/announcements/active'),
   leaderboard: (fightName: string, isCm: boolean, opts: { profession?: string; role?: 'power' | 'condi' } = {}) => {
     const params = new URLSearchParams({ cm: String(isCm) });
     if (opts.profession) params.set('profession', opts.profession);
@@ -638,6 +700,7 @@ export const api = {
       killsOnly?: boolean;
       mine?: boolean;
       groupId?: string;
+      boss?: string;
       limit?: number;
       offset?: number;
     } = {},
@@ -647,6 +710,7 @@ export const api = {
     if (params.killsOnly) qs.set('killsOnly', 'true');
     if (params.mine) qs.set('mine', 'true');
     if (params.groupId) qs.set('groupId', params.groupId);
+    if (params.boss) qs.set('boss', params.boss);
     if (params.limit) qs.set('limit', String(params.limit));
     if (params.offset) qs.set('offset', String(params.offset));
     const query = qs.toString();
@@ -842,6 +906,24 @@ export const api = {
   adminGuildClearSyncKey: (id: string) =>
     apiFetch<{ ok: true }>(`/admin/guilds/${encodeURIComponent(id)}/clear-sync-key`, { method: 'POST' }),
   adminDeleteGuild: (id: string) => apiFetch<{ ok: true }>(`/admin/guilds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  adminAnnouncements: () => apiFetch<AdminAnnouncement[]>('/admin/announcements'),
+  adminCreateAnnouncement: (data: { message: string; severity: string; expiresAt?: string | null }) =>
+    apiFetch<{ id: string }>('/admin/announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  adminExpireAnnouncement: (id: string) =>
+    apiFetch<{ ok: true }>(`/admin/announcements/${encodeURIComponent(id)}/expire`, { method: 'POST' }),
+  adminDeleteAnnouncement: (id: string) =>
+    apiFetch<{ ok: true }>(`/admin/announcements/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  adminSettings: () => apiFetch<AppSettings>('/admin/settings'),
+  adminSetSetting: (key: string, value: string) =>
+    apiFetch<AppSettings>('/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value }),
+    }),
   adminAudit: (params: { limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     if (params.limit) qs.set('limit', String(params.limit));

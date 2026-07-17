@@ -27,6 +27,9 @@ import { adminBuildsRouter } from './routes/admin/builds.js';
 import { adminHealthRouter } from './routes/admin/health.js';
 import { adminGuildsRouter } from './routes/admin/guilds.js';
 import { adminAuditRouter } from './routes/admin/audit.js';
+import { adminAnnouncementsRouter } from './routes/admin/announcements.js';
+import { adminSettingsRouter } from './routes/admin/settings.js';
+import { announcementsRouter } from './routes/announcements.js';
 
 export function createApp() {
   const app = express();
@@ -60,6 +63,7 @@ export function createApp() {
   app.use('/api/groups', groupsRouter);
   app.use('/api/characters', charactersRouter);
   app.use('/api/builds', buildsRouter);
+  app.use('/api/announcements', announcementsRouter);
 
   // Every /api/admin/* route needs both a valid session and isAdmin — gated
   // once here rather than per-file, so a new admin route file can't
@@ -75,6 +79,8 @@ export function createApp() {
   adminRouter.use('/health', adminHealthRouter);
   adminRouter.use('/guilds', adminGuildsRouter);
   adminRouter.use('/audit', adminAuditRouter);
+  adminRouter.use('/announcements', adminAnnouncementsRouter);
+  adminRouter.use('/settings', adminSettingsRouter);
   app.use('/api/admin', adminRouter);
 
   // Last-resort safety net: without this, any error thrown by an async

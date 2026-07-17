@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, type LogListItem } from '../lib/api';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -34,6 +34,10 @@ function formatDuration(ms: number): string {
 export default function LogsPage() {
   const { user } = useCurrentUser();
   const [filter, setFilter] = useState<Filter>('all');
+  // Boss deep-link from the Encounters page cards (?boss=Vale%20Guardian):
+  // narrows the list to one fight, cleared with the × on its chip.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const boss = searchParams.get('boss') ?? undefined;
   const filters = user ? [...FILTERS, { key: 'mine' as const, label: 'Uploaded by me' }] : FILTERS;
 
   const { items: logs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<LogListItem>(
@@ -43,21 +47,44 @@ export default function LogsPage() {
           category: filter === 'raid' ? 'raid' : filter === 'fractal' ? 'fractal' : undefined,
           killsOnly: filter === 'kills',
           mine: filter === 'mine',
+          boss,
           limit: PAGE_SIZE,
           offset,
         })
         // No total count comes back from this endpoint — a full page is the
         // only signal there might be more behind it.
         .then((items) => ({ items, hasMore: items.length === PAGE_SIZE })),
-    [filter],
+    [filter, boss],
   );
 
   return (
     <div>
-      <PageHeader title="All Logs" subtitle="Every uploaded report across raids and fractal challenge modes" />
+      <PageHeader
+        title={boss ? `${boss} — Logs` : 'All Logs'}
+        subtitle={boss ? `Every uploaded ${boss} report, kills and wipes` : 'Every uploaded report across raids and fractal challenge modes'}
+      />
       <SubNav tabs={LOGS_SUBNAV} />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        {boss && (
+          <button
+            onClick={() => setSearchParams({}, { replace: true })}
+            title="Clear boss filter"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '7px 14px',
+              borderRadius: 20,
+              font: '700 12px var(--font-sans)',
+              background: 'oklch(0.78 0.14 85 / 18%)',
+              color: 'var(--gold)',
+              border: '1px solid oklch(0.78 0.14 85 / 35%)',
+            }}
+          >
+            {boss} <span aria-hidden style={{ opacity: 0.75 }}>✕</span>
+          </button>
+        )}
         {filters.map((f) => {
           const active = filter === f.key;
           return (

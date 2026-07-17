@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { api, type OverviewEncounter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
-import { bossBgPath } from '../data/gw2-data';
-import { ArtImg, PageHeader, SubNav } from '../components/atoms';
+import { bossBgPath, professionIconPath } from '../data/gw2-data';
+import { ArtImg, PageHeader, ParseBadge, SubNav } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 export const LOGS_SUBNAV = [
@@ -91,7 +91,12 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
 
       <div style={{ position: 'relative', padding: '16px 18px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link to={`/logs/${enc.recent[0].id}`} style={{ font: '800 16.5px var(--font-sans)', letterSpacing: '-.2px' }}>
+          {/* The boss name is the card's main action: every log of this fight. */}
+          <Link
+            to={`/logs?boss=${encodeURIComponent(enc.fightName)}`}
+            title={`All ${enc.fightName} logs`}
+            style={{ font: '800 16.5px var(--font-sans)', letterSpacing: '-.2px' }}
+          >
             {enc.fightName}
           </Link>
           {enc.hasCm && (
@@ -113,10 +118,35 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
 
         <div style={{ display: 'flex', gap: 18, margin: '12px 0 14px' }}>
           <CardStat label="Kills" value={`${enc.kills}/${enc.logCount}`} />
-          <CardStat label="Best Squad DPS" value={enc.bestSquadDps.toLocaleString()} gold />
+          {enc.bestParse ? (
+            <div>
+              <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)' }}>
+                Best Parse
+              </div>
+              <Link
+                to={`/logs/${enc.bestParse.logId}`}
+                title={`${enc.bestParse.account} · ${enc.bestParse.spec}${enc.bestParse.isCm ? ' · CM' : ''}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}
+              >
+                <img
+                  src={professionIconPath(enc.bestParse.profession, enc.bestParse.spec)}
+                  alt=""
+                  width={16}
+                  height={16}
+                  style={{ objectFit: 'contain', flex: 'none' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span style={{ font: '700 13.5px var(--font-mono)', color: 'var(--gold)' }}>{enc.bestParse.dps.toLocaleString()}</span>
+              </Link>
+            </div>
+          ) : (
+            <CardStat label="Best Parse" value="—" gold />
+          )}
           <CardStat label="Fastest" value={enc.fastestKillMs != null ? formatDuration(enc.fastestKillMs) : '—'} />
         </div>
 
+        {/* Three most recent parses: each row is the log's top performer with
+            their percentile against every parse of this boss+CM. */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
           {enc.recent.map((log) => (
             <Link
@@ -147,10 +177,27 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
                 {log.success ? 'KILL' : 'WIPE'}
               </span>
               {log.isCm && <span style={{ font: '700 10px var(--font-sans)', color: 'var(--gold)' }}>CM</span>}
-              <span style={{ font: '600 11.5px var(--font-mono)', color: 'var(--text-70)' }}>{formatDuration(log.durationMs)}</span>
-              <span style={{ font: '700 11.5px var(--font-mono)', color: 'var(--gold)', marginLeft: 'auto' }}>
-                {log.squadDps.toLocaleString()}
-              </span>
+              {log.topParse ? (
+                <>
+                  <ParseBadge pct={log.topParse.pct} />
+                  <img
+                    src={professionIconPath(log.topParse.profession, log.topParse.spec)}
+                    alt=""
+                    title={`${log.topParse.account} · ${log.topParse.spec}`}
+                    width={15}
+                    height={15}
+                    style={{ objectFit: 'contain', flex: 'none' }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <span style={{ font: '700 11.5px var(--font-mono)', color: 'var(--gold)', marginLeft: 'auto' }}>
+                    {log.topParse.dps.toLocaleString()}
+                  </span>
+                </>
+              ) : (
+                <span style={{ font: '600 11.5px var(--font-mono)', color: 'var(--text-70)', marginLeft: 'auto' }}>
+                  {formatDuration(log.durationMs)}
+                </span>
+              )}
               <span style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-50)' }}>{relativeDate(log.date)}</span>
             </Link>
           ))}

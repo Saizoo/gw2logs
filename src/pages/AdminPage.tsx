@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { api, ApiError, type AdminAuditEntry, type AdminBuild, type AdminLogRow, type AdminUploadJob, type AdminUserRow } from '../lib/api';
+import { api, ApiError, type AdminAnnouncement, type AdminAuditEntry, type AdminBuild, type AdminLogRow, type AdminUploadJob, type AdminUserRow, type AppSettings } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -11,8 +11,8 @@ import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates'
 
 const PAGE_SIZE = 50;
 
-type Tab = 'Overview' | 'Health' | 'Uploads' | 'Logs' | 'Users' | 'Groups' | 'Guilds' | 'Builds' | 'Audit';
-const TABS: Tab[] = ['Overview', 'Health', 'Uploads', 'Logs', 'Users', 'Groups', 'Guilds', 'Builds', 'Audit'];
+type Tab = 'Overview' | 'Health' | 'Uploads' | 'Logs' | 'Users' | 'Groups' | 'Guilds' | 'Builds' | 'Announcements' | 'Settings' | 'Audit';
+const TABS: Tab[] = ['Overview', 'Health', 'Uploads', 'Logs', 'Users', 'Groups', 'Guilds', 'Builds', 'Announcements', 'Settings', 'Audit'];
 
 export default function AdminPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -57,6 +57,8 @@ export default function AdminPage() {
       {tab === 'Groups' && <GroupsTab />}
       {tab === 'Guilds' && <GuildsAdminTab />}
       {tab === 'Builds' && <BuildsTab />}
+      {tab === 'Announcements' && <AnnouncementsTab />}
+      {tab === 'Settings' && <SettingsTab />}
       {tab === 'Audit' && <AuditTab />}
     </div>
   );
@@ -835,5 +837,233 @@ function AuditTab() {
       {hasMore && <LoadMoreButton onClick={loadMore} loading={loadingMore} />}
       {total != null && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 10 }}>{entries.length} of {total}</div>}
     </div>
+  );
+}
+
+// --- Announcements ---
+
+const SEVERITY_OPTIONS = [
+  { value: 'info', label: 'Info' },
+  { value: 'warning', label: 'Warning' },
+  { value: 'critical', label: 'Critical' },
+];
+
+function AnnouncementsTab() {
+  const [nonce, setNonce] = useState(0);
+  const { data: rows, loading, error } = useApiQuery(() => api.adminAnnouncements(), [nonce]);
+  const [message, setMessage] = useState('');
+  const [severity, setSeverity] = useState('info');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function run(action: () => Promise<unknown>, successMessage: string) {
+    try {
+      await action();
+      toast.success(successMessage);
+      setNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Action failed');
+    }
+  }
+
+  async function create() {
+    if (!message.trim()) {
+      toast.error('Write the announcement first');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.adminCreateAnnouncement({
+        message: message.trim(),
+        severity,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      });
+      toast.success('Announcement published — it shows under the nav on every page');
+      setMessage('');
+      setExpiresAt('');
+      setNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to publish');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputStyle = {
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    font: '400 12.5px var(--font-sans)',
+    padding: '9px 12px',
+    borderRadius: 8,
+  } as const;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <Card style={{ padding: '16px 20px' }}>
+        <SectionLabel>Publish an announcement</SectionLabel>
+        <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            maxLength={500}
+            placeholder='e.g. "Maintenance Sunday 10:00 UTC — uploads paused for ~30 min"'
+            style={{ ...inputStyle, flex: 1, minWidth: 260 }}
+          />
+          <select className="u-select" value={severity} onChange={(e) => setSeverity(e.target.value)} style={inputStyle}>
+            {SEVERITY_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11.5px var(--font-sans)', color: 'var(--text-60)' }}>
+            Expires
+            <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} style={inputStyle} />
+          </label>
+          <GoldButton onClick={create} disabled={saving}>{saving ? 'Publishing…' : 'Publish'}</GoldButton>
+        </div>
+        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 8 }}>
+          Leave "Expires" empty to keep the banner up until you expire or delete it manually.
+        </div>
+      </Card>
+
+      {loading && <LoadingState label="Loading announcements…" />}
+      {error && <ErrorState message={error} />}
+      {rows && rows.length === 0 && <EmptyState>No announcements yet.</EmptyState>}
+      {rows && rows.length > 0 && (
+        <Card style={{ overflow: 'hidden' }}>
+          {rows.map((a: AdminAnnouncement, i: number) => (
+            <div key={a.id} style={{ padding: '12px 18px', borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--border-faint)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', opacity: a.expired ? 0.55 : 1 }}>
+              <Badge tone={a.severity === 'critical' ? 'bad' : 'gold'}>{a.severity}</Badge>
+              <span style={{ font: '500 12.5px var(--font-sans)', flex: 1, minWidth: 200 }}>{a.message}</span>
+              <span style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)' }}>
+                {a.expired
+                  ? 'expired'
+                  : a.expiresAt
+                    ? `until ${new Date(a.expiresAt).toLocaleString()}`
+                    : 'no expiry'}
+                {' · '}by {a.createdBy}
+              </span>
+              {!a.expired && (
+                <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }} onClick={() => run(() => api.adminExpireAnnouncement(a.id), 'Announcement expired')}>
+                  Expire now
+                </button>
+              )}
+              <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--bad)', border: '1px solid var(--border)' }} onClick={() => { if (confirm('Delete this announcement?')) run(() => api.adminDeleteAnnouncement(a.id), 'Announcement deleted'); }}>
+                Delete
+              </button>
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// --- Settings (feature switches) ---
+
+function SettingsTab() {
+  const [nonce, setNonce] = useState(0);
+  const { data: settings, loading, error } = useApiQuery(() => api.adminSettings(), [nonce]);
+  const [reminderDraft, setReminderDraft] = useState<string | null>(null);
+
+  async function set(key: keyof AppSettings, value: string, successMessage: string) {
+    try {
+      await api.adminSetSetting(key, value);
+      toast.success(successMessage);
+      setNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save setting');
+    }
+  }
+
+  if (loading) return <LoadingState label="Loading settings…" />;
+  if (error) return <ErrorState message={error} />;
+  if (!settings) return null;
+
+  const uploadsPaused = settings.uploadsPaused === 'true';
+  const inviteOnly = settings.inviteOnly === 'true';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 760 }}>
+      <SwitchRow
+        title="Pause uploads"
+        description="Rejects new log uploads with a maintenance message. Already-running parses finish normally. Pair it with an announcement so people know why."
+        on={uploadsPaused}
+        onToggle={() => set('uploadsPaused', uploadsPaused ? 'false' : 'true', uploadsPaused ? 'Uploads resumed' : 'Uploads paused')}
+      />
+      <SwitchRow
+        title="Invite-only registration"
+        description="New Discord accounts can't create an account; existing members keep signing in. Bootstrap admins always get through."
+        on={inviteOnly}
+        onToggle={() => set('inviteOnly', inviteOnly ? 'false' : 'true', inviteOnly ? 'Registration opened' : 'Registration is now invite-only')}
+      />
+      <Card style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ font: '700 13px var(--font-sans)' }}>Default reminder lead time</div>
+          <div style={{ font: '400 11.5px/1.5 var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
+            How long before raid start newly created groups send their Discord reminder. Existing groups keep whatever they've set.
+          </div>
+        </div>
+        <select
+          className="u-select"
+          value={reminderDraft ?? settings.defaultReminderMins}
+          onChange={(e) => {
+            setReminderDraft(e.target.value);
+            set('defaultReminderMins', e.target.value, `Default reminder set to ${e.target.value} minutes before start`);
+          }}
+          style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)', font: '400 12.5px var(--font-sans)', padding: '9px 12px', borderRadius: 8 }}
+        >
+          {[15, 30, 60, 120, 180, 360, 720, 1440].map((mins) => (
+            <option key={mins} value={String(mins)}>
+              {mins < 60 ? `${mins} minutes` : `${mins / 60} hour${mins === 60 ? '' : 's'}`} before
+            </option>
+          ))}
+        </select>
+      </Card>
+    </div>
+  );
+}
+
+function SwitchRow({ title, description, on, onToggle }: { title: string; description: string; on: boolean; onToggle: () => void }) {
+  return (
+    <Card style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ font: '700 13px var(--font-sans)' }}>{title}</div>
+          {on && <Badge tone="bad">Active</Badge>}
+        </div>
+        <div style={{ font: '400 11.5px/1.5 var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>{description}</div>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        onClick={onToggle}
+        style={{
+          position: 'relative',
+          width: 46,
+          height: 25,
+          borderRadius: 14,
+          flexShrink: 0,
+          background: on ? 'var(--gold-grad)' : 'oklch(1 0 0 / 10%)',
+          border: '1px solid ' + (on ? 'transparent' : 'var(--border)'),
+          cursor: 'pointer',
+          transition: 'background .15s ease',
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 2,
+            left: on ? 23 : 2,
+            width: 19,
+            height: 19,
+            borderRadius: '50%',
+            background: on ? 'oklch(0.15 0.02 85)' : 'oklch(0.85 0.01 250)',
+            transition: 'left .15s ease',
+          }}
+        />
+      </button>
+    </Card>
   );
 }

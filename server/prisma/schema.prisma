@@ -77,6 +77,7 @@ model User {
   raidSignups      RaidSignup[]
   auditActions     AdminAudit[]
   uploadedLogs     Log[]          @relation("LogUploader")
+  announcements    Announcement[] @relation("AnnouncementAuthor")
 }
 
 model Session {
@@ -446,4 +447,28 @@ model AdminAudit {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// Site-wide announcement / message-of-the-day. Every page shows active,
+// unexpired announcements in a banner under the nav; expiry is a hard
+// cutoff (null = shown until deleted). severity: info | warning | critical.
+model Announcement {
+  id          String    @id @default(cuid())
+  message     String
+  severity    String    @default("info")
+  expiresAt   DateTime?
+  createdById String
+  createdBy   User      @relation("AnnouncementAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+// Feature switches / runtime config, read at request time so flipping one
+// never needs a redeploy. Values are strings; each key's parsing lives in
+// lib/appConfig.ts.
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

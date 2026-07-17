@@ -6,6 +6,7 @@ import { parseWithEliteInsights } from '../lib/eliteInsights.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 import { getGroupRole } from '../lib/groupAccess.js';
+import { getConfigBool } from '../lib/appConfig.js';
 
 // Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — this needs
 // real headroom above that, not just above today's average. Must stay in
@@ -16,6 +17,14 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200
 export const uploadsRouter = Router();
 
 uploadsRouter.post('/', upload.single('file'), async (req, res) => {
+  // Maintenance switch, flipped from the admin Settings tab. Checked before
+  // anything else so a paused site never buffers a 160MB body into a parse
+  // it won't run.
+  if (await getConfigBool('uploadsPaused')) {
+    res.status(503).json({ error: 'Uploads are paused for maintenance — check the site banner for details and try again later.' });
+    return;
+  }
+
   const file = req.file;
   if (!file) {
     res.status(400).json({ error: 'No file uploaded (expected multipart field "file")' });

@@ -8,6 +8,7 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { buildReminderPayload, dueRaidDate, sendWebhook, zonedNow, resolveTimezone } from '../lib/raidReminders.js';
 import { fetchGuildMembers, fetchGuildRanks } from '../lib/gw2Api.js';
 import { applyGuildRanks } from '../lib/guildGroups.js';
+import { getConfigInt } from '../lib/appConfig.js';
 
 export const groupsRouter = Router();
 
@@ -115,6 +116,9 @@ groupsRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
     data: {
       name,
       leaderId: req.user!.id,
+      // Site-wide default from the admin Settings tab; the group can still
+      // change it later from its reminders card.
+      raidReminderMins: await getConfigInt('defaultReminderMins'),
       members: { create: { userId: req.user!.id, role: 'leader' } },
     },
   });
