@@ -181,7 +181,7 @@ function RaidSignupsCard({
   myUserId: string;
   onSet: (date: string, status: SignupStatus | null) => void;
 }) {
-  const dates = upcomingRaidDates(group.raidDays, 3);
+  const dates = upcomingRaidDates(group.raidDays, 3, group.resolvedTimezone);
   const [openDate, setOpenDate] = useState<string | null>(null);
   const shown = openDate && dates.includes(openDate) ? openDate : dates[0];
 
@@ -229,7 +229,7 @@ function RaidSignupsCard({
                   border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
                 }}
               >
-                {signupDateLabel(d)}
+                {signupDateLabel(d, group.resolvedTimezone)}
               </button>
             );
           })}

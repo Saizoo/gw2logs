@@ -256,6 +256,28 @@ model Group {
   discordWebhookEnc String?
   raidReminderMins  Int               @default(60)
   reminderLogs      RaidReminderLog[]
+  weekPlanItems     GroupWeekPlanItem[]
+}
+
+// One planned fight on a group's "This Week" agenda. weekStart pins the
+// plan to a GW2 reset week (Monday 07:30 UTC, stored as that Monday's
+// YYYY-MM-DD) so last week's plan ages out on reset instead of lingering.
+// The composition link is optional — a leader can outline the week's
+// fights before assigning squads — and SetNull keeps the fight on the
+// plan if its composition is later deleted from the planner.
+model GroupWeekPlanItem {
+  id            String       @id @default(cuid())
+  groupId       String
+  group         Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  weekStart     String
+  order         Int
+  encounterName String
+  compositionId String?
+  composition   Composition? @relation(fields: [compositionId], references: [id], onDelete: SetNull)
+  note          String?
+  createdAt     DateTime     @default(now())
+
+  @@index([groupId, weekStart])
 }
 
 // One row per reminder actually sent, so a scheduler tick (or a restart
@@ -368,6 +390,7 @@ model Composition {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   slots       CompositionSlot[]
+  weekPlanItems GroupWeekPlanItem[]
 
   @@index([groupId])
 }

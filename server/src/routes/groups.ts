@@ -166,6 +166,10 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
     raidStartTime: group.raidStartTime,
     raidDurationMins: group.raidDurationMins,
     raidTimezone: group.raidTimezone,
+    // Resolved IANA zone for the free-text raidTimezone ("EST" →
+    // "America/New_York"), so the client can compute raid-night dates on
+    // the group's calendar instead of the viewer's browser clock.
+    resolvedTimezone: resolveTimezone(group.raidTimezone),
     myRole,
     canManage: canManage(myRole),
   });
@@ -357,6 +361,147 @@ groupsRouter.get('/:id/clears', requireAuth, asyncHandler(async (req, res) => {
         lastKill: lastKill.get(fightName) ?? null,
       })),
     })),
+  });
+}));
+
+// ---- This Week plan ----------------------------------------------------
+// The leader's agenda for the current reset week: an ordered list of
+// fights, each optionally backed by a squad composition from the raid
+// planner. Members read it to see what's planned and who plays what;
+// only the leader writes it.
+
+const WEEK_PLAN_MAX_ITEMS = 30;
+
+function weekPlanWeekStart(): string {
+  return currentWeeklyReset().toISOString().slice(0, 10);
+}
+
+async function readWeekPlan(groupId: string, weekStart: string) {
+  const items = await prisma.groupWeekPlanItem.findMany({
+    where: { groupId, weekStart },
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      order: true,
+      encounterName: true,
+      note: true,
+      composition: {
+        select: {
+          id: true,
+          name: true,
+          fightName: true,
+          slots: {
+            select: {
+              subgroup: true,
+              slotIndex: true,
+              role: true,
+              profession: true,
+              spec: true,
+              buildName: true,
+              character: {
+                select: {
+                  name: true,
+                  user: { select: { gw2AccountName: true, discordUsername: true } },
+                },
+              },
+            },
+            orderBy: [{ subgroup: 'asc' }, { slotIndex: 'asc' }],
+          },
+        },
+      },
+    },
+  });
+  return items.map((item) => ({
+    id: item.id,
+    order: item.order,
+    encounterName: item.encounterName,
+    note: item.note,
+    composition: item.composition
+      ? {
+          id: item.composition.id,
+          name: item.composition.name,
+          fightName: item.composition.fightName,
+          slots: item.composition.slots.map((s) => ({
+            subgroup: s.subgroup,
+            slotIndex: s.slotIndex,
+            role: s.role,
+            profession: s.profession,
+            spec: s.spec,
+            buildName: s.buildName,
+            characterName: s.character?.name ?? null,
+            // Who actually plays the slot — the character's owner, shown by
+            // the same identity rules as the member list.
+            player: s.character ? s.character.user.gw2AccountName ?? s.character.user.discordUsername : null,
+          })),
+        }
+      : null,
+  }));
+}
+
+groupsRouter.get('/:id/week-plan', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!role) {
+    res.status(403).json({ error: 'You must be a member of this group to view its weekly plan' });
+    return;
+  }
+  const weekStart = weekPlanWeekStart();
+  res.json({
+    weekStart,
+    canEdit: role === 'leader',
+    items: await readWeekPlan(req.params.id, weekStart),
+  });
+}));
+
+// Replace the whole week's agenda in one write. Leader only — the plan is
+// the leader's call sheet, unlike RSVPs which are personal statements.
+groupsRouter.put('/:id/week-plan', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (role !== 'leader') {
+    res.status(403).json({ error: 'Only the group leader can edit the weekly plan' });
+    return;
+  }
+
+  const rawItems = req.body?.items;
+  if (!Array.isArray(rawItems) || rawItems.length > WEEK_PLAN_MAX_ITEMS) {
+    res.status(400).json({ error: `items must be an array of at most ${WEEK_PLAN_MAX_ITEMS} fights` });
+    return;
+  }
+
+  const items: { encounterName: string; compositionId: string | null; note: string | null }[] = [];
+  for (const raw of rawItems) {
+    const encounterName = typeof raw?.encounterName === 'string' ? raw.encounterName.trim().slice(0, 80) : '';
+    if (!encounterName) {
+      res.status(400).json({ error: 'Every item needs an encounterName' });
+      return;
+    }
+    const compositionId = typeof raw?.compositionId === 'string' && raw.compositionId ? raw.compositionId : null;
+    const note = typeof raw?.note === 'string' ? raw.note.trim().slice(0, 300) || null : null;
+    items.push({ encounterName, compositionId, note });
+  }
+
+  // Every referenced composition must belong to THIS group — otherwise a
+  // leader could read another group's rosters by id-guessing.
+  const compIds = [...new Set(items.map((i) => i.compositionId).filter((id): id is string => id !== null))];
+  if (compIds.length > 0) {
+    const owned = await prisma.composition.count({ where: { id: { in: compIds }, groupId: req.params.id } });
+    if (owned !== compIds.length) {
+      res.status(400).json({ error: 'One or more compositions do not belong to this group' });
+      return;
+    }
+  }
+
+  const weekStart = weekPlanWeekStart();
+  await prisma.$transaction([
+    prisma.groupWeekPlanItem.deleteMany({ where: { groupId: req.params.id, weekStart } }),
+    prisma.groupWeekPlanItem.createMany({
+      data: items.map((item, order) => ({ groupId: req.params.id, weekStart, order, ...item })),
+    }),
+  ]);
+
+  res.json({
+    weekStart,
+    canEdit: true,
+    items: await readWeekPlan(req.params.id, weekStart),
   });
 }));
 
@@ -611,8 +756,17 @@ groupsRouter.post('/:id/reminders/test', requireAuth, asyncHandler(async (req, r
 const SIGNUP_STATUSES = new Set(['in', 'late', 'out']);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function todayUtcDate(): string {
-  return new Date().toISOString().slice(0, 10);
+// "Today" for signup purposes is the group's raid-timezone calendar day,
+// NOT UTC — a member RSVPing for tonight's raid at 9 PM in New York is
+// already on tomorrow's date in UTC, and a UTC comparison rejected those
+// as "in the past". The night belongs to whatever day the group's own
+// clock says it is.
+async function groupTodayDate(groupId: string): Promise<string> {
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { raidTimezone: true },
+  });
+  return zonedNow(resolveTimezone(group?.raidTimezone ?? null)).date;
 }
 
 // Upcoming RSVPs for every member, all raid nights from today forward.
@@ -627,7 +781,7 @@ groupsRouter.get('/:id/signups', requireAuth, asyncHandler(async (req, res) => {
   }
 
   const signups = await prisma.raidSignup.findMany({
-    where: { groupId: req.params.id, date: { gte: todayUtcDate() } },
+    where: { groupId: req.params.id, date: { gte: await groupTodayDate(req.params.id) } },
     select: { userId: true, date: true, status: true },
     orderBy: { date: 'asc' },
   });
@@ -649,7 +803,7 @@ groupsRouter.put('/:id/signups', requireAuth, asyncHandler(async (req, res) => {
     res.status(400).json({ error: 'date must be YYYY-MM-DD' });
     return;
   }
-  if (date < todayUtcDate()) {
+  if (date < await groupTodayDate(req.params.id)) {
     res.status(400).json({ error: 'Cannot RSVP for a past date' });
     return;
   }

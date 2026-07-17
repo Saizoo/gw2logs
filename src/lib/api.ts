@@ -192,6 +192,40 @@ export interface CompositionSlotData {
   characterTemplateId: string | null;
 }
 
+export interface WeekPlanSlot {
+  subgroup: number;
+  slotIndex: number;
+  role: string;
+  profession: string;
+  spec: string | null;
+  buildName: string | null;
+  characterName: string | null;
+  // Display identity of whoever owns the slotted character (account name,
+  // falling back to Discord username) — null for template-only slots.
+  player: string | null;
+}
+
+export interface WeekPlanComposition {
+  id: string;
+  name: string;
+  fightName: string | null;
+  slots: WeekPlanSlot[];
+}
+
+export interface WeekPlanItem {
+  id: string;
+  order: number;
+  encounterName: string;
+  note: string | null;
+  composition: WeekPlanComposition | null;
+}
+
+export interface GroupWeekPlan {
+  weekStart: string;
+  canEdit: boolean;
+  items: WeekPlanItem[];
+}
+
 export interface CompositionDetail {
   id: string;
   name: string;
@@ -251,6 +285,9 @@ export interface GroupDetail {
   raidStartTime: string | null;
   raidDurationMins: number | null;
   raidTimezone: string | null;
+  // IANA zone resolved server-side from the free-text raidTimezone; used
+  // to compute raid-night dates on the group's calendar.
+  resolvedTimezone: string;
   myRole: 'leader' | 'subleader' | 'member' | null;
   canManage: boolean;
 }
@@ -667,6 +704,13 @@ export const api = {
   groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
   groupAttendance: (id: string) => apiFetch<GroupAttendance>(`/groups/${encodeURIComponent(id)}/attendance`),
   groupSignups: (id: string) => apiFetch<RaidSignup[]>(`/groups/${encodeURIComponent(id)}/signups`),
+  groupWeekPlan: (id: string) => apiFetch<GroupWeekPlan>(`/groups/${encodeURIComponent(id)}/week-plan`),
+  setGroupWeekPlan: (id: string, items: { encounterName: string; compositionId?: string | null; note?: string | null }[]) =>
+    apiFetch<GroupWeekPlan>(`/groups/${encodeURIComponent(id)}/week-plan`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    }),
   groupReminders: (id: string) =>
     apiFetch<{ webhookConfigured: boolean; reminderMins: number }>(`/groups/${encodeURIComponent(id)}/reminders`),
   setGroupReminders: (id: string, data: { webhookUrl?: string | null; reminderMins?: number }) =>

@@ -9,6 +9,7 @@ import { LoadingState, ErrorState } from '../components/QueryStates';
 import { ghostBtnStyle } from './group/shared';
 import { GuildBadge } from './MyGroupsPage';
 import OverviewTab from './group/OverviewTab';
+import ThisWeekTab from './group/ThisWeekTab';
 import RosterTab from './group/RosterTab';
 import AttendanceTab from './group/AttendanceTab';
 import LogsTab from './group/LogsTab';
@@ -39,7 +40,7 @@ export default function GroupDetailPage() {
   }
 
   const isMember = group.myRole !== null;
-  const active = tab === 'roster' || tab === 'attendance' || tab === 'logs' ? tab : 'overview';
+  const active = tab === 'week' || tab === 'roster' || tab === 'attendance' || tab === 'logs' ? tab : 'overview';
 
   return (
     <div>
@@ -79,6 +80,9 @@ export default function GroupDetailPage() {
       <SubNav
         tabs={[
           { label: 'Overview', to: `/groups/${id}` },
+          // The weekly plan is member-facing content; non-members browsing a
+          // public group page have nothing to see there, so the tab is hidden.
+          ...(isMember ? [{ label: 'This Week', to: `/groups/${id}/week` }] : []),
           { label: 'Roster', to: `/groups/${id}/roster` },
           { label: 'Attendance', to: `/groups/${id}/attendance` },
           { label: 'Logs', to: `/groups/${id}/logs` },
@@ -86,6 +90,7 @@ export default function GroupDetailPage() {
       />
 
       {active === 'overview' && <OverviewTab group={group} groupId={id} onGroupChanged={refetch} />}
+      {active === 'week' && isMember && <ThisWeekTab groupId={id} />}
       {active === 'roster' && <RosterTab group={group} groupId={id} onGroupChanged={refetch} />}
       {active === 'attendance' && <AttendanceTab group={group} groupId={id} />}
       {active === 'logs' && <LogsTab groupId={id} groupName={group.name} />}

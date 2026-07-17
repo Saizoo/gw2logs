@@ -63,12 +63,12 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
           roster={roster}
           builds={buildRows.map(toBuildEntry)}
           nextNight={(() => {
-            const next = upcomingRaidDates(group.raidDays, 1)[0];
+            const next = upcomingRaidDates(group.raidDays, 1, group.resolvedTimezone)[0];
             if (!next || !signups) return null;
             const confirmed = new Set(
               signups.filter((s) => s.date === next && s.status !== 'out').map((s) => s.userId),
             );
-            return confirmed.size > 0 ? { date: next, confirmed } : null;
+            return confirmed.size > 0 ? { date: next, confirmed, timeZone: group.resolvedTimezone } : null;
           })()}
         />
       )}
@@ -244,7 +244,7 @@ function RosterReadinessCard({
   builds: BuildEntry[];
   // Present when the next raid night has RSVPs — enables the
   // "confirmed only" filter (in + late count as attending).
-  nextNight: { date: string; confirmed: Set<string> } | null;
+  nextNight: { date: string; confirmed: Set<string>; timeZone: string } | null;
 }) {
   const [confirmedOnly, setConfirmedOnly] = useState(false);
   const members = confirmedOnly && nextNight ? allMembers.filter((m) => nextNight.confirmed.has(m.userId)) : allMembers;
@@ -277,7 +277,7 @@ function RosterReadinessCard({
         {nextNight && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11.5px var(--font-sans)', color: 'var(--text-62)', cursor: 'pointer' }}>
             <input type="checkbox" checked={confirmedOnly} onChange={(e) => setConfirmedOnly(e.target.checked)} />
-            Confirmed for {signupDateLabel(nextNight.date)} only
+            Confirmed for {signupDateLabel(nextNight.date, nextNight.timeZone)} only
           </label>
         )}
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>

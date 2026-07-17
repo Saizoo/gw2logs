@@ -114,6 +114,33 @@ export function bossBgPath(fightName: string): string | null {
   return file ? `/assets/raid_backgrounds/${file}` : null;
 }
 
+// Loose variant for raid-planner catalog names, which shorten or
+// re-punctuate some fightNames ("Gorseval" vs "Gorseval the Multifarious",
+// "Greer, the Blightbringer" vs "Greer the Blightbringer"): exact match
+// first, then a normalized prefix/substring match in either direction.
+// Misses fall back to null, same as bossBgPath — the caller keeps its
+// gradient.
+const normalizeBossName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+export function bossBgPathLoose(name: string): string | null {
+  const exact = bossBgPath(name);
+  if (exact) return exact;
+  const n = normalizeBossName(name);
+  if (!n) return null;
+  const keys = Object.keys(BOSS_BG);
+  const hit =
+    keys.find((k) => normalizeBossName(k) === n) ??
+    keys.find((k) => {
+      const kn = normalizeBossName(k);
+      return kn.startsWith(n) || n.startsWith(kn);
+    }) ??
+    keys.find((k) => {
+      const kn = normalizeBossName(k);
+      return kn.includes(n) || n.includes(kn);
+    });
+  return hit ? `/assets/raid_backgrounds/${BOSS_BG[hit]}` : null;
+}
+
 export interface Boss {
   name: string;
   wing: string;

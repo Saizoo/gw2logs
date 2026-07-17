@@ -7,34 +7,50 @@ export function formatLogDuration(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-// Next `count` raid-night dates (YYYY-MM-DD, local calendar) derived from
-// the group's recurring raidDays. The schedule's timezone is free text, so
-// nights are identified by calendar day rather than an exact instant —
-// "Tuesday's raid" is unambiguous to the people signing up for it.
-export function upcomingRaidDates(raidDays: string[], count: number): string[] {
+// Weekday + YYYY-MM-DD of an instant on the group's calendar. Falls back
+// to the browser's zone when the group hasn't set one (timeZone
+// undefined) or set garbage Intl rejects.
+function calendarDay(instant: Date, timeZone?: string): { weekday: string; date: string } {
+  let opts: Intl.DateTimeFormatOptions = { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', timeZone };
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-US', opts).formatToParts(instant);
+  } catch {
+    parts = new Intl.DateTimeFormat('en-US', { ...opts, timeZone: undefined }).formatToParts(instant);
+  }
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return { weekday: get('weekday'), date: `${get('year')}-${get('month')}-${get('day')}` };
+}
+
+// Next `count` raid-night dates (YYYY-MM-DD on the GROUP's calendar)
+// derived from the group's recurring raidDays. Nights are identified by
+// calendar day rather than an exact instant — "Tuesday's raid" is
+// unambiguous to the people signing up for it — but the day must be read
+// off the group's clock, not the viewer's: a browser a timezone-day away
+// from the group would otherwise generate dates the server (which
+// validates in group time) rejects as past.
+export function upcomingRaidDates(raidDays: string[], count: number, timeZone?: string): string[] {
   if (raidDays.length === 0) return [];
   const dates: string[] = [];
-  const cursor = new Date();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const start = Date.now();
   for (let i = 0; i < 21 && dates.length < count; i++) {
-    const weekday = cursor.toLocaleDateString('en-US', { weekday: 'short' });
-    if (raidDays.includes(weekday)) {
-      const y = cursor.getFullYear();
-      const m = String(cursor.getMonth() + 1).padStart(2, '0');
-      const d = String(cursor.getDate()).padStart(2, '0');
-      dates.push(`${y}-${m}-${d}`);
-    }
-    cursor.setDate(cursor.getDate() + 1);
+    const { weekday, date } = calendarDay(new Date(start + i * DAY_MS), timeZone);
+    // 24h steps can land on a repeated calendar day across a DST fall-back;
+    // skip the duplicate rather than listing the same night twice.
+    if (raidDays.includes(weekday) && dates[dates.length - 1] !== date) dates.push(date);
   }
   return dates;
 }
 
-export function signupDateLabel(date: string): string {
+export function signupDateLabel(date: string, timeZone?: string): string {
   // Parse as local calendar day — new Date('YYYY-MM-DD') would read it as
   // UTC midnight and shift the weekday for anyone west of Greenwich.
   const [y, m, d] = date.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
-  const today = new Date();
-  const isToday = dt.getFullYear() === today.getFullYear() && dt.getMonth() === today.getMonth() && dt.getDate() === today.getDate();
+  // "Tonight" means today on the group's calendar, matching the dates
+  // upcomingRaidDates generates.
+  const isToday = date === calendarDay(new Date(), timeZone).date;
   const label = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   return isToday ? `Tonight — ${label}` : label;
 }
