@@ -403,7 +403,7 @@ function BuildsTab() {
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select value={profFilter} onChange={(e) => setProfFilter(e.target.value)} style={selectStyle}>
+        <select className="u-select" value={profFilter} onChange={(e) => setProfFilter(e.target.value)} style={selectStyle}>
           <option value="">All professions</option>
           {PROF_ORDER.map((k) => (
             <option key={k} value={k}>
@@ -486,14 +486,14 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
     <Card style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ font: '700 13px var(--font-sans)' }}>{initial ? `Edit "${initial.name}"` : 'Add a build'}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <select value={profession} onChange={(e) => setProfession(e.target.value)} style={selectStyle}>
+        <select className="u-select" value={profession} onChange={(e) => setProfession(e.target.value)} style={selectStyle}>
           {PROF_ORDER.map((k) => (
             <option key={k} value={k}>
               {PROF[k].name}
             </option>
           ))}
         </select>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} style={selectStyle}>
+        <select className="u-select" value={category} onChange={(e) => setCategory(e.target.value)} style={selectStyle}>
           {(Object.keys(CAT) as BuildCategory[]).map((k) => (
             <option key={k} value={k}>
               {CAT[k].label}

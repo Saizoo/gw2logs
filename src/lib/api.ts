@@ -214,10 +214,26 @@ export interface WeekPlanComposition {
 
 export interface WeekPlanItem {
   id: string;
+  // Weekday short name ("Mon".."Sun") the fight is scheduled on; null for
+  // fights not pinned to a day.
+  day: string | null;
   order: number;
   encounterName: string;
   note: string | null;
   composition: WeekPlanComposition | null;
+}
+
+export interface GroupRaidStatus {
+  groupId: string;
+  name: string;
+  nextRaidDate: string | null;
+  nextRaidDay: string | null;
+  raidStartTime: string | null;
+  raidTimezone: string | null;
+  resolvedTimezone: string;
+  myStatus: SignupStatus | null;
+  fights: string[];
+  totalPlannedThisWeek: number;
 }
 
 export interface GroupWeekPlan {
@@ -612,7 +628,10 @@ export const api = {
   importDpsReportStatus: (batchId: string) =>
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
   home: () => apiFetch<HomeSummary>('/home'),
-  dashboard: () => apiFetch<DashboardSummary>('/dashboard'),
+  // Sends the browser's IANA zone so the weekly-activity bars bucket on
+  // the viewer's calendar days instead of UTC.
+  dashboard: () =>
+    apiFetch<DashboardSummary>(`/dashboard?tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC')}`),
   logs: (
     params: {
       category?: 'raid' | 'fractal';
@@ -704,8 +723,9 @@ export const api = {
   groupClears: (id: string) => apiFetch<GroupClears>(`/groups/${encodeURIComponent(id)}/clears`),
   groupAttendance: (id: string) => apiFetch<GroupAttendance>(`/groups/${encodeURIComponent(id)}/attendance`),
   groupSignups: (id: string) => apiFetch<RaidSignup[]>(`/groups/${encodeURIComponent(id)}/signups`),
+  groupRaidStatus: () => apiFetch<GroupRaidStatus[]>('/groups/raid-status'),
   groupWeekPlan: (id: string) => apiFetch<GroupWeekPlan>(`/groups/${encodeURIComponent(id)}/week-plan`),
-  setGroupWeekPlan: (id: string, items: { encounterName: string; compositionId?: string | null; note?: string | null }[]) =>
+  setGroupWeekPlan: (id: string, items: { day?: string | null; encounterName: string; compositionId?: string | null; note?: string | null }[]) =>
     apiFetch<GroupWeekPlan>(`/groups/${encodeURIComponent(id)}/week-plan`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

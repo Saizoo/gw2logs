@@ -270,6 +270,9 @@ model GroupWeekPlanItem {
   groupId       String
   group         Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   weekStart     String
+  // Weekday short name ("Mon".."Sun") the fight is scheduled on. Null =
+  // not pinned to a day (legacy rows and "sometime this week" fights).
+  day           String?
   order         Int
   encounterName String
   compositionId String?

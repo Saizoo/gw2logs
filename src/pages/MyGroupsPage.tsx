@@ -133,7 +133,7 @@ export default function MyGroupsPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             style={{ ...inputStyle, flex: 1 }}
           />
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)} style={inputStyle}>
+          <select className="u-select" value={sort} onChange={(e) => setSort(e.target.value as SortOption)} style={inputStyle}>
             {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}

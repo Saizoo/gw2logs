@@ -277,7 +277,7 @@ export default function PlannerPage() {
 
       {/* --- group / composition picker --- */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <select value={groupId ?? ''} onChange={(e) => { setGroupId(e.target.value || null); setCompositionId(null); }} style={selectStyle}>
+        <select className="u-select" value={groupId ?? ''} onChange={(e) => { setGroupId(e.target.value || null); setCompositionId(null); }} style={selectStyle}>
           {myGroups?.length ? (
             myGroups.map((g) => (
               <option key={g.id} value={g.id}>
@@ -288,7 +288,7 @@ export default function PlannerPage() {
             <option value="">No groups yet</option>
           )}
         </select>
-        <select value={compositionId ?? ''} onChange={(e) => setCompositionId(e.target.value || null)} style={selectStyle} disabled={!compositions?.length}>
+        <select className="u-select" value={compositionId ?? ''} onChange={(e) => setCompositionId(e.target.value || null)} style={selectStyle} disabled={!compositions?.length}>
           {compositions?.length ? (
             compositions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -510,14 +510,14 @@ function SlotRow({
         {tab === 'catalog' && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input placeholder="Role (e.g. Power DPS)" value={role} onChange={(e) => setRole(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
-            <select value={profKey} onChange={(e) => { setProfKey(e.target.value as typeof profKey); setBuildId(''); }} style={selectStyle}>
+            <select className="u-select" value={profKey} onChange={(e) => { setProfKey(e.target.value as typeof profKey); setBuildId(''); }} style={selectStyle}>
               {PROF_ORDER.map((k) => (
                 <option key={k} value={k}>
                   {PROF[k].name}
                 </option>
               ))}
             </select>
-            <select value={buildId} onChange={(e) => setBuildId(e.target.value)} style={{ ...selectStyle, minWidth: 260 }}>
+            <select className="u-select" value={buildId} onChange={(e) => setBuildId(e.target.value)} style={{ ...selectStyle, minWidth: 260 }}>
               <option value="">— choose a build —</option>
               {catalogOptions.map((b) => (
                 <option key={b.id} value={b.id}>

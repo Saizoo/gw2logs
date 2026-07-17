@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, ApiError, type SignupStatus } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { toast } from '../lib/toast';
 import { bossBgPath, professionColor, professionIconPath } from '../data/gw2-data';
 import { ArtImg, Card, GoldButton, ParseLegend, ProfDot, ResultPill, StatCard } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+import { SIGNUP_META, signupDateLabel } from './group/shared';
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
@@ -283,8 +286,100 @@ function SignedInDashboard() {
               ))}
             </div>
           </Card>
+
+          <RaidStatusCard />
         </div>
       </div>
     </div>
+  );
+}
+
+// Compact per-group raid outlook: the next raid night on each group's
+// calendar, whether the viewer has RSVP'd (with one-tap RSVP if not),
+// and the fights the leader has planned for that night.
+function RaidStatusCard() {
+  const [nonce, setNonce] = useState(0);
+  const { data: statuses } = useApiQuery(() => api.groupRaidStatus(), [nonce]);
+
+  if (!statuses || statuses.length === 0) return null;
+
+  async function rsvp(groupId: string, date: string, status: SignupStatus) {
+    try {
+      await api.setSignup(groupId, date, status);
+      toast.success('RSVP saved');
+      setNonce((n) => n + 1);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save RSVP');
+    }
+  }
+
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
+        Raid Nights
+      </div>
+      {statuses.map((s) => {
+        const meta = s.myStatus ? SIGNUP_META[s.myStatus] : null;
+        return (
+          <div key={s.groupId} style={{ padding: '13px 20px', borderBottom: '1px solid var(--border-faint)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Link to={`/groups/${s.groupId}/week`} className="u-link" style={{ font: '700 12.5px var(--font-sans)', color: 'var(--text)' }}>
+                {s.name}
+              </Link>
+              {meta && (
+                <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: meta.color, background: meta.bg, padding: '2px 8px', borderRadius: 10 }}>
+                  {meta.label}
+                </span>
+              )}
+            </div>
+            <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-58)', marginTop: 3 }}>
+              {s.nextRaidDate
+                ? `${signupDateLabel(s.nextRaidDate, s.resolvedTimezone)}${s.raidStartTime ? ` · ${s.raidStartTime}${s.raidTimezone ? ` ${s.raidTimezone}` : ''}` : ''}`
+                : 'No raid schedule set'}
+            </div>
+            {s.nextRaidDate && !s.myStatus && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                <span style={{ font: '500 11px var(--font-sans)', color: 'var(--gold)' }}>You haven't RSVP'd —</span>
+                {(['in', 'late', 'out'] as SignupStatus[]).map((status) => (
+                  <button
+                    key={status}
+                    className="u-chip"
+                    onClick={() => rsvp(s.groupId, s.nextRaidDate!, status)}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 10,
+                      font: '600 10.5px var(--font-sans)',
+                      background: 'oklch(1 0 0 / 4%)',
+                      color: SIGNUP_META[status].color,
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {SIGNUP_META[status].label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {s.fights.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {s.fights.slice(0, 5).map((f, i) => (
+                  <span key={`${f}-${i}`} style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-70)', background: 'oklch(1 0 0 / 4%)', border: '1px solid var(--border-faint)', padding: '3px 9px', borderRadius: 10 }}>
+                    {f}
+                  </span>
+                ))}
+                {s.fights.length > 5 && (
+                  <span style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-50)' }}>+{s.fights.length - 5} more</span>
+                )}
+              </div>
+            ) : (
+              s.totalPlannedThisWeek > 0 && (
+                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 6 }}>
+                  {s.totalPlannedThisWeek} fight{s.totalPlannedThisWeek === 1 ? '' : 's'} planned later this week
+                </div>
+              )
+            )}
+          </div>
+        );
+      })}
+    </Card>
   );
 }

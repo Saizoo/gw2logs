@@ -68,7 +68,7 @@ export default function UploadPage() {
             <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
               Attach to group (optional)
             </span>
-            <select value={groupId} onChange={(e) => setGroupId(e.target.value)} style={selectStyle}>
+            <select className="u-select" value={groupId} onChange={(e) => setGroupId(e.target.value)} style={selectStyle}>
               <option value="">Don't attach to a group</option>
               {myGroups.map((g) => (
                 <option key={g.id} value={g.id}>

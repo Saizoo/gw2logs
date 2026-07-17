@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
         subtitle="Top squad-verified DPS across the guild, ranked by encounter and role"
         actions={
           <>
-          <select
+          <select className="u-select"
             value={selected ? `${selected.fightName}|${selected.isCm}` : ''}
             onChange={(e) => {
               const [fightName, cm] = e.target.value.split('|');
@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
               </option>
             ))}
           </select>
-          <select value={role} onChange={(e) => selectRole(e.target.value === 'condi' ? 'condi' : 'power')} style={selectStyle}>
+          <select className="u-select" value={role} onChange={(e) => selectRole(e.target.value === 'condi' ? 'condi' : 'power')} style={selectStyle}>
             <option value="power">Power DPS</option>
             <option value="condi">Condition DPS</option>
           </select>

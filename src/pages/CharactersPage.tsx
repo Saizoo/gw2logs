@@ -168,7 +168,7 @@ export default function CharactersPage() {
       {adding && (
         <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <input placeholder="Character name" value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-          <select value={newProf} onChange={(e) => setNewProf(e.target.value)} style={selectStyle}>
+          <select className="u-select" value={newProf} onChange={(e) => setNewProf(e.target.value)} style={selectStyle}>
             {PROF_ORDER.map((k) => (
               <option key={k} value={PROF[k].name}>
                 {PROF[k].name}
@@ -335,7 +335,7 @@ function CharacterRow({
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none', flexWrap: 'wrap', maxWidth: '100%' }}>
         {assignOpen && selected ? (
           <>
-            <select
+            <select className="u-select"
               autoFocus
               value={selected.assignedBuildId ?? ''}
               onChange={(e) => handleAssign(e.target.value || null)}

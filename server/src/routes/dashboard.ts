@@ -8,7 +8,23 @@ export const dashboardRouter = Router();
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 
+// The browser sends its IANA zone (?tz=America/New_York) so day buckets
+// land on the viewer's calendar — bucketing in UTC shifted any evening
+// upload west of Greenwich onto the next day's bar.
+function viewerTimezone(raw: unknown): string {
+  if (typeof raw === 'string' && raw.length <= 64) {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: raw });
+      return raw;
+    } catch {
+      // fall through to UTC
+    }
+  }
+  return 'UTC';
+}
+
 dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
+  const timeZone = viewerTimezone(req.query.tz);
   const user = await prisma.user.findUnique({
     where: { id: req.user!.id },
     select: {
@@ -30,7 +46,7 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
       displayName: user?.discordUsername ?? 'there',
       gw2AccountName: null,
       stats: { logsThisWeek: 0, logsThisWeekDelta: 0, avgSquadDps: 0, avgSquadDpsDelta: 0, clearsThisWeek: 0, totalThisWeek: 0 },
-      weeklyActivity: buildWeekBuckets([]),
+      weeklyActivity: buildWeekBuckets([], timeZone),
       recentLogs: [],
     });
     return;
@@ -75,7 +91,7 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
       clearsThisWeek,
       totalThisWeek: thisWeekLogs.length,
     },
-    weeklyActivity: buildWeekBuckets(thisWeekLogs.map((l) => l.log.uploadedAt)),
+    weeklyActivity: buildWeekBuckets(thisWeekLogs.map((l) => l.log.uploadedAt), timeZone),
     recentLogs: recentLogPlayers.map((lp) => ({
       logId: lp.log.id,
       boss: lp.log.fightName,
@@ -90,19 +106,33 @@ dashboardRouter.get('/', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-function buildWeekBuckets(dates: Date[]): { label: string; count: number }[] {
-  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function buildWeekBuckets(dates: Date[], timeZone: string): { label: string; count: number }[] {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const calendarDay = (d: Date): { key: string; label: string } => {
+    const parts = fmt.formatToParts(d);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    return { key: `${get('year')}-${get('month')}-${get('day')}`, label: get('weekday') };
+  };
+
   const buckets = new Map<string, number>();
-  const today = new Date();
+  const now = Date.now();
   const days: { key: string; label: string }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * DAY_MS);
-    const key = d.toISOString().slice(0, 10);
-    days.push({ key, label: labels[d.getDay()] });
-    buckets.set(key, 0);
+    const day = calendarDay(new Date(now - i * DAY_MS));
+    // 24h steps can repeat a calendar day across a DST fall-back — skip
+    // the duplicate rather than rendering the same bar twice.
+    if (days.length && days[days.length - 1].key === day.key) continue;
+    days.push(day);
+    buckets.set(day.key, 0);
   }
   for (const d of dates) {
-    const key = new Date(d).toISOString().slice(0, 10);
+    const { key } = calendarDay(new Date(d));
     if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1);
   }
   return days.map((d) => ({ label: d.label, count: buckets.get(d.key) ?? 0 }));

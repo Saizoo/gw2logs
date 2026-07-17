@@ -290,6 +290,50 @@ p {
   transform: translateY(1px);
 }
 
+/* Dropdown menus. Native selects get a themed shell + custom chevron.
+   Several call sites pass an inline `background` shorthand (inputStyle),
+   which would wipe a class-level background-image — hence the !important
+   on the chevron layer and its right padding. Option/optgroup styling is
+   limited by the platform, but dark ground + readable text is portable. */
+select.u-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23c9a94f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 10px 6px !important;
+  padding-right: 30px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+select.u-select:hover:not(:disabled) {
+  border-color: oklch(0.78 0.14 85 / 40%);
+  background-color: oklch(0.14 0.016 250);
+}
+select.u-select:focus-visible {
+  outline: none;
+  border-color: oklch(0.78 0.14 85 / 60%);
+  box-shadow: 0 0 0 3px oklch(0.78 0.14 85 / 14%);
+}
+select.u-select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+select.u-select option,
+select.u-select optgroup {
+  background: oklch(0.16 0.014 250);
+  color: oklch(0.88 0.01 250);
+}
+select.u-select optgroup {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--gold);
+}
+
 /* Primary gold call-to-action buttons/links. */
 .u-btn-gold {
   transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;

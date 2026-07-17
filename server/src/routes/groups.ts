@@ -122,6 +122,75 @@ groupsRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
   res.status(201).json({ id: group.id });
 }));
 
+// Dashboard raid-status: for every group the caller belongs to, the next
+// raid night on the group's calendar, the caller's RSVP for it, and the
+// fights the leader planned for that day. Registered before '/:id' so the
+// literal path wins the route match.
+groupsRouter.get('/raid-status', requireAuth, asyncHandler(async (req, res) => {
+  const memberships = await prisma.groupMember.findMany({
+    where: { userId: req.user!.id },
+    select: {
+      joinedAt: true,
+      group: { select: { id: true, name: true, raidDays: true, raidStartTime: true, raidTimezone: true } },
+    },
+    orderBy: { joinedAt: 'asc' },
+  });
+  const weekStart = weekPlanWeekStart();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  const statuses = await Promise.all(
+    memberships.map(async ({ group }) => {
+      const timeZone = resolveTimezone(group.raidTimezone);
+      let nextDate: string | null = null;
+      let nextDay: string | null = null;
+      if (group.raidDays.length > 0) {
+        for (let i = 0; i < 14; i++) {
+          const z = zonedNow(timeZone, new Date(Date.now() + i * DAY_MS));
+          if (group.raidDays.includes(z.weekday)) {
+            nextDate = z.date;
+            nextDay = z.weekday;
+            break;
+          }
+        }
+      }
+
+      const [signup, planItems] = await Promise.all([
+        nextDate
+          ? prisma.raidSignup.findUnique({
+              where: { groupId_userId_date: { groupId: group.id, userId: req.user!.id, date: nextDate } },
+              select: { status: true },
+            })
+          : Promise.resolve(null),
+        prisma.groupWeekPlanItem.findMany({
+          where: { groupId: group.id, weekStart },
+          orderBy: { order: 'asc' },
+          select: { day: true, encounterName: true },
+        }),
+      ]);
+
+      // Fights pinned to the upcoming night, plus any unpinned "sometime
+      // this week" items — that's what the member should expect to raid.
+      const fights = planItems
+        .filter((p) => p.day === null || (nextDay !== null && p.day === nextDay))
+        .map((p) => p.encounterName);
+
+      return {
+        groupId: group.id,
+        name: group.name,
+        nextRaidDate: nextDate,
+        nextRaidDay: nextDay,
+        raidStartTime: group.raidStartTime,
+        raidTimezone: group.raidTimezone,
+        resolvedTimezone: timeZone,
+        myStatus: signup?.status ?? null,
+        fights,
+        totalPlannedThisWeek: planItems.length,
+      };
+    }),
+  );
+  res.json(statuses);
+}));
+
 groupsRouter.get('/:id', asyncHandler(async (req, res) => {
   const group = await prisma.group.findUnique({
     where: { id: req.params.id },
@@ -382,6 +451,7 @@ async function readWeekPlan(groupId: string, weekStart: string) {
     orderBy: { order: 'asc' },
     select: {
       id: true,
+      day: true,
       order: true,
       encounterName: true,
       note: true,
@@ -413,6 +483,7 @@ async function readWeekPlan(groupId: string, weekStart: string) {
   });
   return items.map((item) => ({
     id: item.id,
+    day: item.day,
     order: item.order,
     encounterName: item.encounterName,
     note: item.note,
@@ -467,16 +538,24 @@ groupsRouter.put('/:id/week-plan', requireAuth, asyncHandler(async (req, res) =>
     return;
   }
 
-  const items: { encounterName: string; compositionId: string | null; note: string | null }[] = [];
+  const items: { day: string | null; encounterName: string; compositionId: string | null; note: string | null }[] = [];
   for (const raw of rawItems) {
     const encounterName = typeof raw?.encounterName === 'string' ? raw.encounterName.trim().slice(0, 80) : '';
     if (!encounterName) {
       res.status(400).json({ error: 'Every item needs an encounterName' });
       return;
     }
+    let day: string | null = null;
+    if (raw?.day != null) {
+      if (typeof raw.day !== 'string' || !(WEEKDAYS as readonly string[]).includes(raw.day)) {
+        res.status(400).json({ error: `day must be one of ${WEEKDAYS.join(', ')} (or null)` });
+        return;
+      }
+      day = raw.day;
+    }
     const compositionId = typeof raw?.compositionId === 'string' && raw.compositionId ? raw.compositionId : null;
     const note = typeof raw?.note === 'string' ? raw.note.trim().slice(0, 300) || null : null;
-    items.push({ encounterName, compositionId, note });
+    items.push({ day, encounterName, compositionId, note });
   }
 
   // Every referenced composition must belong to THIS group — otherwise a

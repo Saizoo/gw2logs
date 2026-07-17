@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { api, ApiError, type GroupWeekPlan, type WeekPlanComposition, type WeekPlanItem } from '../../lib/api';
+import { api, ApiError, type GroupDetail, type GroupWeekPlan, type WeekPlanComposition, type WeekPlanItem } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { ArtImg, Card, GoldButton } from '../../components/atoms';
@@ -7,10 +7,11 @@ import { EXPANSIONS } from '../../data/encounters';
 import { bossBgPathLoose, professionColor, professionIconPath } from '../../data/gw2-data';
 import { ghostBtnStyle, inputStyle, smallBtnStyle } from './shared';
 
-// This Week tab: the leader's agenda for the current reset week. Fights
-// are picked from the raid-planner encounter catalog and each one can
-// carry a squad composition built in the planner — members open this tab
-// to see what's on the menu and which role they're playing.
+// This Week tab: the leader's agenda for the current reset week, organized
+// by raid night. Each day gets its own card holding that night's fights;
+// fights are picked from the raid-planner encounter catalog and can carry
+// a squad composition built in the planner — members open this tab to see
+// what's on the menu each night and which role they're playing.
 
 interface CatalogEncounter {
   name: string;
@@ -37,13 +38,51 @@ const CATALOG_BY_NAME = new Map<string, CatalogEncounter>(
   CATALOG.flatMap((g) => g.encs).map((e) => [e.name, e]),
 );
 
+// Reset week runs Monday → Sunday (GW2 reset is Monday 07:30 UTC), so day
+// cards always render in that order, with unpinned fights last.
+const WEEK_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_FULL: Record<string, string> = {
+  Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday',
+};
+
+// "Thu" + weekStart Monday → "Jul 16": the concrete date this weekday
+// lands on within the reset week.
+function dayDateLabel(weekStart: string, day: string): string {
+  const idx = WEEK_ORDER.indexOf(day);
+  if (idx < 0) return '';
+  const [y, m, d] = weekStart.split('-').map(Number);
+  return new Date(y, m - 1, d + idx).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Today's weekday on the group's calendar, for the "Tonight" badge.
+function groupToday(timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone }).format(new Date());
+  } catch {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date());
+  }
+}
+
 interface DraftItem {
   encounterName: string;
   compositionId: string | null;
   note: string;
 }
 
-export default function ThisWeekTab({ groupId }: { groupId: string }) {
+interface DraftDay {
+  day: string | null;
+  fights: DraftItem[];
+}
+
+function sortDayGroups<T extends { day: string | null }>(groups: T[]): T[] {
+  return [...groups].sort((a, b) => {
+    const ai = a.day === null ? WEEK_ORDER.length : WEEK_ORDER.indexOf(a.day);
+    const bi = b.day === null ? WEEK_ORDER.length : WEEK_ORDER.indexOf(b.day);
+    return ai - bi;
+  });
+}
+
+export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; groupId: string }) {
   const [nonce, setNonce] = useState(0);
   const { data: plan, loading, error } = useApiQuery(() => api.groupWeekPlan(groupId), [groupId, nonce]);
   const [editing, setEditing] = useState(false);
@@ -64,13 +103,22 @@ export default function ThisWeekTab({ groupId }: { groupId: string }) {
 
   const resetLabel = new Date(`${plan.weekStart}T07:30:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+  const dayGroups = sortDayGroups(
+    [...plan.items.reduce((acc, item) => {
+      const key = item.day ?? '';
+      acc.set(key, [...(acc.get(key) ?? []), item]);
+      return acc;
+    }, new Map<string, WeekPlanItem[]>())].map(([key, items]) => ({ day: key || null, items })),
+  );
+  const today = groupToday(group.resolvedTimezone);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Card style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ font: '700 13.5px var(--font-sans)' }}>This Week's Raid Plan</div>
           <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
-            Reset week of {resetLabel} · {plan.items.length} fight{plan.items.length === 1 ? '' : 's'} planned
+            Reset week of {resetLabel} · {plan.items.length} fight{plan.items.length === 1 ? '' : 's'} across {dayGroups.length} night{dayGroups.length === 1 ? '' : 's'}
           </div>
         </div>
         {plan.canEdit && !editing && (
@@ -83,6 +131,8 @@ export default function ThisWeekTab({ groupId }: { groupId: string }) {
       {editing && plan.canEdit ? (
         <PlanEditor
           groupId={groupId}
+          raidDays={group.raidDays}
+          weekStart={plan.weekStart}
           initial={plan}
           onDone={(changed) => {
             setEditing(false);
@@ -94,12 +144,14 @@ export default function ThisWeekTab({ groupId }: { groupId: string }) {
           <div style={{ font: '700 14px var(--font-sans)', marginBottom: 6 }}>Nothing planned yet</div>
           <div style={{ font: '400 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
             {plan.canEdit
-              ? 'Pick the fights for this week and attach squad compositions from the raid planner.'
+              ? 'Pick a raid night, add the fights for it, and attach squad compositions from the raid planner.'
               : "The group leader hasn't planned this week's fights yet — check back later."}
           </div>
         </Card>
       ) : (
-        plan.items.map((item, i) => <PlannedFightCard key={item.id} item={item} index={i} />)
+        dayGroups.map(({ day, items }) => (
+          <DayCard key={day ?? 'any'} day={day} items={items} weekStart={plan.weekStart} isTonight={day !== null && day === today} />
+        ))
       )}
     </div>
   );
@@ -107,25 +159,51 @@ export default function ThisWeekTab({ groupId }: { groupId: string }) {
 
 // ---- Read view -----------------------------------------------------------
 
-function PlannedFightCard({ item, index }: { item: WeekPlanItem; index: number }) {
+function DayCard({ day, items, weekStart, isTonight }: { day: string | null; items: WeekPlanItem[]; weekStart: string; isTonight: boolean }) {
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 22px', borderBottom: '1px solid var(--border-soft)', background: 'oklch(1 0 0 / 2.5%)', flexWrap: 'wrap' }}>
+        <div style={{ font: '800 15px var(--font-sans)', letterSpacing: '-.2px' }}>
+          {day ? DAY_FULL[day] : 'Anytime this week'}
+        </div>
+        {day && (
+          <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>{dayDateLabel(weekStart, day)}</div>
+        )}
+        {isTonight && (
+          <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)', background: 'oklch(0.78 0.14 85 / 15%)', border: '1px solid oklch(0.78 0.14 85 / 35%)', padding: '3px 9px', borderRadius: 12 }}>
+            Tonight
+          </span>
+        )}
+        <div style={{ marginLeft: 'auto', font: '500 11.5px var(--font-sans)', color: 'var(--text-50)' }}>
+          {items.length} fight{items.length === 1 ? '' : 's'}
+        </div>
+      </div>
+      {items.map((item, i) => (
+        <PlannedFight key={item.id} item={item} index={i} />
+      ))}
+    </Card>
+  );
+}
+
+function PlannedFight({ item, index }: { item: WeekPlanItem; index: number }) {
   const info = CATALOG_BY_NAME.get(item.encounterName);
   const art = bossBgPathLoose(item.encounterName);
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
-    <Card style={{ overflow: 'hidden' }}>
-      <div style={{ position: 'relative', padding: '18px 22px', borderBottom: '1px solid var(--border-soft)', overflow: 'hidden' }}>
+    <div style={{ borderTop: index > 0 ? '1px solid var(--border-soft)' : undefined }}>
+      <div style={{ position: 'relative', padding: '15px 22px', overflow: 'hidden' }}>
         {art && (
           <>
-            <ArtImg src={art} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', opacity: 0.35 }} />
+            <ArtImg src={art} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', opacity: 0.3 }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--bg-card) 0%, oklch(0 0 0 / 25%) 60%, oklch(0 0 0 / 10%) 100%)' }} />
           </>
         )}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ font: '800 13px var(--font-mono, monospace)', color: 'var(--gold)', opacity: 0.9 }}>{String(index + 1).padStart(2, '0')}</span>
+          <span style={{ font: '800 12px var(--font-mono, monospace)', color: 'var(--gold)', opacity: 0.9 }}>{String(index + 1).padStart(2, '0')}</span>
           <div>
-            <div style={{ font: '800 17px var(--font-sans)', letterSpacing: '-.2px' }}>{item.encounterName}</div>
-            {info && <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-60)', marginTop: 2 }}>{info.wing}</div>}
+            <div style={{ font: '800 16px var(--font-sans)', letterSpacing: '-.2px' }}>{item.encounterName}</div>
+            {info && <div style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-60)', marginTop: 2 }}>{info.wing}</div>}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {info && (
@@ -143,13 +221,13 @@ function PlannedFightCard({ item, index }: { item: WeekPlanItem; index: number }
       </div>
 
       {item.note && (
-        <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--border-faint)', font: '400 12.5px var(--font-sans)', color: 'var(--gold)', fontStyle: 'italic' }}>
+        <div style={{ padding: '10px 22px', borderTop: '1px solid var(--border-faint)', font: '400 12.5px var(--font-sans)', color: 'var(--gold)', fontStyle: 'italic' }}>
           “{item.note}”
         </div>
       )}
 
       {guideOpen && info && (
-        <div style={{ padding: '14px 22px', borderBottom: '1px solid var(--border-faint)' }}>
+        <div style={{ padding: '12px 22px', borderTop: '1px solid var(--border-faint)' }}>
           <div style={{ font: '400 12.5px/1.6 var(--font-sans)', color: 'var(--text-70)', marginBottom: info.notes.length ? 10 : 0 }}>{info.tag}</div>
           {info.notes.length > 0 && (
             <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -164,11 +242,11 @@ function PlannedFightCard({ item, index }: { item: WeekPlanItem; index: number }
       {item.composition ? (
         <CompositionRoster composition={item.composition} />
       ) : (
-        <div style={{ padding: '14px 22px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
+        <div style={{ padding: '10px 22px 14px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
           No squad composition attached — the leader can link one from the raid planner.
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -185,14 +263,14 @@ function CompositionRoster({ composition }: { composition: WeekPlanComposition }
 
   if (composition.slots.length === 0) {
     return (
-      <div style={{ padding: '14px 22px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
+      <div style={{ padding: '10px 22px 14px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
         Composition “{composition.name}” has no slots filled yet.
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '14px 22px' }}>
+    <div style={{ padding: '12px 22px 16px' }}>
       <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 10 }}>
         Squad · {composition.name}
       </div>
@@ -237,44 +315,76 @@ function CompositionRoster({ composition }: { composition: WeekPlanComposition }
 
 function PlanEditor({
   groupId,
+  raidDays,
+  weekStart,
   initial,
   onDone,
 }: {
   groupId: string;
+  raidDays: string[];
+  weekStart: string;
   initial: GroupWeekPlan;
   onDone: (changed: boolean) => void;
 }) {
   const { data: compositions } = useApiQuery(() => api.compositions(groupId), [groupId]);
-  const [items, setItems] = useState<DraftItem[]>(
-    initial.items.map((item) => ({
-      encounterName: item.encounterName,
-      compositionId: item.composition?.id ?? null,
-      note: item.note ?? '',
-    })),
-  );
+  const [days, setDays] = useState<DraftDay[]>(() => {
+    const byDay = new Map<string, DraftItem[]>();
+    for (const item of initial.items) {
+      const key = item.day ?? '';
+      byDay.set(key, [
+        ...(byDay.get(key) ?? []),
+        { encounterName: item.encounterName, compositionId: item.composition?.id ?? null, note: item.note ?? '' },
+      ]);
+    }
+    return sortDayGroups([...byDay.entries()].map(([key, fights]) => ({ day: key || null, fights })));
+  });
   const [saving, setSaving] = useState(false);
 
-  const update = (index: number, patch: Partial<DraftItem>) =>
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-  const move = (index: number, delta: -1 | 1) =>
-    setItems((prev) => {
-      const next = [...prev];
-      const target = index + delta;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+  const totalFights = days.reduce((sum, d) => sum + d.fights.length, 0);
+  const usedDays = new Set(days.map((d) => (d.day === null ? 'any' : d.day)));
+
+  const addDay = (day: string | null) =>
+    setDays((prev) => sortDayGroups([...prev, { day, fights: [] }]));
+  const removeDay = (index: number) => setDays((prev) => prev.filter((_, i) => i !== index));
+  const addFight = (dayIndex: number) =>
+    setDays((prev) =>
+      prev.map((d, i) =>
+        i === dayIndex ? { ...d, fights: [...d.fights, { encounterName: CATALOG[0].encs[0].name, compositionId: null, note: '' }] } : d,
+      ),
+    );
+  const updateFight = (dayIndex: number, fightIndex: number, patch: Partial<DraftItem>) =>
+    setDays((prev) =>
+      prev.map((d, i) =>
+        i === dayIndex ? { ...d, fights: d.fights.map((f, j) => (j === fightIndex ? { ...f, ...patch } : f)) } : d,
+      ),
+    );
+  const moveFight = (dayIndex: number, fightIndex: number, delta: -1 | 1) =>
+    setDays((prev) =>
+      prev.map((d, i) => {
+        if (i !== dayIndex) return d;
+        const target = fightIndex + delta;
+        if (target < 0 || target >= d.fights.length) return d;
+        const fights = [...d.fights];
+        [fights[fightIndex], fights[target]] = [fights[target], fights[fightIndex]];
+        return { ...d, fights };
+      }),
+    );
+  const removeFight = (dayIndex: number, fightIndex: number) =>
+    setDays((prev) => prev.map((d, i) => (i === dayIndex ? { ...d, fights: d.fights.filter((_, j) => j !== fightIndex) } : d)));
 
   async function save() {
     setSaving(true);
     try {
       await api.setGroupWeekPlan(
         groupId,
-        items.map((item) => ({
-          encounterName: item.encounterName,
-          compositionId: item.compositionId,
-          note: item.note.trim() || null,
-        })),
+        days.flatMap((d) =>
+          d.fights.map((f) => ({
+            day: d.day,
+            encounterName: f.encounterName,
+            compositionId: f.compositionId,
+            note: f.note.trim() || null,
+          })),
+        ),
       );
       toast.success('Weekly plan saved');
       onDone(true);
@@ -296,82 +406,140 @@ function PlanEditor({
   };
 
   return (
-    <Card style={{ overflow: 'hidden' }}>
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13px var(--font-sans)' }}>
-        Edit weekly plan
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {items.length === 0 && (
-          <div style={{ padding: '18px 20px', font: '400 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
-            No fights yet — add the first one below.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {days.map((dayGroup, di) => (
+        <Card key={dayGroup.day ?? 'any'} style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid var(--border-soft)', background: 'oklch(1 0 0 / 2.5%)', flexWrap: 'wrap' }}>
+            <div style={{ font: '800 14px var(--font-sans)' }}>{dayGroup.day ? DAY_FULL[dayGroup.day] : 'Anytime this week'}</div>
+            {dayGroup.day && (
+              <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-55)' }}>{dayDateLabel(weekStart, dayGroup.day)}</div>
+            )}
+            {dayGroup.day && raidDays.includes(dayGroup.day) && (
+              <span style={{ font: '600 10px var(--font-sans)', color: 'var(--gold)', letterSpacing: '.4px', textTransform: 'uppercase' }}>Raid night</span>
+            )}
+            <button
+              className="u-btn-ghost"
+              style={{ ...smallBtnStyle, color: 'var(--bad)', marginLeft: 'auto' }}
+              onClick={() => removeDay(di)}
+              title="Remove this day and its fights"
+            >
+              Remove day
+            </button>
           </div>
-        )}
-        {items.map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderBottom: '1px solid var(--border-faint)', flexWrap: 'wrap' }}>
-            <span style={{ font: '700 11px var(--font-mono, monospace)', color: 'var(--text-50)', width: 20 }}>{i + 1}.</span>
-            <select
-              value={item.encounterName}
-              onChange={(e) => update(i, { encounterName: e.target.value })}
-              style={{ ...inputStyle, minWidth: 190 }}
-            >
-              {CATALOG.map((g) => (
-                <optgroup key={g.wing} label={g.wing}>
-                  {g.encs.map((enc) => (
-                    <option key={enc.name} value={enc.name}>{enc.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <select
-              value={item.compositionId ?? ''}
-              onChange={(e) => update(i, { compositionId: e.target.value || null })}
-              style={{ ...inputStyle, minWidth: 170 }}
-            >
-              <option value="">No composition</option>
-              {compsFor(item.encounterName).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}{c.fightName ? ` (${c.fightName})` : ''}
-                </option>
-              ))}
-            </select>
-            <input
-              value={item.note}
-              onChange={(e) => update(i, { note: e.target.value })}
-              placeholder="Note (optional) — e.g. CM attempt, new comp trial"
-              maxLength={300}
-              style={{ ...inputStyle, flex: 1, minWidth: 160 }}
-            />
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button className="u-btn-ghost" style={smallBtnStyle} onClick={() => move(i, -1)} disabled={i === 0} title="Move up">↑</button>
-              <button className="u-btn-ghost" style={smallBtnStyle} onClick={() => move(i, 1)} disabled={i === items.length - 1} title="Move down">↓</button>
-              <button
-                className="u-btn-ghost"
-                style={{ ...smallBtnStyle, color: 'var(--bad)' }}
-                onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
-                title="Remove fight"
-              >
-                ✕
-              </button>
+
+          {dayGroup.fights.length === 0 && (
+            <div style={{ padding: '14px 20px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
+              No fights yet for this night.
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+          {dayGroup.fights.map((fight, fi) => (
+            <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderBottom: '1px solid var(--border-faint)', flexWrap: 'wrap' }}>
+              <span style={{ font: '700 11px var(--font-mono, monospace)', color: 'var(--text-50)', width: 20 }}>{fi + 1}.</span>
+              <select
+                className="u-select"
+                value={fight.encounterName}
+                onChange={(e) => updateFight(di, fi, { encounterName: e.target.value })}
+                style={{ ...inputStyle, minWidth: 190 }}
+              >
+                {CATALOG.map((g) => (
+                  <optgroup key={g.wing} label={g.wing}>
+                    {g.encs.map((enc) => (
+                      <option key={enc.name} value={enc.name}>{enc.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <select
+                className="u-select"
+                value={fight.compositionId ?? ''}
+                onChange={(e) => updateFight(di, fi, { compositionId: e.target.value || null })}
+                style={{ ...inputStyle, minWidth: 170 }}
+              >
+                <option value="">No composition</option>
+                {compsFor(fight.encounterName).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.fightName ? ` (${c.fightName})` : ''}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={fight.note}
+                onChange={(e) => updateFight(di, fi, { note: e.target.value })}
+                placeholder="Note (optional) — e.g. CM attempt, new comp trial"
+                maxLength={300}
+                style={{ ...inputStyle, flex: 1, minWidth: 160 }}
+              />
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="u-btn-ghost" style={smallBtnStyle} onClick={() => moveFight(di, fi, -1)} disabled={fi === 0} title="Move up">↑</button>
+                <button className="u-btn-ghost" style={smallBtnStyle} onClick={() => moveFight(di, fi, 1)} disabled={fi === dayGroup.fights.length - 1} title="Move down">↓</button>
+                <button className="u-btn-ghost" style={{ ...smallBtnStyle, color: 'var(--bad)' }} onClick={() => removeFight(di, fi)} title="Remove fight">✕</button>
+              </div>
+            </div>
+          ))}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', flexWrap: 'wrap' }}>
-        <button
-          className="u-btn-ghost"
-          style={ghostBtnStyle}
-          onClick={() => setItems((prev) => [...prev, { encounterName: CATALOG[0].encs[0].name, compositionId: null, note: '' }])}
-          disabled={items.length >= 30}
-        >
-          + Add fight
-        </button>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ padding: '12px 20px' }}>
+            <button
+              className="u-btn-ghost"
+              style={ghostBtnStyle}
+              onClick={() => addFight(di)}
+              disabled={totalFights >= 30}
+            >
+              + Add fight to {dayGroup.day ? DAY_FULL[dayGroup.day] : 'this list'}
+            </button>
+          </div>
+        </Card>
+      ))}
+
+      <Card style={{ padding: '14px 20px' }}>
+        <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 10 }}>
+          Add a raid night
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {WEEK_ORDER.map((day) => (
+            <button
+              key={day}
+              className="u-chip"
+              onClick={() => addDay(day)}
+              disabled={usedDays.has(day)}
+              title={raidDays.includes(day) ? 'One of your scheduled raid days' : undefined}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 14,
+                font: '600 12px var(--font-sans)',
+                background: 'oklch(1 0 0 / 4%)',
+                color: usedDays.has(day) ? 'var(--text-35)' : raidDays.includes(day) ? 'var(--gold)' : 'var(--text-70)',
+                border: `1px solid ${raidDays.includes(day) && !usedDays.has(day) ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
+                cursor: usedDays.has(day) ? 'default' : 'pointer',
+                opacity: usedDays.has(day) ? 0.5 : 1,
+              }}
+            >
+              {DAY_FULL[day]}
+              {raidDays.includes(day) ? ' ★' : ''}
+            </button>
+          ))}
+          <button
+            className="u-chip"
+            onClick={() => addDay(null)}
+            disabled={usedDays.has('any')}
+            style={{
+              padding: '7px 14px',
+              borderRadius: 14,
+              font: '600 12px var(--font-sans)',
+              background: 'oklch(1 0 0 / 4%)',
+              color: usedDays.has('any') ? 'var(--text-35)' : 'var(--text-70)',
+              border: '1px solid var(--border)',
+              cursor: usedDays.has('any') ? 'default' : 'pointer',
+              opacity: usedDays.has('any') ? 0.5 : 1,
+            }}
+          >
+            Anytime this week
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
           <button className="u-btn-ghost" style={ghostBtnStyle} onClick={() => onDone(false)} disabled={saving}>Cancel</button>
           <GoldButton onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save plan'}</GoldButton>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

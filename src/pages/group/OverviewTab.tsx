@@ -138,7 +138,7 @@ function RaidScheduleCard({
           <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
             Duration
           </span>
-          <select
+          <select className="u-select"
             value={durationMins}
             onChange={(e) => setDurationMins(e.target.value ? Number(e.target.value) : '')}
             style={inputStyle}
@@ -388,7 +388,7 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-62)' }}>Remind</div>
-        <select
+        <select className="u-select"
           value={settings.reminderMins}
           disabled={busy}
           onChange={(e) =>
