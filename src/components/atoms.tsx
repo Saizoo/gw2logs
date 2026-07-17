@@ -371,12 +371,16 @@ export function GoldButton({
   to,
   disabled,
   type,
+  style: styleOverride,
 }: {
   children: ReactNode;
   onClick?: () => void;
   to?: string;
   disabled?: boolean;
   type?: 'button' | 'submit';
+  // Layout tweaks from the call site (margins, flex placement) — merged
+  // over the base look so the gold styling itself stays consistent.
+  style?: CSSProperties;
 }) {
   const style: CSSProperties = {
     cursor: disabled ? 'default' : 'pointer',
@@ -387,6 +391,7 @@ export function GoldButton({
     background: 'var(--gold-grad)',
     color: 'var(--gold-fg)',
     opacity: disabled ? 0.6 : 1,
+    ...styleOverride,
   };
   if (to) {
     return (
