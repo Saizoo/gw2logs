@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { api, ApiError, type AdminAuditEntry, type AdminBuild, type AdminGuildRow, type AdminHealth, type AdminLogRow, type AdminUploadJob, type AdminUserDetail, type AdminUserRow } from '../lib/api';
+import { api, ApiError, type AdminAuditEntry, type AdminBuild, type AdminLogRow, type AdminUploadJob, type AdminUserRow } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
