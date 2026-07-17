@@ -132,11 +132,23 @@ export interface LeaderboardRow {
 // and (when available) real healing output, never from DPS magnitude.
 export type SquadRole = 'dps' | 'boon_dps' | 'boon_heal';
 
+export interface PlayerCoverageEncounter {
+  boss: string;
+  killed: boolean;
+  attempted: boolean;
+  bestPct: number | null;
+}
+
 export interface PlayerProfile {
   account: string;
   totalLogs: number;
   overallScore: number | null;
   consistencyScore: number | null;
+  record: { kills: number; wipes: number; total: number; successRate: number };
+  roleBreakdown: { role: string; count: number; pct: number }[];
+  specBreakdown: { spec: string; profession: string; count: number; pct: number }[];
+  specPerformance: { spec: string; profession: string; plays: number; avgPct: number; bestPct: number; bestLogId: string }[];
+  coverage: { wing: string; killed: number; total: number; encounters: PlayerCoverageEncounter[] }[];
   professionBreakdown: { profession: string; pct: number }[];
   bestParses: { boss: string; isCm: boolean; spec: string; dps: number; pct: number; logId: string }[];
   recent: { boss: string; isCm: boolean; spec: string; dps: number; success: boolean; logId: string; uploadedAt: string }[];

@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { BOSS_WING, canonicalFightName } from '../lib/bossMeta.js';
 
 export const playersRouter = Router();
+
+// Raid wings always show in the coverage grid (an unkilled wing is
+// meaningful "still to do" progress); strike/fractal maps only appear once
+// the player has actually engaged them, so a pure raider isn't padded with
+// a dozen permanently-empty strike rows. Mirrors the group clears board.
+const isRaidWing = (wing: string) => wing.startsWith('Wing ') || wing === "Guardian's Glade";
 
 playersRouter.get('/:account', asyncHandler(async (req, res) => {
   const { account } = req.params;
@@ -24,6 +31,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
       profession: true,
       spec: true,
       totalDps: true,
+      squadRole: true,
       log: { select: { fightName: true, isCm: true, uploadedAt: true, success: true } },
     },
     orderBy: { log: { uploadedAt: 'desc' } },
@@ -105,11 +113,112 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     if (!current || pct > current.pct) bestByBoss.set(key, { lp, pct });
   }
 
+  // Kill/wipe record. Every LogPlayer row is one appearance in a log, so
+  // counting success here counts this player's own kills and wipes.
+  const kills = logPlayers.filter((lp) => lp.log.success).length;
+  const wipes = logPlayers.length - kills;
+  const record = {
+    kills,
+    wipes,
+    total: logPlayers.length,
+    successRate: logPlayers.length ? Math.round((kills / logPlayers.length) * 100) : 0,
+  };
+
+  // Role split across the 3-role classification (plain DPS / boon DPS /
+  // healer) — what this player actually does in a squad.
+  const roleCounts = new Map<string, number>();
+  for (const lp of logPlayers) roleCounts.set(lp.squadRole, (roleCounts.get(lp.squadRole) ?? 0) + 1);
+  const roleBreakdown = [...roleCounts.entries()]
+    .map(([role, count]) => ({ role, count, pct: Math.round((count / total) * 100) }))
+    .sort((a, b) => b.count - a.count);
+
+  // Elite-spec distribution (finer than the profession breakdown) — the
+  // classes this player actually brings, with the profession carried for
+  // colouring/icons.
+  const specCounts = new Map<string, { profession: string; count: number }>();
+  for (const lp of logPlayers) {
+    const entry = specCounts.get(lp.spec) ?? { profession: lp.profession, count: 0 };
+    entry.count += 1;
+    specCounts.set(lp.spec, entry);
+  }
+  const specBreakdown = [...specCounts.entries()]
+    .map(([spec, { profession, count }]) => ({ spec, profession, count, pct: Math.round((count / total) * 100) }))
+    .sort((a, b) => b.count - a.count);
+
+  // Per-spec performance table: for every spec the player has a KILL on,
+  // how many parses, their average and best percentile, and the log behind
+  // the best one. Wipes are excluded (no parse), matching the score/best
+  // logic above.
+  const specPerfAgg = new Map<string, { profession: string; plays: number; pctSum: number; bestPct: number; bestLogId: string }>();
+  for (const lp of logPlayers) {
+    if (!lp.log.success) continue;
+    const pct = pctByLogPlayerId.get(lp.id) ?? 0;
+    const entry = specPerfAgg.get(lp.spec) ?? { profession: lp.profession, plays: 0, pctSum: 0, bestPct: -1, bestLogId: lp.logId };
+    entry.plays += 1;
+    entry.pctSum += pct;
+    if (pct > entry.bestPct) {
+      entry.bestPct = pct;
+      entry.bestLogId = lp.logId;
+    }
+    specPerfAgg.set(lp.spec, entry);
+  }
+  const specPerformance = [...specPerfAgg.entries()]
+    .map(([spec, e]) => ({
+      spec,
+      profession: e.profession,
+      plays: e.plays,
+      avgPct: Math.round(e.pctSum / e.plays),
+      bestPct: Math.round(Math.max(0, e.bestPct)),
+      bestLogId: e.bestLogId,
+    }))
+    .sort((a, b) => b.avgPct - a.avgPct || b.plays - a.plays);
+
+  // Encounter coverage ("collection"): every canonical boss grouped by its
+  // wing/map, flagged killed / attempted (logged but never killed) / not
+  // touched, with the player's best parse percentile on the ones they've
+  // killed. Boss ordering within a wing follows BOSS_WING declaration order.
+  const killedBoss = new Set<string>();
+  const attemptedBoss = new Set<string>();
+  const bestPctByBoss = new Map<string, number>();
+  for (const lp of logPlayers) {
+    const boss = canonicalFightName(lp.log.fightName);
+    attemptedBoss.add(boss);
+    if (lp.log.success) {
+      killedBoss.add(boss);
+      const pct = pctByLogPlayerId.get(lp.id) ?? 0;
+      if (pct > (bestPctByBoss.get(boss) ?? -1)) bestPctByBoss.set(boss, pct);
+    }
+  }
+  const coverageWings = new Map<string, { boss: string; killed: boolean; attempted: boolean; bestPct: number | null }[]>();
+  for (const [boss, wing] of Object.entries(BOSS_WING)) {
+    // Strike/fractal maps only appear once engaged; raid wings always show.
+    if (!isRaidWing(wing) && !attemptedBoss.has(boss)) continue;
+    const list = coverageWings.get(wing) ?? [];
+    list.push({
+      boss,
+      killed: killedBoss.has(boss),
+      attempted: attemptedBoss.has(boss),
+      bestPct: killedBoss.has(boss) ? Math.round(bestPctByBoss.get(boss) ?? 0) : null,
+    });
+    coverageWings.set(wing, list);
+  }
+  const coverage = [...coverageWings.entries()].map(([wing, encounters]) => ({
+    wing,
+    killed: encounters.filter((e) => e.killed).length,
+    total: encounters.length,
+    encounters,
+  }));
+
   res.json({
     account: player.account,
     totalLogs: logPlayers.length,
     overallScore,
     consistencyScore,
+    record,
+    roleBreakdown,
+    specBreakdown,
+    specPerformance,
+    coverage,
     professionBreakdown,
     bestParses: [...bestByBoss.values()]
       .sort((a, b) => b.pct - a.pct)

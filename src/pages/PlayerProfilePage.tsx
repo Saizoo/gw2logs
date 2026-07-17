@@ -1,10 +1,19 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionColorAlpha, professionForSpec, professionIconPath } from '../data/gw2-data';
 import { Card, ParseBadge, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+
+// The 3-role classification (see server ingest.ts). SquadRoleBadge only
+// labels the two boon roles; the profile wants all three named with a
+// colour, so it keeps its own small map.
+const ROLE_META: Record<string, { label: string; color: string }> = {
+  dps: { label: 'DPS', color: 'oklch(0.65 0.19 25)' },
+  boon_dps: { label: 'Boon DPS', color: 'var(--gold)' },
+  boon_heal: { label: 'Healer', color: 'var(--good)' },
+};
 
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
@@ -97,6 +106,11 @@ export default function PlayerProfilePage() {
         </div>
       </Card>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'start' }}>
+        <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+        <RecordPanel record={player.record} />
+      </div>
+
       {chart && (
         <Card style={{ padding: '20px 20px 8px', marginBottom: 20 }}>
           <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
@@ -121,6 +135,10 @@ export default function PlayerProfilePage() {
           </svg>
         </Card>
       )}
+
+      {player.specPerformance.length > 0 && <SpecPerformanceTable rows={player.specPerformance} />}
+
+      {player.coverage.length > 0 && <CoveragePanel coverage={player.coverage} />}
 
       <div style={{ marginBottom: 12 }}>
         <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
@@ -186,5 +204,196 @@ export default function PlayerProfilePage() {
         ))}
       </Card>
     </div>
+  );
+}
+
+// --- Class & role identity ------------------------------------------------
+
+function IdentityPanel({
+  specBreakdown,
+  roleBreakdown,
+}: {
+  specBreakdown: PlayerProfile['specBreakdown'];
+  roleBreakdown: PlayerProfile['roleBreakdown'];
+}) {
+  const topSpecs = specBreakdown.slice(0, 6);
+  return (
+    <Card style={{ padding: '18px 20px' }}>
+      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 14 }}>Class &amp; Role</div>
+
+      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)', marginBottom: 8 }}>
+        Specializations played
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {topSpecs.map((s) => {
+          const color = professionColor(s.profession);
+          return (
+            <div key={s.spec} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img
+                src={professionIconPath(s.profession, s.spec !== s.profession ? s.spec : null)}
+                alt=""
+                width={20}
+                height={20}
+                style={{ objectFit: 'contain', flex: 'none' }}
+                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                  <span style={{ font: '600 12px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.spec}</span>
+                  <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{s.pct}%</span>
+                </div>
+                {/* Share-of-play bar, coloured by profession. */}
+                <div style={{ height: 6, borderRadius: 3, background: 'oklch(1 0 0 / 6%)', overflow: 'hidden' }}>
+                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 3, background: color }} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)', margin: '16px 0 8px' }}>
+        Role split
+      </div>
+      {/* Single stacked bar of the three squad roles + a labelled legend. */}
+      <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', gap: 2, background: 'oklch(1 0 0 / 4%)' }}>
+        {roleBreakdown.map((r) => (
+          <div key={r.role} title={`${ROLE_META[r.role]?.label ?? r.role} · ${r.pct}%`} style={{ width: `${r.pct}%`, background: ROLE_META[r.role]?.color ?? 'var(--text-40)' }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
+        {roleBreakdown.map((r) => (
+          <div key={r.role} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 3, background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
+            <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-75)' }}>{ROLE_META[r.role]?.label ?? r.role}</span>
+            <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-50)' }}>{r.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// --- Kill / wipe record ---------------------------------------------------
+
+function RecordPanel({ record }: { record: PlayerProfile['record'] }) {
+  const killPct = record.total ? (record.kills / record.total) * 100 : 0;
+  return (
+    <Card style={{ padding: '18px 20px' }}>
+      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 14 }}>Kill Record</div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ font: '800 30px var(--font-sans)', color: 'var(--good)' }}>{record.successRate}%</span>
+        <span style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>success rate</span>
+      </div>
+      <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-58)', marginBottom: 14 }}>
+        across {record.total.toLocaleString()} logged encounter{record.total === 1 ? '' : 's'}
+      </div>
+
+      {/* Kills-vs-wipes ratio bar. */}
+      <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: 'var(--bad-dim)' }}>
+        <div style={{ width: `${killPct}%`, background: 'var(--good)' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+        <div>
+          <div style={{ font: '800 20px var(--font-sans)', color: 'var(--good)' }}>{record.kills.toLocaleString()}</div>
+          <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Kills</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ font: '800 20px var(--font-sans)', color: 'var(--bad)' }}>{record.wipes.toLocaleString()}</div>
+          <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Wipes</div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// --- Per-spec performance table -------------------------------------------
+
+function SpecPerformanceTable({ rows }: { rows: PlayerProfile['specPerformance'] }) {
+  return (
+    <Card style={{ marginBottom: 20, overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
+        Performance by Specialization
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 460 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 0.9fr 0.9fr', gap: 8, padding: '10px 20px', font: '700 10px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-55)', borderBottom: '1px solid var(--border-faint)' }}>
+            <div>Specialization</div>
+            <div style={{ textAlign: 'right' }}>Parses</div>
+            <div style={{ textAlign: 'right' }}>Avg</div>
+            <div style={{ textAlign: 'right' }}>Best</div>
+          </div>
+          {rows.map((r, i) => (
+            <div key={r.spec} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 0.9fr 0.9fr', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--border-faint)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                <img
+                  src={professionIconPath(r.profession, r.spec !== r.profession ? r.spec : null)}
+                  alt=""
+                  width={22}
+                  height={22}
+                  style={{ objectFit: 'contain', flex: 'none' }}
+                  onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                />
+                <span style={{ font: '600 12.5px var(--font-sans)', color: professionColor(r.profession), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.spec}</span>
+              </div>
+              <div style={{ textAlign: 'right', font: '600 12px var(--font-mono)', color: 'var(--text-70)' }}>{r.plays}</div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <ParseBadge pct={r.avgPct} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Link to={`/logs/${r.bestLogId}`} title="Open best parse">
+                  <ParseBadge pct={r.bestPct} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// --- Encounter coverage ("collection") ------------------------------------
+
+function CoveragePanel({ coverage }: { coverage: PlayerProfile['coverage'] }) {
+  const totalKilled = coverage.reduce((n, w) => n + w.killed, 0);
+  const totalBosses = coverage.reduce((n, w) => n + w.total, 0);
+  return (
+    <Card style={{ marginBottom: 20, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', flexWrap: 'wrap' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Encounter Coverage</div>
+        <div style={{ font: '600 11.5px var(--font-mono)', color: 'var(--gold)' }}>{totalKilled}/{totalBosses} killed</div>
+      </div>
+      <div style={{ padding: '6px 20px 16px' }}>
+        {coverage.map((wing) => (
+          <div key={wing.wing} style={{ marginTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+              <div style={{ font: '700 12px var(--font-sans)' }}>{wing.wing}</div>
+              <div style={{ font: '500 10.5px var(--font-mono)', color: 'var(--text-50)' }}>{wing.killed}/{wing.total}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {wing.encounters.map((enc) => {
+                const state = enc.killed ? 'killed' : enc.attempted ? 'attempted' : 'none';
+                const bg = state === 'killed' ? 'var(--good-dim)' : state === 'attempted' ? 'oklch(0.7 0.15 70 / 12%)' : 'oklch(1 0 0 / 3%)';
+                const border = state === 'killed' ? 'oklch(0.72 0.17 150 / 40%)' : state === 'attempted' ? 'oklch(0.7 0.15 70 / 30%)' : 'var(--border-faint)';
+                const color = state === 'killed' ? 'var(--good)' : state === 'attempted' ? 'oklch(0.8 0.13 70)' : 'var(--text-45)';
+                return (
+                  <div
+                    key={enc.boss}
+                    title={`${enc.boss} — ${state === 'killed' ? `killed${enc.bestPct != null ? `, best ${enc.bestPct}th percentile` : ''}` : state === 'attempted' ? 'attempted, no kill' : 'not logged'}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 11px', borderRadius: 8, background: bg, border: `1px solid ${border}` }}
+                  >
+                    <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', flex: 'none', background: color, opacity: state === 'none' ? 0.5 : 1 }} />
+                    <span style={{ font: '600 11.5px var(--font-sans)', color: state === 'none' ? 'var(--text-55)' : 'var(--text-80)', whiteSpace: 'nowrap' }}>{enc.boss}</span>
+                    {enc.bestPct != null && <ParseBadge pct={enc.bestPct} style={{ height: 16, minWidth: 24, font: '700 9.5px var(--font-mono)' }} />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
