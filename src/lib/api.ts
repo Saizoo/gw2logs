@@ -414,6 +414,53 @@ export interface AdminUserRow {
   gw2AccountName: string | null;
   linkedPlayerAccount: string | null;
   isAdmin: boolean;
+  suspendedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  discordUsername: string;
+  discordAvatar: string | null;
+  gw2AccountName: string | null;
+  gw2LinkedAt: string | null;
+  isAdmin: boolean;
+  suspendedAt: string | null;
+  createdAt: string;
+  displayedGuild: { name: string; tag: string } | null;
+  counts: { uploads: number; characters: number; sessions: number };
+  groups: { id: string; name: string; role: string; isGuild: boolean }[];
+  recentLogs: { id: string; fightName: string; isCm: boolean; success: boolean; uploadedAt: string }[];
+}
+
+export interface AdminHealth {
+  database: { size: string; tables: { name: string; size: string; deadTuples: number }[] };
+  parseQueue: { active: number; queued: number };
+  uploadJobs: Record<string, number>;
+  topFailures: { message: string; count: number }[];
+  stuckJobs: { id: string; fileName: string; createdAt: string }[];
+  stuckThresholdMinutes: number;
+  reminders: { sentLast7Days: number; lastSentAt: string | null };
+}
+
+export interface AdminGuildRow {
+  id: string;
+  name: string;
+  tag: string;
+  createdAt: string;
+  lastRankSyncAt: string | null;
+  syncKeyHolder: string | null;
+  displayedByCount: number;
+  group: { id: string; name: string; memberCount: number } | null;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  admin: string;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  detail: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -712,6 +759,32 @@ export const api = {
     }),
   adminForceLogout: (id: string) =>
     apiFetch<{ ok: true; sessionsRevoked: number }>(`/admin/users/${encodeURIComponent(id)}/logout`, { method: 'POST' }),
+  adminUserDetail: (id: string) => apiFetch<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}/detail`),
+  adminSetUserSuspended: (id: string, suspended: boolean) =>
+    apiFetch<{ id: string; suspendedAt: string | null }>(`/admin/users/${encodeURIComponent(id)}/suspend`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suspended }),
+    }),
+  adminUnlinkUserGw2: (id: string) =>
+    apiFetch<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}/unlink-gw2`, { method: 'POST' }),
+  adminDeleteUserLogs: (id: string) =>
+    apiFetch<{ ok: true; deleted: number }>(`/admin/users/${encodeURIComponent(id)}/delete-logs`, { method: 'POST' }),
+  adminHealth: () => apiFetch<AdminHealth>('/admin/health'),
+  adminCleanupStuck: () => apiFetch<{ ok: true; cleaned: number }>('/admin/health/cleanup-stuck', { method: 'POST' }),
+  adminGuilds: () => apiFetch<AdminGuildRow[]>('/admin/guilds'),
+  adminGuildResync: (id: string) =>
+    apiFetch<{ ok: true; matched: number }>(`/admin/guilds/${encodeURIComponent(id)}/resync`, { method: 'POST' }),
+  adminGuildClearSyncKey: (id: string) =>
+    apiFetch<{ ok: true }>(`/admin/guilds/${encodeURIComponent(id)}/clear-sync-key`, { method: 'POST' }),
+  adminDeleteGuild: (id: string) => apiFetch<{ ok: true }>(`/admin/guilds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  adminAudit: (params: { limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.offset) qs.set('offset', String(params.offset));
+    const query = qs.toString();
+    return apiFetch<{ total: number; entries: AdminAuditEntry[] }>(`/admin/audit${query ? `?${query}` : ''}`);
+  },
   adminGroups: () => apiFetch<AdminGroupRow[]>('/admin/groups'),
   adminDeleteGroup: (id: string) => apiFetch<{ ok: true }>(`/admin/groups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   adminBuilds: () => apiFetch<AdminBuild[]>('/admin/builds'),

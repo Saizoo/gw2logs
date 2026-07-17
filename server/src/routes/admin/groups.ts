@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../../db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { audit } from '../../lib/audit.js';
 
 export const adminGroupsRouter = Router();
 
@@ -38,5 +39,6 @@ adminGroupsRouter.delete('/:id', asyncHandler(async (req, res) => {
   // cascade automatically (onDelete: Cascade) — deleting a Group takes its
   // whole saved-composition history with it.
   await prisma.group.delete({ where: { id: req.params.id } });
+  audit(req.user!.id, 'group_delete', 'group', req.params.id);
   res.json({ ok: true });
 }));

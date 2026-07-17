@@ -24,6 +24,9 @@ import { adminLogsRouter } from './routes/admin/logs.js';
 import { adminUsersRouter } from './routes/admin/users.js';
 import { adminGroupsRouter } from './routes/admin/groups.js';
 import { adminBuildsRouter } from './routes/admin/builds.js';
+import { adminHealthRouter } from './routes/admin/health.js';
+import { adminGuildsRouter } from './routes/admin/guilds.js';
+import { adminAuditRouter } from './routes/admin/audit.js';
 
 export function createApp() {
   const app = express();
@@ -69,6 +72,9 @@ export function createApp() {
   adminRouter.use('/users', adminUsersRouter);
   adminRouter.use('/groups', adminGroupsRouter);
   adminRouter.use('/builds', adminBuildsRouter);
+  adminRouter.use('/health', adminHealthRouter);
+  adminRouter.use('/guilds', adminGuildsRouter);
+  adminRouter.use('/audit', adminAuditRouter);
   app.use('/api/admin', adminRouter);
 
   // Last-resort safety net: without this, any error thrown by an async

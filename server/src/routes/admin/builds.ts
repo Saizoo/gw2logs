@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../../db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { audit } from '../../lib/audit.js';
 
 export const adminBuildsRouter = Router();
 
@@ -100,5 +101,6 @@ adminBuildsRouter.delete('/:id', asyncHandler(async (req, res) => {
   const referencedBy = await prisma.compositionSlot.count({ where: { buildId: req.params.id } });
 
   await prisma.build.delete({ where: { id: req.params.id } });
+  audit(req.user!.id, 'build_delete', 'build', req.params.id);
   res.json({ ok: true, referencedSlots: referencedBy });
 }));

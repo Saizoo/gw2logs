@@ -20,6 +20,12 @@ const MAX_CONCURRENT_PARSES = 2;
 let activeParses = 0;
 const waiters: (() => void)[] = [];
 
+// For the admin health panel: how many EI processes are running right now
+// and how many uploads are queued behind them.
+export function getParseQueueState(): { active: number; queued: number } {
+  return { active: activeParses, queued: waiters.length };
+}
+
 async function acquireSlot(): Promise<() => void> {
   if (activeParses >= MAX_CONCURRENT_PARSES) {
     await new Promise<void>((resolve) => waiters.push(resolve));

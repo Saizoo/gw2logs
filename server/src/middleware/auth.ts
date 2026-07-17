@@ -26,6 +26,12 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     res.status(401).json({ error: 'Not signed in' });
     return;
   }
+  // Suspended accounts keep their session rows but can't act — every
+  // authenticated route rejects until an admin unsuspends.
+  if (req.user.suspendedAt) {
+    res.status(403).json({ error: 'This account is suspended. Contact an admin if you think this is a mistake.' });
+    return;
+  }
   next();
 }
 

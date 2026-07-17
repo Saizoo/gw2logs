@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../../db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { audit } from '../../lib/audit.js';
 
 export const adminLogsRouter = Router();
 
@@ -60,5 +61,6 @@ adminLogsRouter.delete('/:id', asyncHandler(async (req, res) => {
   // dangles — that's fine, it's just a plain field, not a foreign key (see
   // Log's other consumers of that same pattern).
   await prisma.log.delete({ where: { id: req.params.id } });
+  audit(req.user!.id, 'log_delete', 'log', req.params.id);
   res.json({ ok: true });
 }));
