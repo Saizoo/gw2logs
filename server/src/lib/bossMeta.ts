@@ -39,6 +39,7 @@ export const BOSS_WING: Record<string, string> = {
   'Mai Trin': 'Aetherblade Hideout',
   Ankka: 'Xunlai Jade Junkyard',
   'Minister Li': 'Kaineng Overlook',
+  'Prototype Vermilion': "Old Lion's Court",
   'The Dragonvoid': 'Harvest Temple',
   Dagda: 'Cosmic Observatory',
   Cerus: 'Temple of Febe',
