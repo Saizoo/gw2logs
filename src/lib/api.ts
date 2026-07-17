@@ -139,11 +139,17 @@ export interface PlayerCoverageEncounter {
   bestPct: number | null;
 }
 
+export interface PlayerAffiliations {
+  guild: { id: string; name: string; tag: string } | null;
+  groups: { id: string; name: string; role: string; isGuildGroup: boolean; guildRank: string | null }[];
+}
+
 export interface PlayerProfile {
   account: string;
   totalLogs: number;
   overallScore: number | null;
   consistencyScore: number | null;
+  affiliations: PlayerAffiliations | null;
   record: { kills: number; wipes: number; total: number; successRate: number };
   roleBreakdown: { role: string; count: number; pct: number }[];
   specBreakdown: { spec: string; profession: string; count: number; pct: number }[];

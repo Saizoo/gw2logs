@@ -5,6 +5,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionColorAlpha, professionForSpec, professionIconPath } from '../data/gw2-data';
 import { Card, ParseBadge, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+import { GuildBadge } from './MyGroupsPage';
 
 // The 3-role classification (see server ingest.ts). SquadRoleBadge only
 // labels the two boon roles; the profile wants all three named with a
@@ -106,6 +107,10 @@ export default function PlayerProfilePage() {
         </div>
       </Card>
 
+      {player.affiliations && (player.affiliations.guild || player.affiliations.groups.length > 0) && (
+        <AffiliationsPanel affiliations={player.affiliations} />
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'start' }}>
         <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
         <RecordPanel record={player.record} />
@@ -204,6 +209,57 @@ export default function PlayerProfilePage() {
         ))}
       </Card>
     </div>
+  );
+}
+
+// --- Guild & group affiliations -------------------------------------------
+
+function AffiliationsPanel({ affiliations }: { affiliations: NonNullable<PlayerProfile['affiliations']> }) {
+  const roleLabel = (role: string) => (role === 'leader' ? 'Leader' : role === 'subleader' ? 'Subleader' : 'Member');
+  return (
+    <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)', flex: 'none' }}>
+        Affiliations
+      </div>
+      {affiliations.guild && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <GuildBadge tag={affiliations.guild.tag} />
+          <span style={{ font: '600 12.5px var(--font-sans)', color: 'var(--text-80)' }}>{affiliations.guild.name}</span>
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {affiliations.groups.map((g) => (
+          <Link
+            key={g.id}
+            to={`/groups/${g.id}`}
+            className="u-chip"
+            title={`${roleLabel(g.role)}${g.guildRank ? ` · ${g.guildRank}` : ''}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '6px 12px',
+              borderRadius: 20,
+              font: '600 12px var(--font-sans)',
+              background: g.isGuildGroup ? 'oklch(0.78 0.14 85 / 12%)' : 'oklch(1 0 0 / 5%)',
+              color: 'var(--text-80)',
+              border: `1px solid ${g.isGuildGroup ? 'oklch(0.78 0.14 85 / 30%)' : 'var(--border)'}`,
+            }}
+          >
+            {g.isGuildGroup && <span aria-hidden style={{ color: 'var(--gold)' }}>⚜</span>}
+            {g.name}
+            {g.role !== 'member' && (
+              <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                {roleLabel(g.role)}
+              </span>
+            )}
+          </Link>
+        ))}
+        {affiliations.groups.length === 0 && !affiliations.guild && (
+          <span style={{ font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>No groups or guild yet.</span>
+        )}
+      </div>
+    </Card>
   );
 }
 

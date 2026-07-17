@@ -13,7 +13,30 @@ const isRaidWing = (wing: string) => wing.startsWith('Wing ') || wing === "Guard
 
 playersRouter.get('/:account', asyncHandler(async (req, res) => {
   const { account } = req.params;
-  const player = await prisma.player.findUnique({ where: { account } });
+  const player = await prisma.player.findUnique({
+    where: { account },
+    select: {
+      id: true,
+      account: true,
+      // Affiliations come from the linked user (if this player has claimed
+      // their account). Displayed guild is one the user explicitly chose to
+      // represent, and groups mirror what the public group pages already
+      // show — nothing here is private that isn't already reachable.
+      user: {
+        select: {
+          displayedGuild: { select: { id: true, name: true, tag: true } },
+          groupMemberships: {
+            select: {
+              role: true,
+              guildRank: true,
+              group: { select: { id: true, name: true, guildId: true } },
+            },
+            orderBy: { joinedAt: 'asc' },
+          },
+        },
+      },
+    },
+  });
   if (!player) {
     res.status(404).json({ error: 'Player not found' });
     return;
@@ -209,11 +232,30 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     encounters,
   }));
 
+  // Guild + group affiliations from the linked user. Null for an unclaimed
+  // player (no user linked yet); guild-marker groups (auto-created from an
+  // in-game guild) are flagged so the UI can badge them differently.
+  const affiliations = player.user
+    ? {
+        guild: player.user.displayedGuild
+          ? { id: player.user.displayedGuild.id, name: player.user.displayedGuild.name, tag: player.user.displayedGuild.tag }
+          : null,
+        groups: player.user.groupMemberships.map((m) => ({
+          id: m.group.id,
+          name: m.group.name,
+          role: m.role,
+          isGuildGroup: m.group.guildId != null,
+          guildRank: m.guildRank,
+        })),
+      }
+    : null;
+
   res.json({
     account: player.account,
     totalLogs: logPlayers.length,
     overallScore,
     consistencyScore,
+    affiliations,
     record,
     roleBreakdown,
     specBreakdown,
