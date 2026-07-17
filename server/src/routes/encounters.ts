@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
-import { BOSS_WING, categorizeFight } from '../lib/bossMeta.js';
+import { BOSS_WING, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
 
 export const encountersRouter = Router();
 
@@ -78,16 +78,20 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
   const RECENT_PER_BOSS = 3;
   const wings = new Map<string, Map<string, OverviewEncounter>>();
   for (const log of logs) {
+    // Old rows may still carry a raw EI name ("Cairn CM", "Aetherblade
+    // Hideout") — canonicalize on read so they merge with new clean rows
+    // into one card instead of fragmenting into "Other".
+    const fightName = canonicalFightName(log.fightName);
     const wing =
-      categorizeFight(log.fightName, log._count.players) === 'fractal'
+      categorizeFight(fightName, log._count.players) === 'fractal'
         ? 'Fractal CMs'
-        : BOSS_WING[log.fightName] ?? log.wing ?? 'Other';
+        : BOSS_WING[fightName] ?? log.wing ?? 'Other';
     let bosses = wings.get(wing);
     if (!bosses) wings.set(wing, (bosses = new Map()));
-    let enc = bosses.get(log.fightName);
+    let enc = bosses.get(fightName);
     if (!enc) {
-      bosses.set(log.fightName, (enc = {
-        fightName: log.fightName,
+      bosses.set(fightName, (enc = {
+        fightName,
         hasCm: false,
         logCount: 0,
         kills: 0,

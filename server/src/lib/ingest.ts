@@ -10,6 +10,8 @@
 // means re-uploading the source log, not just re-running extraction against
 // a stored copy.
 
+import { canonicalFightName } from './bossMeta.js';
+
 export type RawEiJson = Record<string, any>;
 
 // Mirrors .NET's JsonNamingPolicy.CamelCase exactly, not just "lowercase the
@@ -336,7 +338,11 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
   const timeStart = field(raw, 'TimeStart') ?? field(raw, 'TimeStartStd');
 
   return {
-    fightName: field(raw, 'FightName') ?? 'Unknown Encounter',
+    // Fold Elite Insights' name variants (CM suffix, map/short/split-phase
+    // names) onto one canonical fightName at the point of ingest, so every
+    // downstream consumer — categorization, wing grouping, background art,
+    // leaderboards — sees a single stable spelling per encounter.
+    fightName: canonicalFightName(field(raw, 'FightName') ?? 'Unknown Encounter'),
     triggerId: typeof field(raw, 'TriggerID') === 'number' ? field(raw, 'TriggerID') : null,
     isCm: Boolean(field(raw, 'IsCM') ?? false),
     success: Boolean(field(raw, 'Success')),

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
-import { RAID_BOSSES, FRACTAL_CM_BOSSES, categorizeFight } from '../lib/bossMeta.js';
+import { RAID_BOSSES, FRACTAL_CM_BOSSES, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
 
 export const logsRouter = Router();
 
@@ -12,7 +12,9 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   const mine = req.query.mine === 'true';
   const groupId = typeof req.query.groupId === 'string' ? req.query.groupId : undefined;
   // Exact fightName filter — the Encounters page links each boss card here.
-  const boss = typeof req.query.boss === 'string' && req.query.boss ? req.query.boss : undefined;
+  // Canonicalized so a raw-variant link still matches the (canonical) stored
+  // rows.
+  const boss = typeof req.query.boss === 'string' && req.query.boss ? canonicalFightName(req.query.boss) : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
@@ -99,7 +101,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   res.json(
     logs.map((l) => ({
       id: l.id,
-      boss: l.fightName,
+      boss: canonicalFightName(l.fightName),
       wing: l.wing,
       category: categorizeFight(l.fightName, l._count.players),
       isCm: l.isCm,

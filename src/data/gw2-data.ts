@@ -109,8 +109,54 @@ const BOSS_BG: Record<string, string> = {
   Cerus: 'templeoffebe.jpg',
 };
 
+// Elite Insights names some encounters with a " CM" suffix or by a map /
+// short / split-phase name; fold those onto the BOSS_BG keys so the art
+// resolves regardless of which spelling a log arrived with. Mirrors the
+// server's canonicalFightName (server/src/lib/bossMeta.ts) — kept small and
+// local here rather than shared, since the frontend has no other reason to
+// import server code.
+const BG_ALIASES: Record<string, string> = {
+  Gorseval: 'Gorseval the Multifarious',
+  Sabetha: 'Sabetha the Saboteur',
+  Matthias: 'Matthias Gabrel',
+  Cairn: 'Cairn the Indomitable',
+  Adina: 'Cardinal Adina',
+  Sabir: 'Cardinal Sabir',
+  'Peerless Qadim': 'Qadim the Peerless',
+  Greer: 'Greer the Blightbringer',
+  Decima: 'Decima the Stormsinger',
+  Ura: 'Ura the Steamshrieker',
+  Kela: 'Kela Seneschal of Waves',
+  'Kela, Seneschal of Waves': 'Kela Seneschal of Waves',
+  Nikare: 'Twin Largos',
+  Kenut: 'Twin Largos',
+  Desmina: 'Soulless Horror',
+  'Shiverpeaks Pass': 'Legendary Icebrood Construct',
+  'Voice of the Fallen and Claw of the Fallen': 'The Voice and the Claw',
+  'Forging Steel': 'Ancient Forgeman',
+  'Cold War': 'Minister of Morale',
+  'Aetherblade Hideout': 'Mai Trin',
+  'Captain Mai Trin': 'Mai Trin',
+  'Mai Trin & Echo of Scarlet Briar': 'Mai Trin',
+  'Xunlai Jade Junkyard': 'Ankka',
+  'Kaineng Overlook': 'Minister Li',
+  'Minister Li & The Response Team': 'Minister Li',
+  'Harvest Temple': 'The Dragonvoid',
+  'Void Amalgamate': 'The Dragonvoid',
+  'Cosmic Observatory': 'Dagda',
+  'Temple of Febe': 'Cerus',
+  "Old Lion's Court": 'Prototype Vermilion',
+};
+const CM_SUFFIX = /\s*[[(]?\b(?:c\.?m\.?|l\.?c\.?m\.?|challenge mode|legendary challenge mode)\b[\])]?\s*$/i;
+
+function canonicalBoss(fightName: string): string {
+  const trimmed = fightName.trim();
+  const base = trimmed.replace(CM_SUFFIX, '').trim() || trimmed;
+  return BG_ALIASES[base] ?? base;
+}
+
 export function bossBgPath(fightName: string): string | null {
-  const file = BOSS_BG[fightName];
+  const file = BOSS_BG[canonicalBoss(fightName)];
   return file ? `/assets/raid_backgrounds/${file}` : null;
 }
 
