@@ -5,6 +5,7 @@
 // adds or removes, they're the actual GW2 profession/role taxonomy.
 
 import type { Build } from '../lib/api';
+import { PROFESSIONS } from './gw2-data';
 
 export type ProfessionKey = 'guard' | 'rev' | 'war' | 'eng' | 'rang' | 'thief' | 'ele' | 'mes' | 'nec';
 export type BuildCategory = 'pdps' | 'cdps' | 'qdps' | 'adps' | 'qheal' | 'aheal' | 'tank' | 'kiter';
@@ -51,6 +52,19 @@ export const PROF_BY_API: Record<string, ProfessionKey> = {
   Mesmer: 'mes',
   Necromancer: 'nec',
 };
+
+// Snowcrows build names embed the elite spec ("Condition Daredevil",
+// "Power Quickness Deadeye") — pull it back out by matching the build's
+// profession specs against the name, so the picker can show a spec icon.
+// Returns null for a core build (no elite spec named), letting callers
+// fall back to the base profession icon.
+export function buildSpec(build: BuildEntry): string | null {
+  const professionName = PROF[build.p]?.name;
+  const specs = professionName ? PROFESSIONS[professionName]?.specs : undefined;
+  if (!specs) return null;
+  const haystack = build.name.toLowerCase();
+  return specs.find((spec) => haystack.includes(spec.toLowerCase())) ?? null;
+}
 
 export const CAT: Record<BuildCategory, { label: string; group: 'dps' | 'heal' | 'util'; c: string }> = {
   pdps: { label: 'Power DPS', group: 'dps', c: '#d24a3a' },

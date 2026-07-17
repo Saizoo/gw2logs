@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { api, ApiError, type CompositionDetail, type CompositionSlotData, type RosterCharacter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { PROF, PROF_ORDER, CAT, toBuildEntry, type BuildEntry } from '../data/builds';
+import { PROF, PROF_ORDER, CAT, buildSpec, toBuildEntry, type BuildEntry } from '../data/builds';
+import { Select } from '../components/Select';
 import { EXPANSIONS, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO } from '../data/encounters';
 import { COV_BOONS, coverageFor } from '../data/boonCoverage';
 import { professionColor, professionIconPath } from '../data/gw2-data';
@@ -277,28 +278,23 @@ export default function PlannerPage() {
 
       {/* --- group / composition picker --- */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <select className="u-select" value={groupId ?? ''} onChange={(e) => { setGroupId(e.target.value || null); setCompositionId(null); }} style={selectStyle}>
-          {myGroups?.length ? (
-            myGroups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))
-          ) : (
-            <option value="">No groups yet</option>
-          )}
-        </select>
-        <select className="u-select" value={compositionId ?? ''} onChange={(e) => setCompositionId(e.target.value || null)} style={selectStyle} disabled={!compositions?.length}>
-          {compositions?.length ? (
-            compositions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))
-          ) : (
-            <option value="">No compositions yet</option>
-          )}
-        </select>
+        <Select
+          ariaLabel="Group"
+          value={groupId ?? ''}
+          onChange={(v) => { setGroupId(v || null); setCompositionId(null); }}
+          placeholder="No groups yet"
+          style={{ minWidth: 190 }}
+          options={(myGroups ?? []).map((g) => ({ value: g.id, label: g.name }))}
+        />
+        <Select
+          ariaLabel="Composition"
+          value={compositionId ?? ''}
+          onChange={(v) => setCompositionId(v || null)}
+          placeholder="No compositions yet"
+          disabled={!compositions?.length}
+          style={{ minWidth: 190 }}
+          options={(compositions ?? []).map((c) => ({ value: c.id, label: c.name }))}
+        />
         {canEdit && <GoldButton onClick={() => setCreating((c) => !c)}>New</GoldButton>}
         {composition && canEdit && (
           <button onClick={handleDelete} className="u-btn-ghost" style={ghostBtnStyle}>
@@ -510,21 +506,38 @@ function SlotRow({
         {tab === 'catalog' && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input placeholder="Role (e.g. Power DPS)" value={role} onChange={(e) => setRole(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
-            <select className="u-select" value={profKey} onChange={(e) => { setProfKey(e.target.value as typeof profKey); setBuildId(''); }} style={selectStyle}>
-              {PROF_ORDER.map((k) => (
-                <option key={k} value={k}>
-                  {PROF[k].name}
-                </option>
-              ))}
-            </select>
-            <select className="u-select" value={buildId} onChange={(e) => setBuildId(e.target.value)} style={{ ...selectStyle, minWidth: 260 }}>
-              <option value="">— choose a build —</option>
-              {catalogOptions.map((b) => (
-                <option key={b.id} value={b.id}>
-                  [{CAT[b.cat].label}] {b.name} — {b.weapons}
-                </option>
-              ))}
-            </select>
+            <Select
+              ariaLabel="Profession"
+              value={profKey}
+              onChange={(v) => { setProfKey(v as typeof profKey); setBuildId(''); }}
+              style={{ minWidth: 170 }}
+              panelWidth={210}
+              options={PROF_ORDER.map((k) => ({
+                value: k,
+                label: PROF[k].name,
+                icon: professionIconPath(PROF[k].name),
+                accent: professionColor(PROF[k].name),
+              }))}
+            />
+            <Select
+              ariaLabel="Choose a build"
+              value={buildId}
+              onChange={setBuildId}
+              placeholder="— choose a build —"
+              style={{ minWidth: 260 }}
+              panelWidth={360}
+              options={catalogOptions.map((b) => {
+                const professionName = PROF[b.p]?.name ?? b.p;
+                const spec = buildSpec(b);
+                return {
+                  value: b.id,
+                  label: b.name,
+                  sublabel: `${CAT[b.cat].label} · ${b.weapons}`,
+                  icon: professionIconPath(professionName, spec),
+                  accent: professionColor(professionName),
+                };
+              })}
+            />
             <GoldButton onClick={handleSaveCatalog}>Save</GoldButton>
           </div>
         )}
@@ -616,17 +629,6 @@ function pillStyle(active: boolean) {
     border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
   } as const;
 }
-
-const selectStyle = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-92)',
-  fontSize: 12.5,
-  fontWeight: 600,
-  padding: '9px 12px',
-  borderRadius: 10,
-  fontFamily: 'var(--font-sans)',
-} as const;
 
 const inputStyle = {
   background: 'var(--bg-input)',

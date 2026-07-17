@@ -5,8 +5,9 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
 import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
-import { CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
+import { buildSpec, CAT, PROF, PROF_BY_API, PROF_ORDER, toBuildEntry, type BuildEntry } from '../data/builds';
 import { ArtImg, Card, GoldButton } from '../components/atoms';
+import { Select, type SelectOption } from '../components/Select';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 type FilterTab = 'all' | 'assigned';
@@ -168,13 +169,19 @@ export default function CharactersPage() {
       {adding && (
         <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <input placeholder="Character name" value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-          <select className="u-select" value={newProf} onChange={(e) => setNewProf(e.target.value)} style={selectStyle}>
-            {PROF_ORDER.map((k) => (
-              <option key={k} value={PROF[k].name}>
-                {PROF[k].name}
-              </option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Profession"
+            value={newProf}
+            onChange={setNewProf}
+            style={{ minWidth: 190 }}
+            panelWidth={220}
+            options={PROF_ORDER.map((k) => ({
+              value: PROF[k].name,
+              label: PROF[k].name,
+              icon: professionIconPath(PROF[k].name),
+              accent: professionColor(PROF[k].name),
+            }))}
+          />
           <GoldButton onClick={handleAdd}>Add</GoldButton>
           {addError && <span style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{addError}</span>}
         </Card>
@@ -197,6 +204,26 @@ export default function CharactersPage() {
       </div>
     </div>
   );
+}
+
+// Build options for the assign dropdown: a spec icon (derived from the
+// build name) + the build name, with category · weapons as the sublabel,
+// plus a leading "clear" row so a tab can be unassigned from the menu too.
+function buildSelectOptions(builds: BuildEntry[]): SelectOption[] {
+  return [
+    { value: '', label: 'No build', icon: '' },
+    ...builds.map((b): SelectOption => {
+      const professionName = PROF[b.p]?.name ?? b.p;
+      const spec = buildSpec(b);
+      return {
+        value: b.id,
+        label: b.name,
+        sublabel: `${CAT[b.cat].label} · ${b.weapons}`,
+        icon: professionIconPath(professionName, spec),
+        accent: professionColor(professionName),
+      };
+    }),
+  ];
 }
 
 function CharacterRow({
@@ -335,19 +362,16 @@ function CharacterRow({
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, flex: 'none', flexWrap: 'wrap', maxWidth: '100%' }}>
         {assignOpen && selected ? (
           <>
-            <select className="u-select"
+            <Select
               autoFocus
+              ariaLabel={`Assign a build to tab ${selected.tab}`}
               value={selected.assignedBuildId ?? ''}
-              onChange={(e) => handleAssign(e.target.value || null)}
-              style={{ ...selectStyle, minWidth: 240 }}
-            >
-              <option value="">— assign a build to tab {selected.tab} —</option>
-              {options.map((b) => (
-                <option key={b.id} value={b.id}>
-                  [{CAT[b.cat].label}] {b.name} — {b.weapons}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => handleAssign(v || null)}
+              placeholder={`— assign a build to tab ${selected.tab} —`}
+              options={buildSelectOptions(options)}
+              panelWidth={360}
+              style={{ minWidth: 260 }}
+            />
             <button onClick={() => setAssignOpen(false)} title="Cancel" style={{ font: '600 13px var(--font-sans)', color: 'var(--text-55)', padding: '0 2px' }}>
               ×
             </button>
@@ -443,17 +467,6 @@ const assignBtnStyle = {
   color: 'var(--text-92)',
   border: '1px solid oklch(1 0 0 / 10%)',
   whiteSpace: 'nowrap',
-} as const;
-
-const selectStyle = {
-  background: 'var(--bg-input)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-92)',
-  fontSize: 12.5,
-  fontWeight: 600,
-  padding: '9px 12px',
-  borderRadius: 10,
-  fontFamily: 'var(--font-sans)',
 } as const;
 
 const inputStyle = {
