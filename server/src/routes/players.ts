@@ -24,6 +24,8 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
       // show — nothing here is private that isn't already reachable.
       user: {
         select: {
+          id: true,
+          privateProfile: true,
           displayedGuild: { select: { id: true, name: true, tag: true } },
           groupMemberships: {
             select: {
@@ -40,6 +42,16 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
   if (!player) {
     res.status(404).json({ error: 'Player not found' });
     return;
+  }
+
+  // Private profile: only the owner (and admins) see the full page; everyone
+  // else gets a stub so the profile still resolves but exposes nothing.
+  if (player.user?.privateProfile) {
+    const isOwner = req.user?.id === player.user.id;
+    if (!isOwner && !req.user?.isAdmin) {
+      res.json({ account: player.account, private: true });
+      return;
+    }
   }
 
   const logPlayers = await prisma.logPlayer.findMany({

@@ -129,10 +129,12 @@ export default function LeaderboardPage() {
             <div>Date</div>
           </div>
           {leaderboard.map((row, i) => {
-            const candidate = { logId: row.logId, account: row.account, label: row.name };
+            // Hidden-name rows still show their parse, but can't be linked to
+            // a profile or picked for compare (both need the real account).
+            const candidate = row.account ? { logId: row.logId, account: row.account, label: row.name } : null;
             return (
               <div
-                key={row.logId + row.account}
+                key={`${row.logId}-${i}`}
                 className="u-row"
                 style={{
                   position: 'relative',
@@ -151,20 +153,34 @@ export default function LeaderboardPage() {
               >
                 <ArtImg src={specBgPath(row.profession, row.spec)} style={{ opacity: 0.22, zIndex: -1 }} />
                 <div style={{ position: 'absolute', inset: 0, zIndex: -1, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 90%) 0%, oklch(0.13 0.014 250 / 60%) 55%, oklch(0.13 0.014 250 / 90%) 100%)' }} />
-                <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.name} />
+                {candidate ? (
+                  <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.name} />
+                ) : (
+                  <div />
+                )}
                 <div style={{ font: '800 15px var(--font-sans)', color: i < 3 ? RANK_COLORS[i] : 'var(--text-55)' }}>#{row.rank}</div>
-                <Link to={`/players/${encodeURIComponent(row.account)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <img src={professionIconPath(row.profession, row.spec)} alt={row.spec} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
-                      <SquadRoleBadge squadRole={row.squadRole} />
-                    </div>
-                    <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <ProfDot color={professionColor(row.profession)} size={6} /> {row.spec}
-                    </div>
-                  </div>
-                </Link>
+                {(() => {
+                  const inner = (
+                    <>
+                      <img src={professionIconPath(row.profession, row.spec)} alt={row.spec} style={{ width: 28, height: 28, objectFit: 'contain', flex: 'none' }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</div>
+                          <SquadRoleBadge squadRole={row.squadRole} />
+                        </div>
+                        <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <ProfDot color={professionColor(row.profession)} size={6} /> {row.spec}
+                        </div>
+                      </div>
+                    </>
+                  );
+                  const style = { display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 } as const;
+                  return row.account ? (
+                    <Link to={`/players/${encodeURIComponent(row.account)}`} style={style}>{inner}</Link>
+                  ) : (
+                    <div style={style}>{inner}</div>
+                  );
+                })()}
                 <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-70)' }}>{row.role === 'power' ? 'Power DPS' : 'Condition DPS'}</div>
                 <div style={{ font: '700 13.5px var(--font-mono)', color: 'var(--gold)' }}>{row.dps.toLocaleString()}</div>
                 <div><ParseBadge pct={row.pct} /></div>

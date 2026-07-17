@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { BOSS_WING, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
+import { maskIdentity } from '../lib/privacy.js';
 
 export const encountersRouter = Router();
 
@@ -58,7 +59,7 @@ interface OverviewEncounter {
 // ingested before a mapping fix still land in the right wing; fractal CMs
 // get their own bucket since they have no wing, and anything unmapped
 // falls into "Other".
-encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
+encountersRouter.get('/overview', asyncHandler(async (req, res) => {
   const logs = await prisma.log.findMany({
     select: {
       id: true,
@@ -131,10 +132,11 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
   const fightNames = allEncounters.map((enc) => enc.fightName);
   if (recentIds.length > 0) {
     const [topPlayers, population, bestRows] = await Promise.all([
-      prisma.$queryRaw<{ logId: string; totalDps: number; spec: string; profession: string; account: string }[]>`
-        SELECT DISTINCT ON (lp."logId") lp."logId", lp."totalDps", lp.spec, lp.profession, p.account
+      prisma.$queryRaw<{ logId: string; totalDps: number; spec: string; profession: string; account: string; userId: string | null; hideName: boolean | null }[]>`
+        SELECT DISTINCT ON (lp."logId") lp."logId", lp."totalDps", lp.spec, lp.profession, p.account, p."userId", u."hideName"
         FROM "LogPlayer" lp
         JOIN "Player" p ON lp."playerId" = p.id
+        LEFT JOIN "User" u ON u.id = p."userId"
         WHERE lp."logId" = ANY(${recentIds})
         ORDER BY lp."logId", lp."totalDps" DESC
       `,
@@ -144,11 +146,12 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
         JOIN "Log" l ON lp."logId" = l.id
         WHERE l."fightName" = ANY(${fightNames})
       `,
-      prisma.$queryRaw<{ fightName: string; logId: string; totalDps: number; spec: string; profession: string; account: string; isCm: boolean }[]>`
-        SELECT DISTINCT ON (l."fightName") l."fightName", lp."logId", lp."totalDps", lp.spec, lp.profession, p.account, l."isCm"
+      prisma.$queryRaw<{ fightName: string; logId: string; totalDps: number; spec: string; profession: string; account: string; userId: string | null; hideName: boolean | null; isCm: boolean }[]>`
+        SELECT DISTINCT ON (l."fightName") l."fightName", lp."logId", lp."totalDps", lp.spec, lp.profession, p.account, p."userId", u."hideName", l."isCm"
         FROM "LogPlayer" lp
         JOIN "Log" l ON lp."logId" = l.id
         JOIN "Player" p ON lp."playerId" = p.id
+        LEFT JOIN "User" u ON u.id = p."userId"
         WHERE l.success = true AND l."fightName" = ANY(${fightNames})
         ORDER BY l."fightName", lp."totalDps" DESC
       `,
@@ -178,24 +181,26 @@ encountersRouter.get('/overview', asyncHandler(async (_req, res) => {
     for (const enc of allEncounters) {
       const best = bestByFight.get(enc.fightName);
       if (best) {
+        const masked = maskIdentity(best.account, best.account, best.hideName ?? false, best.userId, req.user?.id);
         enc.bestParse = {
           logId: best.logId,
           dps: best.totalDps,
           spec: best.spec,
           profession: best.profession,
-          account: best.account,
+          account: masked.name,
           isCm: best.isCm,
         };
       }
       for (const recent of enc.recent) {
         const top = topByLogId.get(recent.id);
         if (top) {
+          const masked = maskIdentity(top.account, top.account, top.hideName ?? false, top.userId, req.user?.id);
           recent.topParse = {
             dps: top.totalDps,
             pct: pctOf(`${enc.fightName}|${recent.isCm}`, top.totalDps),
             spec: top.spec,
             profession: top.profession,
-            account: top.account,
+            account: masked.name,
           };
         }
       }
@@ -226,6 +231,8 @@ interface BenchmarkRawRow {
   condiDps: number;
   squadRole: string;
   account: string;
+  userId: string | null;
+  hideName: boolean | null;
   fightName: string;
   isCm: boolean;
   encounterTime: Date;
@@ -234,14 +241,15 @@ interface BenchmarkRawRow {
 // Best parse ever logged on each elite specialization, kills only. Core
 // builds are excluded (spec equals profession for those rows) — the
 // Benchmarks page is explicitly an elite-spec ranking.
-encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
+encountersRouter.get('/benchmarks', asyncHandler(async (req, res) => {
   const rows = await prisma.$queryRaw<BenchmarkRawRow[]>`
     SELECT DISTINCT ON (lp.spec)
            lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
-           lp."squadRole", p.account, l."fightName", l."isCm", l."encounterTime"
+           lp."squadRole", p.account, p."userId", u."hideName", l."fightName", l."isCm", l."encounterTime"
     FROM "LogPlayer" lp
     JOIN "Log" l ON lp."logId" = l.id
     JOIN "Player" p ON lp."playerId" = p.id
+    LEFT JOIN "User" u ON u.id = p."userId"
     WHERE l.success = true AND lp.spec <> lp.profession
     ORDER BY lp.spec, lp."totalDps" DESC
   `;
@@ -249,11 +257,14 @@ encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
   res.json(
     rows
       .sort((a, b) => b.totalDps - a.totalDps)
-      .map((r, i) => ({
+      .map((r, i) => {
+        const masked = maskIdentity(r.characterName, r.account, r.hideName ?? false, r.userId, req.user?.id);
+        return {
         rank: i + 1,
         logId: r.logId,
-        name: r.characterName,
-        account: r.account,
+        name: masked.name,
+        account: masked.account,
+        hidden: masked.hidden,
         profession: r.profession,
         spec: r.spec,
         dps: r.totalDps,
@@ -262,7 +273,8 @@ encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
         fightName: r.fightName,
         isCm: r.isCm,
         date: r.encounterTime,
-      })),
+      };
+      }),
   );
 }));
 
@@ -270,7 +282,7 @@ encountersRouter.get('/benchmarks', asyncHandler(async (_req, res) => {
 // excluded): the box-plot Benchmarks page needs the spread, not just the
 // single best. Quantiles are computed here rather than in SQL so the exact
 // method (linear interpolation) is one obvious piece of code.
-encountersRouter.get('/benchmarks/distribution', asyncHandler(async (_req, res) => {
+encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) => {
   const rows = await prisma.$queryRaw<{ spec: string; profession: string; totalDps: number }[]>`
     SELECT lp.spec, lp.profession, lp."totalDps"
     FROM "LogPlayer" lp
@@ -278,13 +290,14 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (_req, res) 
     WHERE l.success = true AND lp.spec <> lp.profession
   `;
   const bestRows = await prisma.$queryRaw<
-    { spec: string; logId: string; totalDps: number; characterName: string; account: string; fightName: string; isCm: boolean; encounterTime: Date }[]
+    { spec: string; logId: string; totalDps: number; characterName: string; account: string; userId: string | null; hideName: boolean | null; fightName: string; isCm: boolean; encounterTime: Date }[]
   >`
     SELECT DISTINCT ON (lp.spec)
-           lp.spec, lp."logId", lp."totalDps", lp."characterName", p.account, l."fightName", l."isCm", l."encounterTime"
+           lp.spec, lp."logId", lp."totalDps", lp."characterName", p.account, p."userId", u."hideName", l."fightName", l."isCm", l."encounterTime"
     FROM "LogPlayer" lp
     JOIN "Log" l ON lp."logId" = l.id
     JOIN "Player" p ON lp."playerId" = p.id
+    LEFT JOIN "User" u ON u.id = p."userId"
     WHERE l.success = true AND lp.spec <> lp.profession
     ORDER BY lp.spec, lp."totalDps" DESC
   `;
@@ -322,15 +335,19 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (_req, res) 
           p95: quantile(values, 0.95),
           max: values[values.length - 1],
           best: best
-            ? {
-                logId: best.logId,
-                dps: best.totalDps,
-                name: best.characterName,
-                account: best.account,
-                fightName: best.fightName,
-                isCm: best.isCm,
-                date: best.encounterTime,
-              }
+            ? (() => {
+                const masked = maskIdentity(best.characterName, best.account, best.hideName ?? false, best.userId, req.user?.id);
+                return {
+                  logId: best.logId,
+                  dps: best.totalDps,
+                  name: masked.name,
+                  account: masked.account,
+                  hidden: masked.hidden,
+                  fightName: best.fightName,
+                  isCm: best.isCm,
+                  date: best.encounterTime,
+                };
+              })()
             : null,
         };
       })
@@ -366,6 +383,8 @@ interface LeaderboardRawRow {
   condiDps: number;
   squadRole: string;
   account: string;
+  userId: string | null;
+  hideName: boolean | null;
   durationMs: number;
   encounterTime: Date;
 }
@@ -405,10 +424,11 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
     `,
     prisma.$queryRaw<LeaderboardRawRow[]>`
       SELECT lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
-             lp."squadRole", p.account, l."durationMs", l."encounterTime"
+             lp."squadRole", p.account, p."userId", u."hideName", l."durationMs", l."encounterTime"
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id
       JOIN "Player" p ON lp."playerId" = p.id
+      LEFT JOIN "User" u ON u.id = p."userId"
       WHERE l."fightName" = ${fightName} AND l."isCm" = ${isCm} AND l.success = true
       ${professionCondition} ${roleCondition}
       ORDER BY lp."totalDps" DESC
@@ -418,12 +438,15 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
   const total = Number(totalRows[0]?.count ?? 0);
 
   res.json(
-    rows.map((r, i) => ({
+    rows.map((r, i) => {
+      const masked = maskIdentity(r.characterName, r.account, r.hideName ?? false, r.userId, req.user?.id);
+      return {
       rank: i + 1,
       pct: total <= 1 ? 100 : Math.round(((total - 1 - i) / (total - 1)) * 100),
       logId: r.logId,
-      name: r.characterName,
-      account: r.account,
+      name: masked.name,
+      account: masked.account,
+      hidden: masked.hidden,
       profession: r.profession,
       spec: r.spec,
       dps: r.totalDps,
@@ -431,7 +454,8 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       squadRole: r.squadRole,
       durationMs: r.durationMs,
       date: r.encounterTime,
-    })),
+    };
+    }),
   );
 }));
 
@@ -446,7 +470,7 @@ encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
       durationMs: true,
       encounterTime: true,
       players: {
-        select: { totalDps: true, player: { select: { account: true } } },
+        select: { totalDps: true, player: { select: { account: true, userId: true, user: { select: { hideName: true } } } } },
         orderBy: { totalDps: 'desc' },
         take: 1,
       },
@@ -464,12 +488,15 @@ encountersRouter.get('/:fightName/stats', asyncHandler(async (req, res) => {
   const topDpsRow = logs
     .flatMap((l) => l.players)
     .sort((a, b) => b.totalDps - a.totalDps)[0];
+  const topDpsName = topDpsRow
+    ? maskIdentity(topDpsRow.player.account, topDpsRow.player.account, topDpsRow.player.user?.hideName ?? false, topDpsRow.player.userId, req.user?.id).name
+    : null;
 
   res.json({
     fastestKill: fastest
       ? { durationMs: fastest.durationMs, date: fastest.encounterTime }
       : null,
-    topDps: topDpsRow ? { dps: topDpsRow.totalDps, name: topDpsRow.player.account } : null,
+    topDps: topDpsRow ? { dps: topDpsRow.totalDps, name: topDpsName } : null,
     clearRate: Math.round((successes.length / logs.length) * 100),
     totalLogs: logs.length,
   });

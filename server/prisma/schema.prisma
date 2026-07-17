@@ -62,6 +62,13 @@ model User {
   // Set when an admin suspends the account — suspended users keep their
   // rows but every authenticated request is rejected until unsuspended.
   suspendedAt      DateTime?
+  // Privacy: when hideName is set, this user's account/character names are
+  // masked (shown as "Anonymous") everywhere a log surfaces them —
+  // leaderboards, benchmarks, log squad tables — while their parse numbers
+  // still show. When privateProfile is set, their /players profile page is
+  // only viewable by themselves (and admins). Both default off.
+  hideName         Boolean        @default(false)
+  privateProfile   Boolean        @default(false)
   // The guild this user chose to represent (from the guilds on their GW2
   // account). Driving membership of the guild's auto-created group; null
   // means no guild displayed.

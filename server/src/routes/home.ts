@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { maskIdentity } from '../lib/privacy.js';
 
 export const homeRouter = Router();
 
@@ -12,9 +13,11 @@ interface TopByProfessionRow {
   logId: string;
   fightName: string;
   account: string;
+  userId: string | null;
+  hideName: boolean | null;
 }
 
-homeRouter.get('/', asyncHandler(async (_req, res) => {
+homeRouter.get('/', asyncHandler(async (req, res) => {
   const [topByProfession, recentLogs] = await Promise.all([
     // DISTINCT ON picks the single highest-DPS row per profession in one
     // pass — far cheaper than fetching everything and grouping in JS.
@@ -22,10 +25,11 @@ homeRouter.get('/', asyncHandler(async (_req, res) => {
     // the squad didn't actually win isn't a real record.
     prisma.$queryRaw<TopByProfessionRow[]>`
       SELECT DISTINCT ON (lp.profession)
-        lp.profession, lp."characterName", lp.spec, lp."totalDps", lp."logId", l."fightName", p.account
+        lp.profession, lp."characterName", lp.spec, lp."totalDps", lp."logId", l."fightName", p.account, p."userId", u."hideName"
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id
       JOIN "Player" p ON lp."playerId" = p.id
+      LEFT JOIN "User" u ON u.id = p."userId"
       WHERE l.success = true
       ORDER BY lp.profession, lp."totalDps" DESC
     `,
@@ -49,15 +53,19 @@ homeRouter.get('/', asyncHandler(async (_req, res) => {
 
   res.json({
     topByProfession: topByProfession
-      .map((r) => ({
-        profession: r.profession,
-        name: r.characterName,
-        account: r.account,
-        spec: r.spec,
-        dps: r.totalDps,
-        boss: r.fightName,
-        logId: r.logId,
-      }))
+      .map((r) => {
+        const masked = maskIdentity(r.characterName, r.account, r.hideName ?? false, r.userId, req.user?.id);
+        return {
+          profession: r.profession,
+          name: masked.name,
+          account: masked.account,
+          hidden: masked.hidden,
+          spec: r.spec,
+          dps: r.totalDps,
+          boss: r.fightName,
+          logId: r.logId,
+        };
+      })
       .sort((a, b) => b.dps - a.dps),
     recentLogs: recentLogs.map((l) => ({
       id: l.id,

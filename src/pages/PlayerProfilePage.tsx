@@ -18,7 +18,12 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
-  const { data: player, loading, error } = useApiQuery(() => api.player(name), [name]);
+  const { data, loading, error } = useApiQuery(() => api.player(name), [name]);
+
+  // Private profiles resolve to a stub for non-owners; narrow to the full
+  // profile for everything below.
+  const isPrivate = !!data && data.private === true;
+  const player = data && !isPrivate ? (data as PlayerProfile) : null;
 
   // Wipes don't have a meaningful "final" DPS — the fight never finished,
   // so a low number there just means it ended early, not that the parse was
@@ -48,6 +53,16 @@ export default function PlayerProfilePage() {
 
   if (loading) return <LoadingState label="Loading profile…" />;
   if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
+  if (isPrivate) {
+    return (
+      <Card style={{ padding: '48px 40px', textAlign: 'center' }}>
+        <div style={{ font: '800 22px var(--font-sans)', marginBottom: 8 }}>{data?.account}</div>
+        <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-60)' }}>
+          🔒 This player has made their profile private.
+        </div>
+      </Card>
+    );
+  }
   if (!player) return null;
 
   const mainProfession = player.professionBreakdown[0]?.profession ?? null;

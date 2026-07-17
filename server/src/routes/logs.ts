@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { RAID_BOSSES, FRACTAL_CM_BOSSES, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
+import { maskIdentity } from '../lib/privacy.js';
 
 export const logsRouter = Router();
 
@@ -147,7 +148,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
           boons: true,
           mechanics: true,
           squadRole: true,
-          player: { select: { account: true } },
+          player: { select: { account: true, userId: true, user: { select: { hideName: true } } } },
         },
       },
       mechanicEvents: {
@@ -190,6 +191,15 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
   `;
   const pctByName = new Map(playerPercentiles.map((p) => [p.characterName, Number(p.pct)]));
 
+  // character name → its masked display, for any player whose linked user
+  // hid their name (and isn't the viewer themselves). Used to scrub the
+  // squad table, timeline and death log all from one place.
+  const maskedActorName = new Map<string, string>();
+  for (const p of log.players) {
+    const masked = maskIdentity(p.characterName, p.player.account, p.player.user?.hideName ?? false, p.player.userId, req.user?.id);
+    if (masked.hidden) maskedActorName.set(p.characterName, masked.name);
+  }
+
   // Claimable if nobody's attributed to the upload yet and the signed-in
   // user's own linked GW2 account was actually a player in this log — i.e.
   // they can prove they were there, not just anyone passing by.
@@ -213,9 +223,12 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
     // extract a per-second breakdown from anymore.
     dpsChart: null,
-    players: log.players.map((p) => ({
-      name: p.characterName,
-      account: p.player.account,
+    players: log.players.map((p) => {
+      const masked = maskIdentity(p.characterName, p.player.account, p.player.user?.hideName ?? false, p.player.userId, req.user?.id);
+      return {
+      name: masked.name,
+      account: masked.account,
+      hidden: masked.hidden,
       profession: p.profession,
       spec: p.spec,
       subgroup: p.subgroup,
@@ -236,16 +249,19 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       deaths: p.deadCount,
       boons: p.boons,
       mechanics: p.mechanics,
-    })),
+    };
+    }),
+    // Timeline/mechanics reference players by character name; mask the ones
+    // whose linked user hid their name, or the name would leak here.
     mechanicEvents: log.mechanicEvents.map((e) => ({
       timeMs: e.timeMs,
       name: e.name,
-      actor: e.actor,
+      actor: e.actor ? maskedActorName.get(e.actor) ?? e.actor : e.actor,
       severity: e.severity,
     })),
     deathEvents: log.deathEvents.map((e) => ({
       timeMs: e.timeMs,
-      actor: e.actor,
+      actor: e.actor ? maskedActorName.get(e.actor) ?? e.actor : e.actor,
       killedBy: e.killedBy,
     })),
   });

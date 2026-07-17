@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { bossBgPath, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
@@ -9,6 +9,18 @@ import { useComparePicker } from '../hooks/useComparePicker';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { toast } from '../lib/toast';
+
+// A player's name linking to their profile — unless they hid their name
+// (account null), in which case it's plain text with no link (a link would
+// leak the real account in its href).
+function PlayerLink({ name, account, style, onClick }: { name: string; account: string | null; style?: CSSProperties; onClick?: (e: React.MouseEvent) => void }) {
+  if (!account) return <span style={style}>{name}</span>;
+  return (
+    <Link to={`/players/${encodeURIComponent(account)}`} style={style} onClick={onClick}>
+      {name}
+    </Link>
+  );
+}
 
 type Tab = 'Squad' | 'Boons' | 'Mechanics' | 'Timeline';
 const TABS: Tab[] = ['Squad', 'Boons', 'Mechanics', 'Timeline'];
@@ -282,13 +294,12 @@ function SquadTab({ log }: { log: LogDetail }) {
                       {p.role === 'power' ? 'Power DPS' : 'Condition DPS'} · {p.spec}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Link
-                        to={`/players/${encodeURIComponent(p.account)}`}
+                      <PlayerLink
+                        name={p.name}
+                        account={p.account}
                         style={{ position: 'relative', font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
                         onClick={(e) => e.stopPropagation()}
-                      >
-                        {p.name}
-                      </Link>
+                      />
                       <SquadRoleBadge squadRole={p.squadRole} />
                     </div>
                   </div>
@@ -330,9 +341,7 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
           {players.map((p) => (
             <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
               <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-              <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.name}
-              </Link>
+              <PlayerLink name={p.name} account={p.account} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <ProfDot color={professionColor(p.profession)} />
                 <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>
@@ -440,9 +449,7 @@ function MechanicsTab({ log }: { log: LogDetail }) {
               {log.players.map((p) => (
                 <div key={p.account} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
                   <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
-                  <Link to={`/players/${encodeURIComponent(p.account)}`} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.name}
-                  </Link>
+                  <PlayerLink name={p.name} account={p.account} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <ProfDot color={professionColor(p.profession)} />
                     <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)' }}>{p.spec}</div>

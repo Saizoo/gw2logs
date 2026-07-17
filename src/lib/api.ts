@@ -117,7 +117,9 @@ export interface LeaderboardRow {
   pct: number;
   logId: string;
   name: string;
-  account: string;
+  // Null when the player hid their name — render as plain text, no link.
+  account: string | null;
+  hidden?: boolean;
   profession: string;
   spec: string;
   dps: number;
@@ -144,8 +146,16 @@ export interface PlayerAffiliations {
   groups: { id: string; name: string; role: string; isGuildGroup: boolean; guildRank: string | null }[];
 }
 
+// Returned instead of PlayerProfile when the target's profile is private
+// and the viewer isn't the owner/an admin.
+export interface PlayerPrivateProfile {
+  account: string;
+  private: true;
+}
+
 export interface PlayerProfile {
   account: string;
+  private?: false;
   totalLogs: number;
   overallScore: number | null;
   consistencyScore: number | null;
@@ -162,7 +172,9 @@ export interface PlayerProfile {
 
 export interface LogDetailPlayer {
   name: string;
-  account: string;
+  // Null when the player hid their name — render as plain text, no link.
+  account: string | null;
+  hidden?: boolean;
   profession: string;
   spec: string;
   subgroup: number;
@@ -487,6 +499,9 @@ export interface CurrentUser {
   // Null until the first-login tour has been completed or skipped.
   onboardedAt: string | null;
   displayedGuildId: string | null;
+  // Privacy toggles.
+  hideName: boolean;
+  privateProfile: boolean;
   pendingGroupRequests: number;
 }
 
@@ -623,7 +638,7 @@ export interface DpsReportImportStatus {
 }
 
 export interface HomeSummary {
-  topByProfession: { profession: string; name: string; account: string; spec: string; dps: number; boss: string; logId: string }[];
+  topByProfession: { profession: string; name: string; account: string | null; hidden?: boolean; spec: string; dps: number; boss: string; logId: string }[];
   recentLogs: { id: string; boss: string; isCm: boolean; wing: string | null; squadDps: number; success: boolean; playerCount: number; uploadedAt: string }[];
 }
 
@@ -659,7 +674,7 @@ export const api = {
   },
   encounterStats: (fightName: string, isCm: boolean) =>
     apiFetch<EncounterStats>(`/encounters/${encodeURIComponent(fightName)}/stats?cm=${isCm}`),
-  player: (account: string) => apiFetch<PlayerProfile>(`/players/${encodeURIComponent(account)}`),
+  player: (account: string) => apiFetch<PlayerProfile | PlayerPrivateProfile>(`/players/${encodeURIComponent(account)}`),
   log: (id: string) => apiFetch<LogDetail>(`/logs/${encodeURIComponent(id)}`),
   claimLog: (id: string) => apiFetch<{ ok: true }>(`/logs/${encodeURIComponent(id)}/claim`, { method: 'POST' }),
   search: (q: string) => apiFetch<SearchResults>(`/search?q=${encodeURIComponent(q)}`),
@@ -686,6 +701,12 @@ export const api = {
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
   completeOnboarding: () => apiFetch<{ ok: true }>('/account/onboarding-complete', { method: 'POST' }),
+  updatePrivacy: (data: { hideName?: boolean; privateProfile?: boolean }) =>
+    apiFetch<{ hideName: boolean; privateProfile: boolean }>('/account/privacy', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
   accountGuilds: () =>
     apiFetch<{ displayedGuildId: string | null; guilds: (GuildRef & { isLeader: boolean | null })[] }>('/account/guilds'),
   setDisplayGuild: (guildId: string | null) =>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { maskIdentity } from '../lib/privacy.js';
 
 export const compareRouter = Router();
 
@@ -12,6 +13,7 @@ async function loadPlayerRow(logId: string, account: string) {
       totalDps: true,
       downCount: true,
       damageTaken: true,
+      player: { select: { userId: true, user: { select: { hideName: true } } } },
       log: { select: { durationMs: true, fightName: true } },
     },
   });
@@ -51,9 +53,12 @@ compareRouter.get('/', asyncHandler(async (req, res) => {
     return { label: row.label, a: row.a, b: row.b, aPct, bPct };
   });
 
+  const nameA = maskIdentity(accountA, accountA, a.player.user?.hideName ?? false, a.player.userId, req.user?.id).name;
+  const nameB = maskIdentity(accountB, accountB, b.player.user?.hideName ?? false, b.player.userId, req.user?.id).name;
+
   res.json({
-    playerA: { name: accountA, spec: a.spec, boss: a.log.fightName },
-    playerB: { name: accountB, spec: b.spec, boss: b.log.fightName },
+    playerA: { name: nameA, spec: a.spec, boss: a.log.fightName },
+    playerB: { name: nameB, spec: b.spec, boss: b.log.fightName },
     rows,
   });
 }));

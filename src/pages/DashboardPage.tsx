@@ -106,7 +106,7 @@ function LoggedOutDashboard() {
                   >
                     <ProfDot color={professionColor(row.profession)} size={9} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: '600 13px var(--font-sans)' }}>{row.account}</div>
+                      <div style={{ font: '600 13px var(--font-sans)' }}>{row.account ?? row.name}</div>
                       <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
                         {row.spec} · {row.boss}
                       </div>

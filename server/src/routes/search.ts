@@ -17,6 +17,10 @@ searchRouter.get('/', asyncHandler(async (req, res) => {
         { displayName: { contains: q, mode: 'insensitive' } },
         { account: { contains: q, mode: 'insensitive' } },
       ],
+      // Players who chose "Hide my name" shouldn't be findable by name —
+      // that would defeat the setting. Unlinked players (no user) have no
+      // such setting and always appear.
+      NOT: { user: { hideName: true } },
     },
     take: 10,
   });

@@ -176,6 +176,24 @@ accountRouter.post('/onboarding-complete', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Privacy toggles: hide my name from shared log displays, and/or make my
+// profile page private to others. Only the provided keys change.
+accountRouter.put('/privacy', asyncHandler(async (req, res) => {
+  const data: { hideName?: boolean; privateProfile?: boolean } = {};
+  if (typeof req.body?.hideName === 'boolean') data.hideName = req.body.hideName;
+  if (typeof req.body?.privateProfile === 'boolean') data.privateProfile = req.body.privateProfile;
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: 'Provide hideName and/or privateProfile as booleans' });
+    return;
+  }
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data,
+    select: { hideName: true, privateProfile: true },
+  });
+  res.json(user);
+}));
+
 accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
   const userId = req.user!.id;
 

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { REPLAY_TOUR_EVENT } from '../components/OnboardingTour';
-import { api, ApiError, type DpsReportImportStatus } from '../lib/api';
+import { api, ApiError, type CurrentUser, type DpsReportImportStatus } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge, Card, GoldButton } from '../components/atoms';
+import { toast } from '../lib/toast';
 
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -270,6 +271,8 @@ export default function AccountPage() {
 
       {user.gw2AccountName && <GuildCard />}
 
+      <PrivacyCard user={user} onSaved={refresh} />
+
       <div style={{ textAlign: 'center', marginTop: 22 }}>
         <button
           onClick={() => {
@@ -282,6 +285,85 @@ export default function AccountPage() {
           Replay the site tour
         </button>
       </div>
+    </div>
+  );
+}
+
+// Privacy toggles: hide my name from shared log displays, and/or make my
+// profile page private. Saves each toggle immediately.
+function PrivacyCard({ user, onSaved }: { user: CurrentUser; onSaved: () => void }) {
+  const [saving, setSaving] = useState<string | null>(null);
+
+  async function set(key: 'hideName' | 'privateProfile', value: boolean, message: string) {
+    setSaving(key);
+    try {
+      await api.updatePrivacy({ [key]: value });
+      toast.success(message);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save');
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <Card style={{ padding: 22, marginTop: 16 }}>
+      <div style={{ font: '800 15px var(--font-sans)', marginBottom: 4 }}>Privacy</div>
+      <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-58)', marginBottom: 16 }}>
+        Control how your name and profile appear to other people. Your own parses always stay visible.
+      </div>
+      <PrivacyToggle
+        title="Hide my name"
+        description="Show your parses as “Anonymous” on leaderboards, benchmarks and log squad tables. Your DPS still counts and ranks — only your account and character names are hidden. You always see your own name."
+        on={user.hideName}
+        busy={saving === 'hideName'}
+        onToggle={() => set('hideName', !user.hideName, user.hideName ? 'Your name is now visible' : 'Your name is now hidden')}
+      />
+      <div style={{ height: 12 }} />
+      <PrivacyToggle
+        title="Private profile"
+        description="Only you can view your player profile page. Others who open it see a “this profile is private” notice."
+        on={user.privateProfile}
+        busy={saving === 'privateProfile'}
+        onToggle={() => set('privateProfile', !user.privateProfile, user.privateProfile ? 'Your profile is now public' : 'Your profile is now private')}
+      />
+    </Card>
+  );
+}
+
+function PrivacyToggle({ title, description, on, busy, onToggle }: { title: string; description: string; on: boolean; busy: boolean; onToggle: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ font: '700 13px var(--font-sans)' }}>{title}</div>
+          {on && <Badge tone="gold">On</Badge>}
+        </div>
+        <div style={{ font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>{description}</div>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={title}
+        onClick={onToggle}
+        disabled={busy}
+        style={{
+          position: 'relative',
+          width: 46,
+          height: 25,
+          borderRadius: 14,
+          flexShrink: 0,
+          marginTop: 2,
+          background: on ? 'var(--gold-grad)' : 'oklch(1 0 0 / 10%)',
+          border: '1px solid ' + (on ? 'transparent' : 'var(--border)'),
+          cursor: busy ? 'default' : 'pointer',
+          opacity: busy ? 0.6 : 1,
+          transition: 'background .15s ease',
+        }}
+      >
+        <span aria-hidden style={{ position: 'absolute', top: 2, left: on ? 23 : 2, width: 19, height: 19, borderRadius: '50%', background: on ? 'oklch(0.15 0.02 85)' : 'oklch(0.85 0.01 250)', transition: 'left .15s ease' }} />
+      </button>
     </div>
   );
 }
