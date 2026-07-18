@@ -5,6 +5,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { STATUS_META, type UploadStatus } from '../data/derived';
 import { Card, SectionLabel } from '../components/atoms';
+import { Select } from '../components/Select';
 import { EmptyState } from '../components/QueryStates';
 
 interface QueueItem {
@@ -68,14 +69,16 @@ export default function UploadPage() {
             <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
               Attach to group (optional)
             </span>
-            <select className="u-select" value={groupId} onChange={(e) => setGroupId(e.target.value)} style={selectStyle}>
-              <option value="">Don't attach to a group</option>
-              {myGroups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              ariaLabel="Attach to group"
+              value={groupId}
+              onChange={setGroupId}
+              options={[
+                { value: '', label: "Don't attach to a group" },
+                ...myGroups.map((g) => ({ value: g.id, label: g.name })),
+              ]}
+              style={{ width: '100%' }}
+            />
           </label>
         </div>
       )}
@@ -174,13 +177,3 @@ export default function UploadPage() {
     </div>
   );
 }
-
-const selectStyle = {
-  background: 'var(--bg-input)',
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
-  fontSize: 12.5,
-  padding: '8px 12px',
-  borderRadius: 8,
-  fontFamily: 'var(--font-sans)',
-} as const;

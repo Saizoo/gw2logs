@@ -7,6 +7,7 @@ import { professionColor, professionIconPath, specBgPath } from '../data/gw2-dat
 import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge, SubNav } from '../components/atoms';
 import { BENCH_SUBNAV } from './BenchmarksPage';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
+import { Select } from '../components/Select';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 const RANK_COLORS = ['var(--gold)', 'oklch(0.7 0.03 85)', 'oklch(0.7 0.03 85)'];
@@ -65,25 +66,29 @@ export default function LeaderboardPage() {
         subtitle="Top squad-verified DPS across the guild, ranked by encounter and role"
         actions={
           <>
-          <select className="u-select"
+          <Select
+            ariaLabel="Encounter"
             value={selected ? `${selected.fightName}|${selected.isCm}` : ''}
-            onChange={(e) => {
-              const [fightName, cm] = e.target.value.split('|');
+            onChange={(v) => {
+              const [fightName, cm] = v.split('|');
               selectEncounter(fightName, cm === 'true');
             }}
-            style={selectStyle}
-          >
-            {encounters?.map((e) => (
-              <option key={`${e.fightName}-${e.isCm}`} value={`${e.fightName}|${e.isCm}`}>
-                {e.fightName}
-                {e.isCm ? ' CM' : ''}
-              </option>
-            ))}
-          </select>
-          <select className="u-select" value={role} onChange={(e) => selectRole(e.target.value === 'condi' ? 'condi' : 'power')} style={selectStyle}>
-            <option value="power">Power DPS</option>
-            <option value="condi">Condition DPS</option>
-          </select>
+            options={(encounters ?? []).map((e) => ({
+              value: `${e.fightName}|${e.isCm}`,
+              label: `${e.fightName}${e.isCm ? ' CM' : ''}`,
+            }))}
+            style={{ minWidth: 220 }}
+          />
+          <Select
+            ariaLabel="Role"
+            value={role}
+            onChange={(v) => selectRole(v === 'condi' ? 'condi' : 'power')}
+            options={[
+              { value: 'power', label: 'Power DPS' },
+              { value: 'condi', label: 'Condition DPS' },
+            ]}
+            style={{ minWidth: 160 }}
+          />
           </>
         }
       />
@@ -200,14 +205,3 @@ export default function LeaderboardPage() {
     </div>
   );
 }
-
-const selectStyle = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-92)',
-  fontSize: 12.5,
-  fontWeight: 600,
-  padding: '9px 12px',
-  borderRadius: 10,
-  fontFamily: 'var(--font-sans)',
-} as const;

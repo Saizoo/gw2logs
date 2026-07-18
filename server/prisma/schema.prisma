@@ -69,6 +69,10 @@ model User {
   // only viewable by themselves (and admins). Both default off.
   hideName         Boolean        @default(false)
   privateProfile   Boolean        @default(false)
+  // The spec or profession the user picked as their profile icon (e.g.
+  // "Firebrand", "Guardian"). Drives both the profile-header icon and its
+  // background banner art. Null falls back to their most-played profession.
+  profileIcon      String?
   // The guild this user chose to represent (from the guilds on their GW2
   // account). Driving membership of the guild's auto-created group; null
   // means no guild displayed.

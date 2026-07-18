@@ -5,6 +5,7 @@ import { useApiQuery } from '../../hooks/useApiQuery';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { toast } from '../../lib/toast';
 import { Card, GoldButton } from '../../components/atoms';
+import { Select } from '../../components/Select';
 import { DURATION_OPTIONS_MINS, WEEKDAYS, formatDurationMins, formatSchedule } from '../../data/schedule';
 import { SIGNUP_META, inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from './shared';
 
@@ -138,18 +139,16 @@ function RaidScheduleCard({
           <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
             Duration
           </span>
-          <select className="u-select"
-            value={durationMins}
-            onChange={(e) => setDurationMins(e.target.value ? Number(e.target.value) : '')}
-            style={inputStyle}
-          >
-            <option value="">—</option>
-            {DURATION_OPTIONS_MINS.map((m) => (
-              <option key={m} value={m}>
-                {formatDurationMins(m)}
-              </option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Duration"
+            value={durationMins === '' ? '' : String(durationMins)}
+            onChange={(v) => setDurationMins(v ? Number(v) : '')}
+            options={[
+              { value: '', label: '—' },
+              ...DURATION_OPTIONS_MINS.map((m) => ({ value: String(m), label: formatDurationMins(m) })),
+            ]}
+            style={{ minWidth: 130 }}
+          />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
@@ -388,23 +387,21 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-62)' }}>Remind</div>
-        <select className="u-select"
-          value={settings.reminderMins}
+        <Select
+          ariaLabel="Reminder lead time"
+          value={String(settings.reminderMins)}
           disabled={busy}
-          onChange={(e) =>
-            run(() => api.setGroupReminders(groupId, { reminderMins: Number(e.target.value) }), 'Reminder time updated')
+          onChange={(v) =>
+            run(() => api.setGroupReminders(groupId, { reminderMins: Number(v) }), 'Reminder time updated')
           }
-          style={{ ...inputStyle, padding: '7px 10px' }}
-        >
-          {REMINDER_LEAD_OPTIONS.map((o) => (
-            <option key={o.mins} value={o.mins}>
-              {o.label}
-            </option>
-          ))}
-          {!REMINDER_LEAD_OPTIONS.some((o) => o.mins === settings.reminderMins) && (
-            <option value={settings.reminderMins}>{settings.reminderMins} minutes before</option>
-          )}
-        </select>
+          options={[
+            ...REMINDER_LEAD_OPTIONS.map((o) => ({ value: String(o.mins), label: o.label })),
+            ...(REMINDER_LEAD_OPTIONS.some((o) => o.mins === settings.reminderMins)
+              ? []
+              : [{ value: String(settings.reminderMins), label: `${settings.reminderMins} minutes before` }]),
+          ]}
+          style={{ minWidth: 170 }}
+        />
       </div>
     </Card>
   );

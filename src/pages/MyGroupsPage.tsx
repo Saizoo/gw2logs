@@ -4,6 +4,7 @@ import { api, ApiError, type GroupSummary } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CountBadge, GoldButton } from '../components/atoms';
+import { Select } from '../components/Select';
 import { LoadingState, EmptyState } from '../components/QueryStates';
 import { WEEKDAYS, formatSchedule } from '../data/schedule';
 
@@ -133,13 +134,13 @@ export default function MyGroupsPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             style={{ ...inputStyle, flex: 1 }}
           />
-          <select className="u-select" value={sort} onChange={(e) => setSort(e.target.value as SortOption)} style={inputStyle}>
-            {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Sort"
+            value={sort}
+            onChange={(v) => setSort(v as SortOption)}
+            options={(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => ({ value: key, label }))}
+            style={{ minWidth: 180 }}
+          />
           <GoldButton onClick={handleSearch}>{searching ? 'Searching…' : 'Search'}</GoldButton>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>

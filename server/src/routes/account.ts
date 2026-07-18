@@ -6,6 +6,7 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { fetchAccount, fetchAccountGuilds, fetchGuildInfo, fetchTokenInfo } from '../lib/gw2Api.js';
 import { addToGuildGroup, ensureGuildGroup, removeFromGuildGroup } from '../lib/guildGroups.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { isValidProfileIcon } from '../lib/gw2Specs.js';
 import { fetchDpsReportJson, fetchDpsReportUploads } from '../lib/dpsReportImport.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
@@ -190,6 +191,27 @@ accountRouter.put('/privacy', asyncHandler(async (req, res) => {
     where: { id: req.user!.id },
     data,
     select: { hideName: true, privateProfile: true },
+  });
+  res.json(user);
+}));
+
+// Profile icon: the spec/profession the user picked to represent themselves
+// on their profile page (also drives the header background). Pass a valid
+// spec/profession name to set it, or null to clear back to the auto default.
+accountRouter.put('/profile-icon', asyncHandler(async (req, res) => {
+  const raw = req.body?.profileIcon;
+  if (raw !== null && typeof raw !== 'string') {
+    res.status(400).json({ error: 'Provide profileIcon as a spec/profession name, or null to clear' });
+    return;
+  }
+  if (typeof raw === 'string' && !isValidProfileIcon(raw)) {
+    res.status(400).json({ error: 'Unknown spec or profession' });
+    return;
+  }
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { profileIcon: raw },
+    select: { profileIcon: true },
   });
   res.json(user);
 }));

@@ -26,6 +26,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
         select: {
           id: true,
           privateProfile: true,
+          profileIcon: true,
           displayedGuild: { select: { id: true, name: true, tag: true } },
           groupMemberships: {
             select: {
@@ -267,6 +268,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     totalLogs: logPlayers.length,
     overallScore,
     consistencyScore,
+    profileIcon: player.user?.profileIcon ?? null,
     affiliations,
     record,
     roleBreakdown,

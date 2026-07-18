@@ -159,6 +159,8 @@ export interface PlayerProfile {
   totalLogs: number;
   overallScore: number | null;
   consistencyScore: number | null;
+  // Chosen profile icon (spec/profession name), or null for the auto default.
+  profileIcon: string | null;
   affiliations: PlayerAffiliations | null;
   record: { kills: number; wipes: number; total: number; successRate: number };
   roleBreakdown: { role: string; count: number; pct: number }[];
@@ -502,6 +504,8 @@ export interface CurrentUser {
   // Privacy toggles.
   hideName: boolean;
   privateProfile: boolean;
+  // Chosen profile icon (spec/profession name), or null for the auto default.
+  profileIcon: string | null;
   pendingGroupRequests: number;
 }
 
@@ -706,6 +710,12 @@ export const api = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+    }),
+  updateProfileIcon: (profileIcon: string | null) =>
+    apiFetch<{ profileIcon: string | null }>('/account/profile-icon', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileIcon }),
     }),
   accountGuilds: () =>
     apiFetch<{ displayedGuildId: string | null; guilds: (GuildRef & { isLeader: boolean | null })[] }>('/account/guilds'),

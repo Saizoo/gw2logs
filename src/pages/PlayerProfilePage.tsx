@@ -1,11 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
-import { professionColor, professionColorAlpha, professionForSpec, professionIconPath } from '../data/gw2-data';
-import { Card, ParseBadge, ProfDot } from '../components/atoms';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { PROFESSIONS, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
+import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
+import { toast } from '../lib/toast';
 import { GuildBadge } from './MyGroupsPage';
+
+// Split a stored profile-icon name (a spec or a core profession) into the
+// profession + optional elite spec the icon/background helpers expect.
+function iconParts(iconName: string | null): { profession: string | null; spec: string | null } {
+  if (!iconName) return { profession: null, spec: null };
+  const profession = professionForSpec(iconName);
+  return { profession, spec: iconName !== profession ? iconName : null };
+}
 
 // The 3-role classification (see server ingest.ts). SquadRoleBadge only
 // labels the two boon roles; the profile wants all three named with a
@@ -19,6 +29,12 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
   const { data, loading, error } = useApiQuery(() => api.player(name), [name]);
+  const { user: currentUser } = useCurrentUser();
+
+  // The chosen icon can change without a re-fetch (owner picks a new one), so
+  // it's held locally, seeded from the server value once the profile loads.
+  const [iconOverride, setIconOverride] = useState<string | null | undefined>(undefined);
+  const [picking, setPicking] = useState(false);
 
   // Private profiles resolve to a stub for non-owners; narrow to the full
   // profile for everything below.
@@ -67,6 +83,30 @@ export default function PlayerProfilePage() {
 
   const mainProfession = player.professionBreakdown[0]?.profession ?? null;
 
+  // Owner can pick their own icon. Ownership is "the signed-in user's linked
+  // GW2 account matches this profile" — the only account whose profile this is.
+  const isOwner = !!currentUser?.gw2AccountName && currentUser.gw2AccountName === player.account;
+
+  // Effective icon: local override (owner just picked) → server value →
+  // most-played profession fallback.
+  const effectiveIcon = iconOverride !== undefined ? iconOverride : player.profileIcon;
+  const iconName = effectiveIcon ?? mainProfession;
+  const { profession: iconProfession, spec: iconSpec } = iconParts(iconName);
+  const headerBg = iconName ? specBgPath(iconProfession!, iconSpec) : null;
+
+  async function chooseIcon(value: string | null) {
+    setPicking(false);
+    const prev = iconOverride;
+    setIconOverride(value); // optimistic
+    try {
+      await api.updateProfileIcon(value);
+      toast.success(value ? `Profile icon set to ${value}` : 'Profile icon reset');
+    } catch {
+      setIconOverride(prev);
+      toast.error('Could not update your profile icon');
+    }
+  }
+
   const profileStats = [
     { label: 'Total Logs', value: player.totalLogs },
     { label: 'Overall Score', value: player.overallScore ?? '—' },
@@ -78,57 +118,108 @@ export default function PlayerProfilePage() {
     <div>
       <Card
         style={{
+          position: 'relative',
+          overflow: 'hidden',
           padding: 32,
           marginBottom: 22,
           display: 'flex',
           alignItems: 'center',
           gap: 22,
+          flexWrap: 'wrap',
           background:
             'radial-gradient(600px 260px at 85% 0%, oklch(0.32 0.06 155 / 25%), transparent), linear-gradient(135deg, oklch(0.2 0.018 250), oklch(0.13 0.014 250))',
         }}
       >
-        <div
-          style={{
-            width: 84,
-            height: 84,
-            borderRadius: 18,
-            background: mainProfession
-              ? `linear-gradient(135deg, ${professionColorAlpha(mainProfession, 50)}, oklch(0.16 0.02 155 / 60%))`
-              : 'oklch(0.22 0.014 250)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 'none',
-            border: '1px solid var(--border)',
-          }}
-        >
-          {mainProfession && <img src={professionIconPath(mainProfession)} alt={mainProfession} style={{ width: 56, height: 56, objectFit: 'contain' }} />}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.account}</div>
-          {mainProfession && (
-            <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{mainProfession}</div>
-          )}
-          <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
-            {profileStats.map((s) => (
-              <div key={s.label}>
-                <div style={{ font: '800 18px var(--font-sans)' }}>{s.value}</div>
-                <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>
-                  {s.label}
+        {/* Chosen-spec banner art, faded into the card and masked toward the
+            right so the name/stats stay legible. */}
+        {headerBg && (
+          <>
+            <ArtImg src={headerBg} style={{ opacity: 0.22, maskImage: 'linear-gradient(90deg, transparent, #000 55%)', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 55%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.15 0.014 250 / 70%), transparent 40%)', pointerEvents: 'none' }} />
+          </>
+        )}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 22, flex: '1 1 340px', minWidth: 0 }}>
+          <button
+            type="button"
+            onClick={() => isOwner && setPicking(true)}
+            title={isOwner ? 'Change your profile icon' : undefined}
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 18,
+              background: iconProfession
+                ? `linear-gradient(135deg, ${professionColorAlpha(iconProfession, 50)}, oklch(0.16 0.02 155 / 60%))`
+                : 'oklch(0.22 0.014 250)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+              border: `1px solid ${iconProfession ? professionColorAlpha(iconProfession, 45) : 'var(--border)'}`,
+              padding: 0,
+              cursor: isOwner ? 'pointer' : 'default',
+              position: 'relative',
+            }}
+          >
+            {iconName && <img src={professionIconPath(iconProfession!, iconSpec)} alt={iconName} style={{ width: 56, height: 56, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />}
+            {isOwner && (
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  right: -6,
+                  bottom: -6,
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: 'var(--gold)',
+                  color: 'oklch(0.2 0.02 260)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  font: '700 13px var(--font-sans)',
+                  border: '2px solid var(--bg-card)',
+                }}
+              >
+                ✎
+              </span>
+            )}
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.account}</div>
+            {iconSpec ? (
+              <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{iconSpec} · {iconProfession}</div>
+            ) : mainProfession ? (
+              <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{mainProfession}</div>
+            ) : null}
+            <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
+              {profileStats.map((s) => (
+                <div key={s.label}>
+                  <div style={{ font: '800 18px var(--font-sans)' }}>{s.value}</div>
+                  <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>
+                    {s.label}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Kill record lives in the header, on the right of the name/stats. */}
+        <div style={{ position: 'relative', flex: '0 1 auto' }}>
+          <HeaderRecord record={player.record} />
+        </div>
       </Card>
+
+      {picking && (
+        <IconPickerModal current={effectiveIcon ?? null} onPick={chooseIcon} onClose={() => setPicking(false)} />
+      )}
 
       {player.affiliations && (player.affiliations.guild || player.affiliations.groups.length > 0) && (
         <AffiliationsPanel affiliations={player.affiliations} />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'start' }}>
+      <div style={{ marginBottom: 20 }}>
         <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
-        <RecordPanel record={player.record} />
       </div>
 
       {chart && (
@@ -345,37 +436,152 @@ function IdentityPanel({
   );
 }
 
-// --- Kill / wipe record ---------------------------------------------------
+// --- Kill / wipe record (compact, lives in the profile header) ------------
 
-function RecordPanel({ record }: { record: PlayerProfile['record'] }) {
+function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
   const killPct = record.total ? (record.kills / record.total) * 100 : 0;
   return (
-    <Card style={{ padding: '18px 20px' }}>
-      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 14 }}>Kill Record</div>
-
+    <div
+      style={{
+        minWidth: 220,
+        padding: '16px 18px',
+        borderRadius: 14,
+        background: 'oklch(0.12 0.012 250 / 55%)',
+        border: '1px solid var(--border)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-55)', marginBottom: 8 }}>
+        Kill Record
+      </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
         <span style={{ font: '800 30px var(--font-sans)', color: 'var(--good)' }}>{record.successRate}%</span>
-        <span style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>success rate</span>
+        <span style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>success rate</span>
       </div>
-      <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-58)', marginBottom: 14 }}>
+      <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 12 }}>
         across {record.total.toLocaleString()} logged encounter{record.total === 1 ? '' : 's'}
       </div>
 
       {/* Kills-vs-wipes ratio bar. */}
-      <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: 'var(--bad-dim)' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--bad-dim)' }}>
         <div style={{ width: `${killPct}%`, background: 'var(--good)' }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
         <div>
-          <div style={{ font: '800 20px var(--font-sans)', color: 'var(--good)' }}>{record.kills.toLocaleString()}</div>
-          <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Kills</div>
+          <div style={{ font: '800 18px var(--font-sans)', color: 'var(--good)' }}>{record.kills.toLocaleString()}</div>
+          <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Kills</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ font: '800 20px var(--font-sans)', color: 'var(--bad)' }}>{record.wipes.toLocaleString()}</div>
-          <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Wipes</div>
+          <div style={{ font: '800 18px var(--font-sans)', color: 'var(--bad)' }}>{record.wipes.toLocaleString()}</div>
+          <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Wipes</div>
         </div>
       </div>
-    </Card>
+    </div>
+  );
+}
+
+// --- Profile icon picker (owner-only) -------------------------------------
+
+function IconPickerModal({
+  current,
+  onPick,
+  onClose,
+}: {
+  current: string | null;
+  onPick: (value: string | null) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Choose profile icon"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 2500,
+        background: 'oklch(0.08 0.01 260 / 62%)',
+        backdropFilter: 'blur(3px)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '6vh 16px',
+        overflowY: 'auto',
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(720px, 100%)' }}>
+      <Card style={{ padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div style={{ font: '800 16px var(--font-sans)' }}>Choose your profile icon</div>
+          <button
+            type="button"
+            onClick={() => onPick(null)}
+            className="u-btn-ghost"
+            style={{ marginLeft: 'auto', font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 11px', cursor: 'pointer' }}
+          >
+            Reset to default
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{ font: '700 16px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {Object.entries(PROFESSIONS).map(([profession, info]) => (
+            <div key={profession}>
+              <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: professionColor(profession), marginBottom: 8 }}>
+                {profession}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[profession, ...info.specs].map((iconName) => {
+                  const spec = iconName === profession ? null : iconName;
+                  const isSel = current === iconName;
+                  return (
+                    <button
+                      key={iconName}
+                      type="button"
+                      onClick={() => onPick(iconName)}
+                      title={spec ? `${spec} · ${profession}` : `${profession} (core)`}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 5,
+                        width: 78,
+                        padding: '9px 6px',
+                        borderRadius: 10,
+                        cursor: 'pointer',
+                        background: isSel ? professionColorAlpha(profession, 18) : 'oklch(1 0 0 / 3%)',
+                        border: `1px solid ${isSel ? professionColor(profession) : 'var(--border-faint)'}`,
+                      }}
+                    >
+                      <img
+                        src={professionIconPath(profession, spec)}
+                        alt=""
+                        width={30}
+                        height={30}
+                        style={{ objectFit: 'contain' }}
+                        onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                      />
+                      <span style={{ font: '600 10px var(--font-sans)', color: isSel ? 'var(--text)' : 'var(--text-62)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                        {iconName === profession ? 'Core' : spec}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      </div>
+    </div>
   );
 }
 

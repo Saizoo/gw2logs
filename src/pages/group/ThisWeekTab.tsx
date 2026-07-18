@@ -3,6 +3,7 @@ import { api, ApiError, type GroupDetail, type GroupWeekPlan, type WeekPlanCompo
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { ArtImg, Card, GoldButton } from '../../components/atoms';
+import { Select } from '../../components/Select';
 import { EXPANSIONS } from '../../data/encounters';
 import { bossBgPathLoose, professionColor, professionIconPath } from '../../data/gw2-data';
 import { ghostBtnStyle, inputStyle, smallBtnStyle } from './shared';
@@ -435,33 +436,29 @@ function PlanEditor({
           {dayGroup.fights.map((fight, fi) => (
             <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderBottom: '1px solid var(--border-faint)', flexWrap: 'wrap' }}>
               <span style={{ font: '700 11px var(--font-mono, monospace)', color: 'var(--text-50)', width: 20 }}>{fi + 1}.</span>
-              <select
-                className="u-select"
+              <Select
+                ariaLabel="Encounter"
                 value={fight.encounterName}
-                onChange={(e) => updateFight(di, fi, { encounterName: e.target.value })}
-                style={{ ...inputStyle, minWidth: 190 }}
-              >
-                {CATALOG.map((g) => (
-                  <optgroup key={g.wing} label={g.wing}>
-                    {g.encs.map((enc) => (
-                      <option key={enc.name} value={enc.name}>{enc.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <select
-                className="u-select"
+                onChange={(v) => updateFight(di, fi, { encounterName: v })}
+                options={CATALOG.flatMap((g) =>
+                  g.encs.map((enc) => ({ value: enc.name, label: enc.name, group: g.wing })),
+                )}
+                style={{ minWidth: 190 }}
+                panelWidth={260}
+              />
+              <Select
+                ariaLabel="Composition"
                 value={fight.compositionId ?? ''}
-                onChange={(e) => updateFight(di, fi, { compositionId: e.target.value || null })}
-                style={{ ...inputStyle, minWidth: 170 }}
-              >
-                <option value="">No composition</option>
-                {compsFor(fight.encounterName).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}{c.fightName ? ` (${c.fightName})` : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateFight(di, fi, { compositionId: v || null })}
+                options={[
+                  { value: '', label: 'No composition' },
+                  ...compsFor(fight.encounterName).map((c) => ({
+                    value: c.id,
+                    label: `${c.name}${c.fightName ? ` (${c.fightName})` : ''}`,
+                  })),
+                ]}
+                style={{ minWidth: 170 }}
+              />
               <input
                 value={fight.note}
                 onChange={(e) => updateFight(di, fi, { note: e.target.value })}

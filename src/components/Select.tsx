@@ -1,15 +1,19 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 
 // A themed, accessible replacement for a native <select>. The native
 // element can't render an image inside an option or restyle its dropdown
 // popup (that's drawn by the OS), so anywhere we want spec icons or a look
 // that matches the rest of the app, we use this instead.
 //
+// The open panel renders in a portal on <body> with fixed positioning
+// anchored to the trigger — so it's never clipped or hidden by an
+// ancestor's overflow/stacking context (Cards, tables, z-indexed rows).
+//
 // Behaviour parity with <select>: click to open, click an option or press
 // Enter to choose, Escape/outside-click to close, ↑/↓ to move the
-// highlight, Home/End to jump, and type-ahead on a letter key. The panel
-// renders in-flow (absolutely positioned under the trigger) and flips
-// above the trigger when there isn't room below.
+// highlight, Home/End to jump, and type-ahead on a letter key. Options may
+// carry a `group` label to render section headers.
 
 export interface SelectOption {
   value: string;
@@ -20,6 +24,17 @@ export interface SelectOption {
   icon?: string;
   /** Optional accent color for the icon frame / selected tint. */
   accent?: string;
+  /** Optional group heading — a header renders before the first option of
+   *  each new group (options should be pre-sorted by group). */
+  group?: string;
+}
+
+interface PanelPos {
+  left: number;
+  width: number;
+  top?: number;
+  bottom?: number;
+  maxHeight: number;
 }
 
 export function Select({
@@ -46,8 +61,7 @@ export function Select({
 }) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
-  const [flipUp, setFlipUp] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<PanelPos | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -56,32 +70,55 @@ export function Select({
 
   const selected = options.find((o) => o.value === value) ?? null;
 
+  // Anchor the fixed-position panel to the trigger, flipping above it when
+  // there's more room up than down. Recomputed on open, scroll and resize.
+  const reposition = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const flip = spaceBelow < 300 && spaceAbove > spaceBelow;
+    setPos({
+      left: rect.left,
+      width: panelWidth ?? rect.width,
+      top: flip ? undefined : rect.bottom + 6,
+      bottom: flip ? window.innerHeight - rect.top + 6 : undefined,
+      maxHeight: Math.min(320, (flip ? spaceAbove : spaceBelow) - 14),
+    });
+  }, [panelWidth]);
+
   useEffect(() => {
     if (autoFocus) setOpen(true);
   }, [autoFocus]);
 
-  // On open, highlight the current value and decide whether to flip up.
   useLayoutEffect(() => {
     if (!open) return;
-    const idx = Math.max(0, options.findIndex((o) => o.value === value));
-    setHighlight(idx);
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setFlipUp(spaceBelow < 280 && rect.top > spaceBelow);
-    }
-  }, [open, options, value]);
+    setHighlight(Math.max(0, options.findIndex((o) => o.value === value)));
+    reposition();
+  }, [open, options, value, reposition]);
 
-  // Keep the highlighted option scrolled into view.
+  // Keep the panel glued to the trigger while the page scrolls or resizes.
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => reposition();
+    window.addEventListener('scroll', handler, true);
+    window.addEventListener('resize', handler);
+    return () => {
+      window.removeEventListener('scroll', handler, true);
+      window.removeEventListener('resize', handler);
+    };
+  }, [open, reposition]);
+
   useEffect(() => {
     if (open) optionRefs.current[highlight]?.scrollIntoView({ block: 'nearest' });
   }, [open, highlight]);
 
-  // Close on outside click.
+  // Close on outside click — check both the trigger and the portalled panel.
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!triggerRef.current?.contains(t) && !panelRef.current?.contains(t)) setOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -130,7 +167,6 @@ export function Select({
         if (options[highlight]) choose(options[highlight].value);
         break;
       default:
-        // Type-ahead: build up a search term while keys arrive quickly.
         if (e.key.length === 1 && /\S/.test(e.key)) {
           const now = Date.now();
           typeahead.current.term = now - typeahead.current.at < 700 ? typeahead.current.term + e.key : e.key;
@@ -143,7 +179,7 @@ export function Select({
   };
 
   return (
-    <div ref={rootRef} style={{ position: 'relative', display: 'inline-block', ...style }}>
+    <div style={{ position: 'relative', display: 'inline-block', ...style }}>
       <button
         ref={triggerRef}
         type="button"
@@ -186,19 +222,19 @@ export function Select({
         </svg>
       </button>
 
-      {open && (
+      {open && pos && createPortal(
         <div
           ref={panelRef}
           id={listId}
           role="listbox"
           style={{
-            position: 'absolute',
-            left: 0,
-            [flipUp ? 'bottom' : 'top']: 'calc(100% + 6px)',
-            zIndex: 50,
-            width: panelWidth ?? '100%',
-            minWidth: panelWidth ?? '100%',
-            maxHeight: 300,
+            position: 'fixed',
+            left: pos.left,
+            top: pos.top,
+            bottom: pos.bottom,
+            zIndex: 3000,
+            width: pos.width,
+            maxHeight: pos.maxHeight,
             overflowY: 'auto',
             padding: 5,
             borderRadius: 12,
@@ -207,7 +243,7 @@ export function Select({
             boxShadow: '0 18px 44px -14px rgba(0,0,0,.7), 0 2px 8px rgba(0,0,0,.4)',
             backdropFilter: 'blur(6px)',
             animation: 'selectPop .14s cubic-bezier(.2,.9,.3,1.2) both',
-            transformOrigin: flipUp ? 'bottom center' : 'top center',
+            transformOrigin: pos.bottom != null ? 'bottom center' : 'top center',
           }}
         >
           {options.length === 0 && (
@@ -216,63 +252,71 @@ export function Select({
           {options.map((opt, i) => {
             const isSelected = opt.value === value;
             const isHigh = i === highlight;
+            const showGroup = opt.group && opt.group !== options[i - 1]?.group;
             return (
-              <div
-                key={opt.value || `__${i}`}
-                ref={(el) => { optionRefs.current[i] = el; }}
-                role="option"
-                aria-selected={isSelected}
-                onMouseEnter={() => setHighlight(i)}
-                onClick={() => choose(opt.value)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '7px 10px',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  background: isHigh ? 'oklch(0.78 0.14 85 / 14%)' : isSelected ? 'oklch(1 0 0 / 5%)' : 'transparent',
-                  transition: 'background .1s ease',
-                }}
-              >
-                {opt.icon !== undefined && (
-                  <div
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 7,
-                      flex: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'oklch(0.13 0.01 250 / 70%)',
-                      border: `1px solid ${opt.accent ? `color-mix(in oklab, ${opt.accent} 45%, transparent)` : 'oklch(1 0 0 / 10%)'}`,
-                    }}
-                  >
-                    {opt.icon && (
-                      <img src={opt.icon} alt="" width={18} height={18} style={{ objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
-                    )}
+              <div key={opt.value || `__${i}`}>
+                {showGroup && (
+                  <div style={{ padding: '8px 10px 4px', font: '700 9.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                    {opt.group}
                   </div>
                 )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: `${isSelected ? 700 : 500} 12.5px var(--font-sans)`, color: isSelected ? 'var(--gold)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {opt.label}
-                  </div>
-                  {opt.sublabel && (
-                    <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
-                      {opt.sublabel}
+                <div
+                  ref={(el) => { optionRefs.current[i] = el; }}
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseEnter={() => setHighlight(i)}
+                  onClick={() => choose(opt.value)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '7px 10px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    background: isHigh ? 'oklch(0.78 0.14 85 / 14%)' : isSelected ? 'oklch(1 0 0 / 5%)' : 'transparent',
+                    transition: 'background .1s ease',
+                  }}
+                >
+                  {opt.icon !== undefined && (
+                    <div
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 7,
+                        flex: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'oklch(0.13 0.01 250 / 70%)',
+                        border: `1px solid ${opt.accent ? `color-mix(in oklab, ${opt.accent} 45%, transparent)` : 'oklch(1 0 0 / 10%)'}`,
+                      }}
+                    >
+                      {opt.icon && (
+                        <img src={opt.icon} alt="" width={18} height={18} style={{ objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+                      )}
                     </div>
                   )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ font: `${isSelected ? 700 : 500} 12.5px var(--font-sans)`, color: isSelected ? 'var(--gold)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {opt.label}
+                    </div>
+                    {opt.sublabel && (
+                      <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
+                        {opt.sublabel}
+                      </div>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden style={{ flex: 'none' }}>
+                      <path d="M2.5 7.5l3 3 6-7" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
-                {isSelected && (
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden style={{ flex: 'none' }}>
-                    <path d="M2.5 7.5l3 3 6-7" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

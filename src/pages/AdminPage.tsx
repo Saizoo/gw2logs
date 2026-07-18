@@ -7,6 +7,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';
 import { PROF, PROF_ORDER, CAT, type BuildCategory, type ProfessionKey } from '../data/builds';
 import { Card, GoldButton, LoadMoreButton, SectionLabel, StatCard, Badge } from '../components/atoms';
+import { Select } from '../components/Select';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 const PAGE_SIZE = 50;
@@ -405,14 +406,16 @@ function BuildsTab() {
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select className="u-select" value={profFilter} onChange={(e) => setProfFilter(e.target.value)} style={selectStyle}>
-          <option value="">All professions</option>
-          {PROF_ORDER.map((k) => (
-            <option key={k} value={k}>
-              {PROF[k].name}
-            </option>
-          ))}
-        </select>
+        <Select
+          ariaLabel="Filter by profession"
+          value={profFilter}
+          onChange={setProfFilter}
+          options={[
+            { value: '', label: 'All professions' },
+            ...PROF_ORDER.map((k) => ({ value: k, label: PROF[k].name })),
+          ]}
+          style={{ minWidth: 180 }}
+        />
         <GoldButton onClick={() => setEditing('new')}>Add build</GoldButton>
         {data && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginLeft: 'auto' }}>{data.length} total</div>}
       </div>
@@ -488,20 +491,20 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
     <Card style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ font: '700 13px var(--font-sans)' }}>{initial ? `Edit "${initial.name}"` : 'Add a build'}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <select className="u-select" value={profession} onChange={(e) => setProfession(e.target.value)} style={selectStyle}>
-          {PROF_ORDER.map((k) => (
-            <option key={k} value={k}>
-              {PROF[k].name}
-            </option>
-          ))}
-        </select>
-        <select className="u-select" value={category} onChange={(e) => setCategory(e.target.value)} style={selectStyle}>
-          {(Object.keys(CAT) as BuildCategory[]).map((k) => (
-            <option key={k} value={k}>
-              {CAT[k].label}
-            </option>
-          ))}
-        </select>
+        <Select
+          ariaLabel="Profession"
+          value={profession}
+          onChange={setProfession}
+          options={PROF_ORDER.map((k) => ({ value: k, label: PROF[k].name }))}
+          style={{ minWidth: 170 }}
+        />
+        <Select
+          ariaLabel="Category"
+          value={category}
+          onChange={setCategory}
+          options={(Object.keys(CAT) as BuildCategory[]).map((k) => ({ value: k, label: CAT[k].label }))}
+          style={{ minWidth: 170 }}
+        />
       </div>
       <input placeholder="Build name (e.g. Heal Alacrity Tempest)" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
       <input placeholder="Weapons (e.g. Dagger & Warhorn)" value={weapons} onChange={(e) => setWeapons(e.target.value)} style={inputStyle} />
@@ -537,17 +540,6 @@ const inputStyle = {
   fontSize: 12.5,
   padding: '8px 12px',
   borderRadius: 8,
-  fontFamily: 'var(--font-sans)',
-} as const;
-
-const selectStyle = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-92)',
-  fontSize: 12.5,
-  fontWeight: 600,
-  padding: '9px 12px',
-  borderRadius: 10,
   fontFamily: 'var(--font-sans)',
 } as const;
 
@@ -910,11 +902,13 @@ function AnnouncementsTab() {
             placeholder='e.g. "Maintenance Sunday 10:00 UTC — uploads paused for ~30 min"'
             style={{ ...inputStyle, flex: 1, minWidth: 260 }}
           />
-          <select className="u-select" value={severity} onChange={(e) => setSeverity(e.target.value)} style={inputStyle}>
-            {SEVERITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Severity"
+            value={severity}
+            onChange={setSeverity}
+            options={SEVERITY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            style={{ minWidth: 150 }}
+          />
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11.5px var(--font-sans)', color: 'var(--text-60)' }}>
             Expires
             <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} style={inputStyle} />
@@ -1004,21 +998,19 @@ function SettingsTab() {
             How long before raid start newly created groups send their Discord reminder. Existing groups keep whatever they've set.
           </div>
         </div>
-        <select
-          className="u-select"
-          value={reminderDraft ?? settings.defaultReminderMins}
-          onChange={(e) => {
-            setReminderDraft(e.target.value);
-            set('defaultReminderMins', e.target.value, `Default reminder set to ${e.target.value} minutes before start`);
+        <Select
+          ariaLabel="Default reminder lead time"
+          value={String(reminderDraft ?? settings.defaultReminderMins)}
+          onChange={(v) => {
+            setReminderDraft(v);
+            set('defaultReminderMins', v, `Default reminder set to ${v} minutes before start`);
           }}
-          style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)', font: '400 12.5px var(--font-sans)', padding: '9px 12px', borderRadius: 8 }}
-        >
-          {[15, 30, 60, 120, 180, 360, 720, 1440].map((mins) => (
-            <option key={mins} value={String(mins)}>
-              {mins < 60 ? `${mins} minutes` : `${mins / 60} hour${mins === 60 ? '' : 's'}`} before
-            </option>
-          ))}
-        </select>
+          options={[15, 30, 60, 120, 180, 360, 720, 1440].map((mins) => ({
+            value: String(mins),
+            label: `${mins < 60 ? `${mins} minutes` : `${mins / 60} hour${mins === 60 ? '' : 's'}`} before`,
+          }))}
+          style={{ minWidth: 180 }}
+        />
       </Card>
     </div>
   );
