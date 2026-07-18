@@ -26,6 +26,16 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
   boon_heal: { label: 'Healer', color: 'var(--good)' },
 };
 
+// The profile's body is split into sub-tabs so the page stays short — the
+// header (identity + kill record) is always visible, and the deeper detail
+// lives one tab-click away.
+type ProfileTab = 'overview' | 'performance' | 'activity';
+const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'performance', label: 'Performance' },
+  { id: 'activity', label: 'Activity' },
+];
+
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
   const { data, loading, error } = useApiQuery(() => api.player(name), [name]);
@@ -35,6 +45,7 @@ export default function PlayerProfilePage() {
   // it's held locally, seeded from the server value once the profile loads.
   const [iconOverride, setIconOverride] = useState<string | null | undefined>(undefined);
   const [picking, setPicking] = useState(false);
+  const [tab, setTab] = useState<ProfileTab>('overview');
 
   // Private profiles resolve to a stub for non-owners; narrow to the full
   // profile for everything below.
@@ -218,102 +229,137 @@ export default function PlayerProfilePage() {
         <AffiliationsPanel affiliations={player.affiliations} />
       )}
 
-      <div style={{ marginBottom: 20 }}>
-        <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+      {/* Sub-tab bar — keeps the page short by paging the deeper detail. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+        {PROFILE_TABS.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              style={{
+                padding: '12px 2px',
+                marginBottom: -1,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                font: '700 13.5px var(--font-sans)',
+                borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
+                color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+                transition: 'color .15s ease, border-color .15s ease',
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {chart && (
-        <Card style={{ padding: '20px 20px 8px', marginBottom: 20 }}>
-          <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
-          <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible' }} preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
-              <line x1="0" y1="10" x2="720" y2="10" />
-              <line x1="0" y1="56" x2="720" y2="56" />
-              <line x1="0" y1="102" x2="720" y2="102" />
-              <line x1="0" y1="148" x2="720" y2="148" />
-            </g>
-            <path d={chart.area} fill="url(#dpsFill2)" />
-            <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            {chart.pts.map((pt, i) => (
-              <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
-            ))}
-          </svg>
-        </Card>
+      {tab === 'overview' && (
+        <>
+          <div style={{ marginBottom: 20 }}>
+            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+          </div>
+
+          {chart && (
+            <Card style={{ padding: '20px 20px 8px' }}>
+              <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
+              <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible' }} preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
+                  <line x1="0" y1="10" x2="720" y2="10" />
+                  <line x1="0" y1="56" x2="720" y2="56" />
+                  <line x1="0" y1="102" x2="720" y2="102" />
+                  <line x1="0" y1="148" x2="720" y2="148" />
+                </g>
+                <path d={chart.area} fill="url(#dpsFill2)" />
+                <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                {chart.pts.map((pt, i) => (
+                  <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+                ))}
+              </svg>
+            </Card>
+          )}
+        </>
       )}
 
-      {player.specPerformance.length > 0 && <SpecPerformanceTable rows={player.specPerformance} />}
+      {tab === 'performance' && (
+        <>
+          {player.specPerformance.length > 0 && <SpecPerformanceTable rows={player.specPerformance} />}
 
-      {player.coverage.length > 0 && <CoveragePanel coverage={player.coverage} />}
-
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-          Best parses
-        </div>
-        {player.bestParses.length === 0 && (
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet.</div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-          {player.bestParses.map((bp) => (
-            <Card key={bp.logId} className="u-card-link" style={{ padding: 14 }}>
-              <Link to={`/logs/${bp.logId}`} style={{ display: 'block' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <ProfDot color={professionColor(professionForSpec(bp.spec))} />
-                  <div style={{ font: '700 13px var(--font-sans)' }}>
-                    {bp.boss}
-                    {bp.isCm ? ' CM' : ''}
-                  </div>
-                </div>
-                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 10 }}>{bp.spec}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <ParseBadge pct={bp.pct} style={{ height: 24, minWidth: 32, font: '800 13px var(--font-mono)' }} />
-                  <span style={{ font: '600 13px var(--font-mono)', color: 'var(--text-65)' }}>{bp.dps.toLocaleString()} dps</span>
-                </div>
-              </Link>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <Card style={{ marginTop: 20, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
-          Recent Activity
-        </div>
-        {player.recent.length === 0 && (
-          <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
-        )}
-        {player.recent.map((r, i) => (
-          <Link
-            key={r.logId}
-            to={`/logs/${r.logId}`}
-            className="u-row"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '11px 20px',
-              borderBottom: i === player.recent.length - 1 ? 'none' : '1px solid var(--border-faint)',
-            }}
-          >
-            <img src={professionIconPath(professionForSpec(r.spec), r.spec)} alt={r.spec} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ font: '600 13px var(--font-sans)' }}>
-                {r.boss}
-                {r.isCm ? ' CM' : ''}
-              </div>
-              <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
-                {r.spec} · {new Date(r.uploadedAt).toLocaleString()}
-              </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
+              Best parses
             </div>
-            <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{r.dps.toLocaleString()}</div>
-          </Link>
-        ))}
-      </Card>
+            {player.bestParses.length === 0 && (
+              <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet.</div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+              {player.bestParses.map((bp) => (
+                <Card key={bp.logId} className="u-card-link" style={{ padding: 14 }}>
+                  <Link to={`/logs/${bp.logId}`} style={{ display: 'block' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <ProfDot color={professionColor(professionForSpec(bp.spec))} />
+                      <div style={{ font: '700 13px var(--font-sans)' }}>
+                        {bp.boss}
+                        {bp.isCm ? ' CM' : ''}
+                      </div>
+                    </div>
+                    <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 10 }}>{bp.spec}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <ParseBadge pct={bp.pct} style={{ height: 24, minWidth: 32, font: '800 13px var(--font-mono)' }} />
+                      <span style={{ font: '600 13px var(--font-mono)', color: 'var(--text-65)' }}>{bp.dps.toLocaleString()} dps</span>
+                    </div>
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === 'activity' && (
+        <Card style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
+            Recent Activity
+          </div>
+          {player.recent.length === 0 && (
+            <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
+          )}
+          {player.recent.map((r, i) => (
+            <Link
+              key={r.logId}
+              to={`/logs/${r.logId}`}
+              className="u-row"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '11px 20px',
+                borderBottom: i === player.recent.length - 1 ? 'none' : '1px solid var(--border-faint)',
+              }}
+            >
+              <img src={professionIconPath(professionForSpec(r.spec), r.spec)} alt={r.spec} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ font: '600 13px var(--font-sans)' }}>
+                  {r.boss}
+                  {r.isCm ? ' CM' : ''}
+                </div>
+                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
+                  {r.spec} · {new Date(r.uploadedAt).toLocaleString()}
+                </div>
+              </div>
+              <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{r.dps.toLocaleString()}</div>
+            </Link>
+          ))}
+        </Card>
+      )}
     </div>
   );
 }
@@ -631,46 +677,3 @@ function SpecPerformanceTable({ rows }: { rows: PlayerProfile['specPerformance']
   );
 }
 
-// --- Encounter coverage ("collection") ------------------------------------
-
-function CoveragePanel({ coverage }: { coverage: PlayerProfile['coverage'] }) {
-  const totalKilled = coverage.reduce((n, w) => n + w.killed, 0);
-  const totalBosses = coverage.reduce((n, w) => n + w.total, 0);
-  return (
-    <Card style={{ marginBottom: 20, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', flexWrap: 'wrap' }}>
-        <div style={{ font: '700 13.5px var(--font-sans)' }}>Encounter Coverage</div>
-        <div style={{ font: '600 11.5px var(--font-mono)', color: 'var(--gold)' }}>{totalKilled}/{totalBosses} killed</div>
-      </div>
-      <div style={{ padding: '6px 20px 16px' }}>
-        {coverage.map((wing) => (
-          <div key={wing.wing} style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-              <div style={{ font: '700 12px var(--font-sans)' }}>{wing.wing}</div>
-              <div style={{ font: '500 10.5px var(--font-mono)', color: 'var(--text-50)' }}>{wing.killed}/{wing.total}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {wing.encounters.map((enc) => {
-                const state = enc.killed ? 'killed' : enc.attempted ? 'attempted' : 'none';
-                const bg = state === 'killed' ? 'var(--good-dim)' : state === 'attempted' ? 'oklch(0.7 0.15 70 / 12%)' : 'oklch(1 0 0 / 3%)';
-                const border = state === 'killed' ? 'oklch(0.72 0.17 150 / 40%)' : state === 'attempted' ? 'oklch(0.7 0.15 70 / 30%)' : 'var(--border-faint)';
-                const color = state === 'killed' ? 'var(--good)' : state === 'attempted' ? 'oklch(0.8 0.13 70)' : 'var(--text-45)';
-                return (
-                  <div
-                    key={enc.boss}
-                    title={`${enc.boss} — ${state === 'killed' ? `killed${enc.bestPct != null ? `, best ${enc.bestPct}th percentile` : ''}` : state === 'attempted' ? 'attempted, no kill' : 'not logged'}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 11px', borderRadius: 8, background: bg, border: `1px solid ${border}` }}
-                  >
-                    <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', flex: 'none', background: color, opacity: state === 'none' ? 0.5 : 1 }} />
-                    <span style={{ font: '600 11.5px var(--font-sans)', color: state === 'none' ? 'var(--text-55)' : 'var(--text-80)', whiteSpace: 'nowrap' }}>{enc.boss}</span>
-                    {enc.bestPct != null && <ParseBadge pct={enc.bestPct} style={{ height: 16, minWidth: 24, font: '700 9.5px var(--font-mono)' }} />}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
