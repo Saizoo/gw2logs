@@ -30,6 +30,8 @@ import { adminAuditRouter } from './routes/admin/audit.js';
 import { adminAnnouncementsRouter } from './routes/admin/announcements.js';
 import { adminSettingsRouter } from './routes/admin/settings.js';
 import { announcementsRouter } from './routes/announcements.js';
+import { notificationsRouter } from './routes/notifications.js';
+import { invitesRouter } from './routes/invites.js';
 
 export function createApp() {
   const app = express();
@@ -64,6 +66,8 @@ export function createApp() {
   app.use('/api/characters', charactersRouter);
   app.use('/api/builds', buildsRouter);
   app.use('/api/announcements', announcementsRouter);
+  app.use('/api/notifications', notificationsRouter);
+  app.use('/api/invites', invitesRouter);
 
   // Every /api/admin/* route needs both a valid session and isAdmin — gated
   // once here rather than per-file, so a new admin route file can't

@@ -8,6 +8,7 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { buildReminderPayload, dueRaidDate, sendWebhook, zonedNow, resolveTimezone } from '../lib/raidReminders.js';
 import { fetchGuildMembers, fetchGuildRanks } from '../lib/gw2Api.js';
 import { applyGuildRanks } from '../lib/guildGroups.js';
+import { notifyGroup, notifyUsers } from '../lib/notifications.js';
 import { getConfigInt } from '../lib/appConfig.js';
 
 export const groupsRouter = Router();
@@ -300,7 +301,14 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
     raidTimezone = req.body.raidTimezone.trim().slice(0, 40) || null;
   }
 
-  await prisma.group.update({
+  // Snapshot the schedule before the write so we only notify the group when
+  // the recurring raid times actually changed (not on an icon/name edit).
+  const before = await prisma.group.findUnique({
+    where: { id: req.params.id },
+    select: { name: true, raidDays: true, raidStartTime: true, raidDurationMins: true, raidTimezone: true },
+  });
+
+  const updated = await prisma.group.update({
     where: { id: req.params.id },
     data: {
       ...(name ? { name } : {}),
@@ -311,7 +319,25 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
       ...(raidDurationMins !== undefined ? { raidDurationMins } : {}),
       ...(raidTimezone !== undefined ? { raidTimezone } : {}),
     },
+    select: { name: true, raidDays: true, raidStartTime: true, raidDurationMins: true, raidTimezone: true },
   });
+
+  const scheduleChanged =
+    !!before &&
+    (JSON.stringify(before.raidDays) !== JSON.stringify(updated.raidDays) ||
+      before.raidStartTime !== updated.raidStartTime ||
+      before.raidDurationMins !== updated.raidDurationMins ||
+      before.raidTimezone !== updated.raidTimezone);
+  if (scheduleChanged) {
+    const when = updated.raidStartTime
+      ? `${updated.raidDays.join(', ') || 'no days'} at ${updated.raidStartTime}${updated.raidTimezone ? ` ${updated.raidTimezone}` : ''}`
+      : 'the schedule was cleared';
+    await notifyGroup(
+      req.params.id,
+      { type: 'schedule_change', title: `${updated.name}: raid schedule updated`, body: when, link: `/groups/${req.params.id}` },
+      req.user!.id,
+    );
+  }
 
   res.json({ ok: true });
 }));
@@ -583,6 +609,20 @@ groupsRouter.put('/:id/week-plan', requireAuth, asyncHandler(async (req, res) =>
       data: items.map((item, order) => ({ groupId: req.params.id, weekStart, order, ...item })),
     }),
   ]);
+
+  if (items.length > 0) {
+    const group = await prisma.group.findUnique({ where: { id: req.params.id }, select: { name: true } });
+    await notifyGroup(
+      req.params.id,
+      {
+        type: 'raid_plan',
+        title: `${group?.name ?? 'Your group'}: this week's raid plan is up`,
+        body: `${items.length} fight${items.length === 1 ? '' : 's'} planned — check the This Week tab.`,
+        link: `/groups/${req.params.id}/week`,
+      },
+      req.user!.id,
+    );
+  }
 
   res.json({
     weekStart,
@@ -1030,6 +1070,83 @@ groupsRouter.post('/:id/members', requireAuth, asyncHandler(async (req, res) => 
   ]);
 
   res.json({ ok: true });
+}));
+
+// Send an invite the recipient chooses to accept (vs POST /members, which
+// adds them outright). Matches an existing account by Discord username or GW2
+// account name; if nobody matches, the invite is held against the Discord
+// username and resolves the moment that person first signs in.
+groupsRouter.post('/:id/invites', requireAuth, asyncHandler(async (req, res) => {
+  const role = await getRole(req.params.id, req.user!.id);
+  if (!canManage(role)) {
+    res.status(403).json({ error: 'Only leaders and subleaders can invite members' });
+    return;
+  }
+  const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+  if (!username) {
+    res.status(400).json({ error: 'username is required' });
+    return;
+  }
+
+  const group = await prisma.group.findUnique({ where: { id: req.params.id }, select: { name: true } });
+  if (!group) {
+    res.status(404).json({ error: 'Group not found' });
+    return;
+  }
+  const inviterName = req.user!.gw2AccountName ?? req.user!.discordUsername;
+
+  const target = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { discordUsername: { equals: username, mode: 'insensitive' } },
+        { gw2AccountName: { equals: username, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (target) {
+    const existingMember = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId: req.params.id, userId: target.id } },
+    });
+    if (existingMember) {
+      res.status(409).json({ error: 'That player is already in this group' });
+      return;
+    }
+    const existingInvite = await prisma.groupInvite.findFirst({
+      where: { groupId: req.params.id, targetUserId: target.id, status: 'pending' },
+    });
+    if (existingInvite) {
+      res.status(409).json({ error: 'That player already has a pending invite to this group' });
+      return;
+    }
+    await prisma.groupInvite.create({
+      data: { groupId: req.params.id, invitedById: req.user!.id, targetUserId: target.id },
+    });
+    await notifyUsers([target.id], {
+      type: 'group_invite',
+      title: `${inviterName} invited you to ${group.name}`,
+      body: 'Accept or decline from your invites.',
+      link: `/groups`,
+      groupId: req.params.id,
+    });
+    res.json({ ok: true, delivered: true });
+    return;
+  }
+
+  // Nobody on the site by that name yet — hold the invite against the Discord
+  // username so it appears the instant they sign in (see auth.ts).
+  const dupe = await prisma.groupInvite.findFirst({
+    where: { groupId: req.params.id, discordUsername: { equals: username, mode: 'insensitive' }, status: 'pending', targetUserId: null },
+  });
+  if (dupe) {
+    res.status(409).json({ error: 'There is already a pending invite for that Discord name' });
+    return;
+  }
+  await prisma.groupInvite.create({
+    data: { groupId: req.params.id, invitedById: req.user!.id, discordUsername: username },
+  });
+  res.json({ ok: true, delivered: false, pendingSignup: true });
 }));
 
 // Role changes (promote to subleader, demote, or hand off leadership) are

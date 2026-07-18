@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
+import { NotificationBell } from './NotificationBell';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 // Raid Planner is deliberately not here — it's only meaningful in the
@@ -161,6 +162,7 @@ export function NavHeader() {
             </svg>
             Upload
           </Link>
+          {user && <NotificationBell />}
           {user && (
             <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>
               <div style={{ font: '600 12.5px var(--font-sans)' }}>{user.discordUsername}</div>

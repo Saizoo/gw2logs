@@ -692,6 +692,24 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  groupId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface IncomingInvite {
+  id: string;
+  createdAt: string;
+  group: { id: string; name: string };
+  invitedBy: string;
+}
+
 export const api = {
   stats: () => apiFetch<{ totalLogs: number; totalPlayers: number }>('/stats'),
   encounters: () => apiFetch<EncounterSummary[]>('/encounters'),
@@ -900,7 +918,9 @@ export const api = {
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/approve`, { method: 'POST' }),
   denyJoinRequest: (id: string, userId: string) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/deny`, { method: 'POST' }),
-  inviteToGroup: (id: string, username: string) =>
+  // Immediately add someone to the group (leader/subleader shortcut). The
+  // interactive invite flow that the recipient accepts is inviteToGroup below.
+  addGroupMember: (id: string, username: string) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/members`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -914,6 +934,22 @@ export const api = {
     }),
   removeGroupMember: (id: string, userId: string) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
+  inviteToGroup: (id: string, username: string) =>
+    apiFetch<{ ok: true; delivered: boolean; pendingSignup?: boolean }>(`/groups/${encodeURIComponent(id)}/invites`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    }),
+
+  // --- Notifications ---
+  notifications: () => apiFetch<{ items: AppNotification[]; unreadCount: number }>('/notifications'),
+  markNotificationRead: (id: string) => apiFetch<{ ok: true }>(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' }),
+  markAllNotificationsRead: () => apiFetch<{ ok: true }>('/notifications/read-all', { method: 'POST' }),
+
+  // --- Invites (recipient side) ---
+  myInvites: () => apiFetch<IncomingInvite[]>('/invites'),
+  acceptInvite: (id: string) => apiFetch<{ ok: true; groupId: string }>(`/invites/${encodeURIComponent(id)}/accept`, { method: 'POST' }),
+  declineInvite: (id: string) => apiFetch<{ ok: true }>(`/invites/${encodeURIComponent(id)}/decline`, { method: 'POST' }),
 
   // --- Characters ---
   myCharacters: () => apiFetch<CharacterData[]>('/characters'),

@@ -22,6 +22,25 @@ export default function MyGroupsPage() {
   const refetch = () => setReloadNonce((n) => n + 1);
 
   const { data: myGroups, loading: myLoading } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([])), [user, reloadNonce]);
+  const { data: invites } = useApiQuery(() => (user ? api.myInvites() : Promise.resolve([])), [user, reloadNonce]);
+
+  async function acceptInvite(id: string) {
+    try {
+      await api.acceptInvite(id);
+      refetch();
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      console.error(err);
+    }
+  }
+  async function declineInvite(id: string) {
+    try {
+      await api.declineInvite(id);
+      refetch();
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   const [search, setSearch] = useState('');
   const [dayFilter, setDayFilter] = useState<string[]>([]);
@@ -82,6 +101,32 @@ export default function MyGroupsPage() {
         </div>
         {user && <GoldButton onClick={() => setCreating((c) => !c)}>Create group</GoldButton>}
       </div>
+
+      {user && invites && invites.length > 0 && (
+        <Card style={{ padding: '16px 20px', marginBottom: 20, borderColor: 'oklch(0.78 0.14 85 / 35%)' }}>
+          <div style={{ font: '700 12px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
+            Invitations ({invites.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {invites.map((inv) => (
+              <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ font: '700 13.5px var(--font-sans)' }}>{inv.group.name}</div>
+                  <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)' }}>Invited by {inv.invitedBy}</div>
+                </div>
+                <GoldButton onClick={() => acceptInvite(inv.id)}>Accept</GoldButton>
+                <button
+                  onClick={() => declineInvite(inv.id)}
+                  className="u-btn-ghost"
+                  style={{ font: '600 12px var(--font-sans)', padding: '9px 14px', borderRadius: 10, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }}
+                >
+                  Decline
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {creating && (
         <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>

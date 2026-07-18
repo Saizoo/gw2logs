@@ -5,6 +5,7 @@ import { discordAuthorizeUrl, discordAvatarUrl, exchangeCodeForToken, fetchDisco
 import { clearSessionCookie, createSession, destroySession, setSessionCookie } from '../lib/session.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { getConfigBool } from '../lib/appConfig.js';
+import { notifyUsers } from '../lib/notifications.js';
 
 export const authRouter = Router();
 
@@ -73,6 +74,26 @@ authRouter.get('/discord/callback', async (req, res) => {
         isAdmin: bootstrapAdmin,
       },
     });
+
+    // Bind any invites that were left against this person's Discord name
+    // before they had an account, so they show up the moment they sign in.
+    const pendingByName = await prisma.groupInvite.findMany({
+      where: { discordUsername: { equals: discordUser.username, mode: 'insensitive' }, targetUserId: null, status: 'pending' },
+      select: { id: true, groupId: true, group: { select: { name: true } } },
+    });
+    if (pendingByName.length > 0) {
+      await prisma.groupInvite.updateMany({
+        where: { id: { in: pendingByName.map((i) => i.id) } },
+        data: { targetUserId: user.id },
+      });
+      const n = pendingByName.length;
+      await notifyUsers([user.id], {
+        type: 'group_invite',
+        title: `You have ${n} group invite${n === 1 ? '' : 's'} waiting`,
+        body: 'Accept or decline them from your groups.',
+        link: '/groups',
+      }).catch(() => {});
+    }
 
     const token = await createSession(user.id);
     setSessionCookie(res, token);

@@ -1,5 +1,6 @@
 import { prisma } from '../db.js';
 import { decrypt } from './crypto.js';
+import { notifyUsers } from './notifications.js';
 
 // ---------------------------------------------------------------------------
 // Timezone resolution. The schedule's raidTimezone is free text ("EST",
@@ -230,9 +231,52 @@ export async function tickReminders(now = new Date()): Promise<number> {
     } catch (err) {
       // Release the claim so a later tick retries a transient failure
       // (Discord hiccup, network) instead of silently skipping the night.
-      await prisma.raidReminderLog.deleteMany({ where: { groupId: g.id, date: raidDate } });
+      await prisma.raidReminderLog.deleteMany({ where: { groupId: g.id, date: raidDate, kind: 'webhook' } });
       console.error(`raid reminder failed for group ${g.id} (${g.name}):`, err instanceof Error ? err.message : err);
     }
+  }
+  return sent;
+}
+
+// In-app pre-raid reminder — fans a notification out to every member of any
+// group whose raid night is due, whether or not a Discord webhook is set.
+// Deduped per (group, night) with a separate reminder-log kind so it can't
+// collide with the webhook claim above.
+export async function tickInAppRaidReminders(now = new Date()): Promise<number> {
+  const groups = await prisma.group.findMany({
+    where: { raidStartTime: { not: null }, NOT: { raidDays: { isEmpty: true } } },
+    select: {
+      id: true,
+      name: true,
+      raidDays: true,
+      raidStartTime: true,
+      raidTimezone: true,
+      raidReminderMins: true,
+      members: { select: { userId: true } },
+    },
+  });
+
+  let sent = 0;
+  for (const g of groups) {
+    const raidDate = dueRaidDate(g, now);
+    if (!raidDate) continue;
+    try {
+      await prisma.raidReminderLog.create({ data: { groupId: g.id, date: raidDate, kind: 'inapp' } });
+    } catch {
+      continue; // already notified for this night
+    }
+    const time = g.raidStartTime ? `${g.raidStartTime}${g.raidTimezone ? ` ${g.raidTimezone}` : ''}` : '';
+    await notifyUsers(
+      g.members.map((m) => m.userId),
+      {
+        type: 'raid_reminder',
+        title: `⚔️ Raid night — ${g.name}`,
+        body: `Starts at ${time}. RSVP on the group page if you haven't yet.`,
+        link: `/groups/${g.id}`,
+        groupId: g.id,
+      },
+    );
+    sent++;
   }
   return sent;
 }
@@ -241,6 +285,7 @@ export function startReminderScheduler(): void {
   const TICK_MS = 60_000;
   setInterval(() => {
     tickReminders().catch((err) => console.error('reminder tick failed:', err));
+    tickInAppRaidReminders().catch((err) => console.error('in-app reminder tick failed:', err));
   }, TICK_MS).unref();
   console.log('raid reminder scheduler started (60s tick)');
 }

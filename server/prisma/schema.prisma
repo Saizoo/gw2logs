@@ -89,6 +89,9 @@ model User {
   auditActions     AdminAudit[]
   uploadedLogs     Log[]          @relation("LogUploader")
   announcements    Announcement[] @relation("AnnouncementAuthor")
+  notifications    Notification[]
+  invitesSent      GroupInvite[]  @relation("InviteSender")
+  invitesReceived  GroupInvite[]  @relation("InviteTarget")
 }
 
 model Session {
@@ -269,6 +272,49 @@ model Group {
   raidReminderMins  Int               @default(60)
   reminderLogs      RaidReminderLog[]
   weekPlanItems     GroupWeekPlanItem[]
+  notifications     Notification[]
+  invites           GroupInvite[]
+}
+
+// In-app notification for a single user. Group-related events (schedule
+// change, published plan, pre-raid reminder, invites) fan out one row per
+// recipient. `link` is an in-app path the bell dropdown navigates to.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  link      String?
+  groupId   String?
+  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// A leader/subleader invite to join a group. Targets an existing user when
+// one matches, otherwise holds a Discord username so the invite resolves the
+// moment that person signs in for the first time.
+model GroupInvite {
+  id             String    @id @default(cuid())
+  groupId        String
+  group          Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedById    String
+  invitedBy      User      @relation("InviteSender", fields: [invitedById], references: [id], onDelete: Cascade)
+  // Set once the invite is bound to a real account; null while it's still a
+  // pending invite-by-Discord-name waiting for that person to sign up.
+  targetUserId   String?
+  targetUser     User?     @relation("InviteTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  discordUsername String?
+  status         String    @default("pending") // pending | accepted | declined
+  createdAt      DateTime  @default(now())
+  respondedAt    DateTime?
+
+  @@index([targetUserId, status])
+  @@index([discordUsername, status])
 }
 
 // One planned fight on a group's "This Week" agenda. weekStart pins the
@@ -302,9 +348,12 @@ model RaidReminderLog {
   groupId String
   group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   date    String // raid night, YYYY-MM-DD in the group's timezone
+  // Which delivery channel this claim is for — the Discord webhook and the
+  // in-app notification fan-out dedupe independently per night.
+  kind    String   @default("webhook")
   sentAt  DateTime @default(now())
 
-  @@unique([groupId, date])
+  @@unique([groupId, date, kind])
 }
 
 // One member's RSVP for one raid night. `date` is a calendar day string

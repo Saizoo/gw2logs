@@ -42,8 +42,12 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
     if (!inviteName.trim()) return;
     setInviteError(null);
     try {
-      await api.inviteToGroup(groupId, inviteName.trim());
-      toast.success(`Invited ${inviteName.trim()}`);
+      const res = await api.inviteToGroup(groupId, inviteName.trim());
+      toast.success(
+        res.pendingSignup
+          ? `Invite saved — ${inviteName.trim()} will see it when they sign in`
+          : `Invited ${inviteName.trim()}`,
+      );
       setInviteName('');
       onGroupChanged();
     } catch (err) {
