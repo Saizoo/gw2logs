@@ -116,6 +116,7 @@ const BOSS_BG: Record<string, string> = {
 // local here rather than shared, since the frontend has no other reason to
 // import server code.
 const BG_ALIASES: Record<string, string> = {
+  'Spirit Race': 'Vale Guardian', // Wing 1 mini-event — reuse the Spirit Vale art
   Gorseval: 'Gorseval the Multifarious',
   Sabetha: 'Sabetha the Saboteur',
   Matthias: 'Matthias Gabrel',
