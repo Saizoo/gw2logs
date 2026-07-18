@@ -270,6 +270,11 @@ model Group {
   // scheduled start time the reminder fires.
   discordWebhookEnc String?
   raidReminderMins  Int               @default(60)
+  // Which group events get posted to the Discord webhook. Keys:
+  // "reminder" (pre-raid RSVP tally), "schedule" (raid times changed),
+  // "plan" (weekly raid plan published), "member" (someone joined).
+  // Empty means the webhook is connected but silent.
+  webhookEvents     String[]          @default(["reminder", "schedule", "plan"])
   reminderLogs      RaidReminderLog[]
   weekPlanItems     GroupWeekPlanItem[]
   notifications     Notification[]

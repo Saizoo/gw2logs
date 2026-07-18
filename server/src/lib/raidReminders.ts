@@ -179,6 +179,69 @@ export async function buildReminderPayload(groupId: string, raidDate: string) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// General group-event webhook posts (beyond the pre-raid reminder). Each is
+// gated by the group's webhookEvents list so a leader controls exactly what
+// lands in their channel.
+// ---------------------------------------------------------------------------
+
+export type WebhookEvent = 'reminder' | 'schedule' | 'plan' | 'member';
+export const WEBHOOK_EVENT_KEYS: WebhookEvent[] = ['reminder', 'schedule', 'plan', 'member'];
+const GOLD = 0xd4a94a;
+
+function groupUrlField(groupId: string, path = ''): { url: string } | Record<string, never> {
+  const base = siteBaseUrl();
+  return base ? { url: `${base}/groups/${groupId}${path}` } : {};
+}
+
+// Post one embed to the group's webhook — but only when the webhook is set AND
+// the group has that event enabled. Fire-and-forget: a webhook hiccup must
+// never fail or block the request that triggered it.
+export async function postGroupWebhookEvent(groupId: string, event: WebhookEvent, embed: Record<string, unknown>): Promise<void> {
+  try {
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      select: { discordWebhookEnc: true, webhookEvents: true },
+    });
+    if (!group?.discordWebhookEnc || !group.webhookEvents.includes(event)) return;
+    await sendWebhook(decrypt(group.discordWebhookEnc), { embeds: [embed] });
+  } catch (err) {
+    console.error(`group webhook (${event}) failed for ${groupId}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+export function scheduleChangedEmbed(groupId: string, name: string, days: string[], startTime: string | null, timezone: string | null) {
+  const when = startTime
+    ? `**${days.length ? days.join(', ') : 'No days set'}** at **${startTime}**${timezone ? ` ${timezone}` : ''}`
+    : 'The recurring schedule was cleared.';
+  return { title: `📅 ${name} — raid schedule updated`, description: when, color: GOLD, ...groupUrlField(groupId) };
+}
+
+export function planPublishedEmbed(
+  groupId: string,
+  name: string,
+  items: { day: string | null; encounterName: string; note: string | null }[],
+) {
+  const byDay = new Map<string, string[]>();
+  for (const it of items) {
+    const key = it.day ?? 'Anytime';
+    const line = `• ${it.encounterName}${it.note ? ` — _${it.note}_` : ''}`;
+    (byDay.get(key) ?? byDay.set(key, []).get(key)!).push(line);
+  }
+  const description = [...byDay.entries()].map(([day, lines]) => `**${day}**\n${lines.join('\n')}`).join('\n\n');
+  return {
+    title: `📋 ${name} — this week's raid plan`,
+    description: description.slice(0, 3800) || 'No fights planned.',
+    color: GOLD,
+    footer: { text: 'Open the This Week tab to RSVP' },
+    ...groupUrlField(groupId, '/week'),
+  };
+}
+
+export function memberJoinedEmbed(groupId: string, name: string, memberName: string) {
+  return { title: `👋 ${memberName} joined ${name}`, color: 0x4caf6d, ...groupUrlField(groupId) };
+}
+
 export async function sendWebhook(webhookUrl: string, payload: unknown): Promise<void> {
   const res = await fetch(webhookUrl, {
     method: 'POST',

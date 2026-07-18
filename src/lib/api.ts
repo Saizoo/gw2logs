@@ -897,8 +897,8 @@ export const api = {
       body: JSON.stringify({ items }),
     }),
   groupReminders: (id: string) =>
-    apiFetch<{ webhookConfigured: boolean; reminderMins: number }>(`/groups/${encodeURIComponent(id)}/reminders`),
-  setGroupReminders: (id: string, data: { webhookUrl?: string | null; reminderMins?: number }) =>
+    apiFetch<{ webhookConfigured: boolean; reminderMins: number; webhookEvents: string[] }>(`/groups/${encodeURIComponent(id)}/reminders`),
+  setGroupReminders: (id: string, data: { webhookUrl?: string | null; reminderMins?: number; webhookEvents?: string[] }) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}/reminders`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

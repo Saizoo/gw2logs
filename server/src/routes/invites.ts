@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { notifyUsers } from '../lib/notifications.js';
+import { postGroupWebhookEvent, memberJoinedEmbed } from '../lib/raidReminders.js';
 
 export const invitesRouter = Router();
 
@@ -59,6 +60,7 @@ invitesRouter.post('/:id/accept', requireAuth, asyncHandler(async (req, res) => 
     link: `/groups/${invite.groupId}`,
     groupId: invite.groupId,
   });
+  await postGroupWebhookEvent(invite.groupId, 'member', memberJoinedEmbed(invite.groupId, invite.group.name, me));
 
   res.json({ ok: true, groupId: invite.groupId });
 }));

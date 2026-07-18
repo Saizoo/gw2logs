@@ -305,6 +305,14 @@ const REMINDER_LEAD_OPTIONS = [
   { mins: 720, label: '12 hours before' },
 ];
 
+// Group events that can be mirrored to the Discord webhook, in display order.
+const WEBHOOK_EVENTS: { key: string; label: string; desc: string }[] = [
+  { key: 'reminder', label: 'Pre-raid reminder', desc: 'RSVP tally before each raid night' },
+  { key: 'schedule', label: 'Schedule changes', desc: 'When the recurring raid times change' },
+  { key: 'plan', label: 'Weekly plan', desc: "When this week's raid plan is published" },
+  { key: 'member', label: 'New members', desc: 'When someone joins the group' },
+];
+
 function DiscordRemindersCard({ groupId }: { groupId: string }) {
   const [nonce, setNonce] = useState(0);
   const { data: settings } = useApiQuery(() => api.groupReminders(groupId), [groupId, nonce]);
@@ -327,12 +335,18 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
 
   if (!settings) return null;
 
+  const events = settings.webhookEvents ?? [];
+  function toggleEvent(key: string) {
+    const next = events.includes(key) ? events.filter((e) => e !== key) : [...events, key];
+    run(() => api.setGroupReminders(groupId, { webhookEvents: next }), 'Discord posts updated');
+  }
+
   return (
     <Card style={{ padding: '16px 20px' }}>
-      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 4 }}>Discord Reminders</div>
-      <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)', marginBottom: 12 }}>
-        Posts the signup tally to a channel before each raid night. Create a webhook in Discord under
-        Channel Settings → Integrations, then paste its URL here.
+      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 4 }}>Discord Integration</div>
+      <div style={{ font: '400 11.5px/1.5 var(--font-sans)', color: 'var(--text-55)', marginBottom: 12 }}>
+        Post group activity to a Discord channel — pre-raid RSVP tallies, schedule changes, the weekly plan,
+        and new members. Create a webhook in Discord under Channel Settings → Integrations, then paste its URL here.
       </div>
 
       {settings.webhookConfigured ? (
@@ -382,6 +396,42 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
           >
             Save
           </GoldButton>
+        </div>
+      )}
+
+      {settings.webhookConfigured && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+            What to post
+          </div>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {WEBHOOK_EVENTS.map((ev) => {
+              const on = events.includes(ev.key);
+              return (
+                <button
+                  key={ev.key}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => toggleEvent(ev.key)}
+                  title={ev.desc}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    cursor: 'pointer',
+                    font: '600 11.5px var(--font-sans)',
+                    background: on ? 'var(--good-dim)' : 'var(--bg-chip)',
+                    color: on ? 'var(--good)' : 'var(--text-55)',
+                    border: `1px solid ${on ? 'var(--good)' : 'var(--border)'}`,
+                  }}
+                >
+                  <span aria-hidden>{on ? '✓' : '+'}</span> {ev.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

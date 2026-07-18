@@ -5,7 +5,18 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 import { getGroupRole as getRole, canManageGroup as canManage } from '../lib/groupAccess.js';
 import { BOSS_WING } from '../lib/bossMeta.js';
 import { encrypt, decrypt } from '../lib/crypto.js';
-import { buildReminderPayload, dueRaidDate, sendWebhook, zonedNow, resolveTimezone } from '../lib/raidReminders.js';
+import {
+  buildReminderPayload,
+  dueRaidDate,
+  sendWebhook,
+  zonedNow,
+  resolveTimezone,
+  postGroupWebhookEvent,
+  scheduleChangedEmbed,
+  planPublishedEmbed,
+  memberJoinedEmbed,
+  WEBHOOK_EVENT_KEYS,
+} from '../lib/raidReminders.js';
 import { fetchGuildMembers, fetchGuildRanks } from '../lib/gw2Api.js';
 import { applyGuildRanks } from '../lib/guildGroups.js';
 import { notifyGroup, notifyUsers } from '../lib/notifications.js';
@@ -337,6 +348,11 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
       { type: 'schedule_change', title: `${updated.name}: raid schedule updated`, body: when, link: `/groups/${req.params.id}` },
       req.user!.id,
     );
+    await postGroupWebhookEvent(
+      req.params.id,
+      'schedule',
+      scheduleChangedEmbed(req.params.id, updated.name, updated.raidDays, updated.raidStartTime, updated.raidTimezone),
+    );
   }
 
   res.json({ ok: true });
@@ -622,6 +638,11 @@ groupsRouter.put('/:id/week-plan', requireAuth, asyncHandler(async (req, res) =>
       },
       req.user!.id,
     );
+    await postGroupWebhookEvent(
+      req.params.id,
+      'plan',
+      planPublishedEmbed(req.params.id, group?.name ?? 'Your group', items),
+    );
   }
 
   res.json({
@@ -803,13 +824,17 @@ groupsRouter.get('/:id/reminders', requireAuth, asyncHandler(async (req, res) =>
   }
   const group = await prisma.group.findUnique({
     where: { id: req.params.id },
-    select: { discordWebhookEnc: true, raidReminderMins: true },
+    select: { discordWebhookEnc: true, raidReminderMins: true, webhookEvents: true },
   });
   if (!group) {
     res.status(404).json({ error: 'Group not found' });
     return;
   }
-  res.json({ webhookConfigured: group.discordWebhookEnc !== null, reminderMins: group.raidReminderMins });
+  res.json({
+    webhookConfigured: group.discordWebhookEnc !== null,
+    reminderMins: group.raidReminderMins,
+    webhookEvents: group.webhookEvents,
+  });
 }));
 
 groupsRouter.put('/:id/reminders', requireAuth, asyncHandler(async (req, res) => {
@@ -819,7 +844,16 @@ groupsRouter.put('/:id/reminders', requireAuth, asyncHandler(async (req, res) =>
     return;
   }
 
-  const data: { discordWebhookEnc?: string | null; raidReminderMins?: number } = {};
+  const data: { discordWebhookEnc?: string | null; raidReminderMins?: number; webhookEvents?: string[] } = {};
+
+  if (Array.isArray(req.body?.webhookEvents)) {
+    const invalid = req.body.webhookEvents.filter((e: unknown) => !WEBHOOK_EVENT_KEYS.includes(e as never));
+    if (invalid.length) {
+      res.status(400).json({ error: `Unknown webhook event(s): ${invalid.join(', ')}` });
+      return;
+    }
+    data.webhookEvents = [...new Set(req.body.webhookEvents as string[])];
+  }
 
   if (req.body?.webhookUrl === null) {
     data.discordWebhookEnc = null;
@@ -1068,6 +1102,10 @@ groupsRouter.post('/:id/members', requireAuth, asyncHandler(async (req, res) => 
       create: { groupId: req.params.id, userId: target.id, role: 'member' },
     }),
   ]);
+
+  const group = await prisma.group.findUnique({ where: { id: req.params.id }, select: { name: true } });
+  const memberName = target.gw2AccountName ?? target.discordUsername;
+  if (group) await postGroupWebhookEvent(req.params.id, 'member', memberJoinedEmbed(req.params.id, group.name, memberName));
 
   res.json({ ok: true });
 }));
