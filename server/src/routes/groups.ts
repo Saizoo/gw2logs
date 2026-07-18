@@ -472,6 +472,7 @@ async function readWeekPlan(groupId: string, weekStart: string) {
               profession: true,
               spec: true,
               buildName: true,
+              manualName: true,
               character: {
                 select: {
                   name: true,
@@ -503,9 +504,11 @@ async function readWeekPlan(groupId: string, weekStart: string) {
             profession: s.profession,
             spec: s.spec,
             buildName: s.buildName,
-            characterName: s.character?.name ?? null,
+            characterName: s.character?.name ?? s.manualName ?? null,
             // Who actually plays the slot — the character's owner, shown by
-            // the same identity rules as the member list.
+            // the same identity rules as the member list. A manually-filled
+            // slot has no linked character, so the hand-typed name (surfaced
+            // above as characterName) is all we have.
             player: s.character ? s.character.user.gw2AccountName ?? s.character.user.discordUsername : null,
           })),
         }
