@@ -425,6 +425,10 @@ model CompositionSlot {
   // slot was filled by picking a real catalog build / character rather
   // than typing a description by hand.
   buildId             String?
+  // A hand-typed player name for someone being filled in manually (not a
+  // synced group character). Ignored when characterId is set — the real
+  // character's name wins.
+  manualName          String?
   characterId         String?
   character           Character?         @relation(fields: [characterId], references: [id], onDelete: SetNull)
   characterTemplateId String?

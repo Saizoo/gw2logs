@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, ApiError, type CompositionDetail, type CompositionSlotData, type RosterCharacter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -123,6 +123,14 @@ export default function PlannerPage() {
 
   return (
     <div>
+      {groupId && (
+        <Link
+          to={`/groups/${groupId}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14, font: '600 12.5px var(--font-sans)', color: 'var(--text-60)' }}
+        >
+          <span aria-hidden>←</span> Back to {group?.name ?? 'group'}
+        </Link>
+      )}
       <div style={{ marginBottom: 20 }}>
         <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Raid Composition Planner</div>
         <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', maxWidth: 640, lineHeight: 1.5 }}>
@@ -441,6 +449,9 @@ function SlotRow({
   const [profKey, setProfKey] = useState(PROF_ORDER[0]);
   const [buildId, setBuildId] = useState('');
   const [role, setRole] = useState(slot?.role ?? '');
+  // A manually typed player name — seeded from the slot's name unless it's
+  // filled by a real synced character (whose name we don't let them edit here).
+  const [playerName, setPlayerName] = useState(slot && !slot.characterId ? slot.characterName ?? '' : '');
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const buildById = (id: string) => builds.find((b) => b.id === id);
@@ -457,6 +468,7 @@ function SlotRow({
         buildId: build.id,
         buildName: build.name,
         buildDetails: build.weapons,
+        characterName: playerName.trim() || null,
       });
       setEditing(false);
       onChanged();
@@ -505,6 +517,7 @@ function SlotRow({
 
         {tab === 'catalog' && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input placeholder="Player name (optional)" value={playerName} onChange={(e) => setPlayerName(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
             <input placeholder="Role (e.g. Power DPS)" value={role} onChange={(e) => setRole(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
             <Select
               ariaLabel="Profession"

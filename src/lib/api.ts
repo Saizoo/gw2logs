@@ -787,6 +787,7 @@ export const api = {
       buildDetails?: string | null;
       buildId?: string | null;
       characterId?: string | null;
+      characterName?: string | null;
       characterTemplateId?: string | null;
     },
   ) =>

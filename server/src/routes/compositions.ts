@@ -15,6 +15,7 @@ const SLOT_SELECT = {
   buildName: true,
   buildDetails: true,
   buildId: true,
+  manualName: true,
   characterId: true,
   characterTemplateId: true,
   character: { select: { name: true } },
@@ -91,7 +92,7 @@ compositionsRouter.get('/:id', asyncHandler(async (req, res) => {
       buildDetails: s.buildDetails,
       buildId: s.buildId,
       characterId: s.characterId,
-      characterName: s.character?.name ?? null,
+      characterName: s.character?.name ?? s.manualName ?? null,
       characterTemplateId: s.characterTemplateId,
     })),
   });
@@ -197,6 +198,9 @@ compositionsRouter.put('/:id/slots/:subgroup/:slotIndex', requireAuth, asyncHand
   const buildId = typeof req.body?.buildId === 'string' ? req.body.buildId.trim() || null : null;
   const characterId = typeof req.body?.characterId === 'string' ? req.body.characterId.trim() || null : null;
   const characterTemplateId = typeof req.body?.characterTemplateId === 'string' ? req.body.characterTemplateId.trim() || null : null;
+  // A hand-typed player name — only kept when the slot isn't a real synced
+  // character (that character's own name wins).
+  const manualName = !characterId && typeof req.body?.characterName === 'string' ? req.body.characterName.trim() || null : null;
 
   if (characterId) {
     const character = await prisma.character.findUnique({ where: { id: characterId } });
@@ -208,8 +212,8 @@ compositionsRouter.put('/:id/slots/:subgroup/:slotIndex', requireAuth, asyncHand
 
   await prisma.compositionSlot.upsert({
     where: { compositionId_subgroup_slotIndex: { compositionId: composition.id, subgroup, slotIndex } },
-    update: { role, profession, spec, buildName, buildDetails, buildId, characterId, characterTemplateId },
-    create: { compositionId: composition.id, subgroup, slotIndex, role, profession, spec, buildName, buildDetails, buildId, characterId, characterTemplateId },
+    update: { role, profession, spec, buildName, buildDetails, buildId, manualName, characterId, characterTemplateId },
+    create: { compositionId: composition.id, subgroup, slotIndex, role, profession, spec, buildName, buildDetails, buildId, manualName, characterId, characterTemplateId },
   });
   await prisma.composition.update({ where: { id: composition.id }, data: {} }); // bump updatedAt
 
