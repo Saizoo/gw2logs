@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import { attachUser, requireAdmin, requireAuth } from './middleware/auth.js';
+import { apiLimiter, authLimiter, uploadLimiter } from './middleware/rateLimit.js';
 import { asyncHandler } from './lib/asyncHandler.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { encountersRouter } from './routes/encounters.js';
@@ -33,13 +34,75 @@ import { announcementsRouter } from './routes/announcements.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { invitesRouter } from './routes/invites.js';
 
+// Origins allowed to make credentialed cross-origin calls. Pinned rather than
+// reflecting any origin (the old `origin: true`): with credentials enabled, a
+// reflect-any policy means the day the session cookie loses SameSite=Lax, any
+// site could ride a logged-in user's cookies. Configure the deployed origin(s)
+// via CORS_ALLOWED_ORIGINS (comma-separated); dev origins are allowed unless
+// running in production.
+function allowedOrigins(): string[] {
+  const configured = (process.env.CORS_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((o) => o.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  // Derive the public origin from the OAuth redirect if not spelled out, so a
+  // standard deploy needs no extra env var.
+  if (configured.length === 0 && process.env.DISCORD_REDIRECT_URI) {
+    try {
+      configured.push(new URL(process.env.DISCORD_REDIRECT_URI).origin);
+    } catch {
+      /* ignore a malformed redirect URI */
+    }
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    configured.push('http://localhost:5173', 'http://localhost:5180', 'http://127.0.0.1:5180');
+  }
+  return configured;
+}
+
+// Baseline security headers on every response the API emits. The static SPA
+// gets the same set from nginx (deploy/nginx.conf.template); setting them here
+// too means the API is covered even if it's ever exposed without that proxy.
+function securityHeaders(): express.RequestHandler {
+  return (_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+    next();
+  };
+}
+
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: true, credentials: true }));
+  // Behind nginx, so req.ip must come from the first X-Forwarded-For hop —
+  // otherwise every request looks like 127.0.0.1 and the rate limiters below
+  // share a single global bucket.
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+
+  const origins = allowedOrigins();
+  app.use(
+    cors({
+      credentials: true,
+      origin(origin, cb) {
+        // Same-origin / server-to-server requests send no Origin header — allow
+        // them. A browser cross-origin request is only allowed from the pinned
+        // list.
+        if (!origin || origins.includes(origin)) return cb(null, true);
+        cb(new Error('Not allowed by CORS'));
+      },
+    }),
+  );
+  app.use(securityHeaders());
   app.use(cookieParser());
   app.use(express.json());
   app.use(attachUser);
+
+  // Broad per-IP flood protection across the whole API.
+  app.use('/api', apiLimiter);
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -51,13 +114,13 @@ export function createApp() {
     res.json({ totalLogs, totalPlayers });
   }));
 
-  app.use('/api/uploads', uploadsRouter);
+  app.use('/api/uploads', uploadLimiter, uploadsRouter);
   app.use('/api/encounters', encountersRouter);
   app.use('/api/players', playersRouter);
   app.use('/api/logs', logsRouter);
   app.use('/api/search', searchRouter);
   app.use('/api/compare', compareRouter);
-  app.use('/api/auth', authRouter);
+  app.use('/api/auth', authLimiter, authRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/home', homeRouter);
   app.use('/api/compositions', compositionsRouter);

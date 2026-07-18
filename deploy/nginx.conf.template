@@ -11,6 +11,17 @@ server {
     root /var/www/gw2logs;
     index index.html;
 
+    # Security headers, applied to every response this server block emits.
+    # `always` sends them on error responses too. HSTS is ignored by browsers
+    # over plain HTTP, so it's harmless here and takes effect once certbot adds
+    # the 443 block. frame-ancestors 'none' (+ X-Frame-Options for old
+    # browsers) blocks clickjacking; nosniff stops MIME-type confusion.
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "frame-ancestors 'none'" always;
+
     # Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — keep in
     # lockstep with the multer fileSize limit in server/src/routes/uploads.ts.
     client_max_body_size 200m;

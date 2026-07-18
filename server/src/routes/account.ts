@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sensitiveLimiter } from '../middleware/rateLimit.js';
 import { encrypt, decrypt } from '../lib/crypto.js';
 import { fetchAccount, fetchAccountGuilds, fetchGuildInfo, fetchTokenInfo } from '../lib/gw2Api.js';
 import { addToGuildGroup, ensureGuildGroup, removeFromGuildGroup } from '../lib/guildGroups.js';
@@ -16,7 +17,7 @@ export const accountRouter = Router();
 
 accountRouter.use(requireAuth);
 
-accountRouter.post('/link-gw2', async (req, res) => {
+accountRouter.post('/link-gw2', sensitiveLimiter, async (req, res) => {
   const apiKey = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
   if (!apiKey) {
     res.status(400).json({ error: 'apiKey is required' });
@@ -66,7 +67,7 @@ accountRouter.post('/link-gw2', async (req, res) => {
 // the public guild endpoint), for the "which guild do you represent?"
 // picker. isLeader comes from account.guild_leader when the key has the
 // "guilds" permission; null when that can't be determined.
-accountRouter.get('/guilds', asyncHandler(async (req, res) => {
+accountRouter.get('/guilds', sensitiveLimiter, asyncHandler(async (req, res) => {
   if (!req.user!.gw2ApiKeyEnc) {
     res.status(400).json({ error: 'Link your GW2 API key first' });
     return;
@@ -103,7 +104,7 @@ accountRouter.get('/guilds', asyncHandler(async (req, res) => {
 // Guild row, auto-creates its group if needed, and adds the user; clearing
 // or switching removes them from the old guild's group (with leadership
 // handoff). The claim is verified against the account's real guild list.
-accountRouter.post('/display-guild', asyncHandler(async (req, res) => {
+accountRouter.post('/display-guild', sensitiveLimiter, asyncHandler(async (req, res) => {
   const guildId = req.body?.guildId;
   if (guildId !== null && typeof guildId !== 'string') {
     res.status(400).json({ error: 'guildId must be a guild id string or null' });
@@ -234,7 +235,7 @@ accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
 // unbounded upload history can't queue a background job that runs forever.
 const MAX_IMPORT_LOGS = 500;
 
-accountRouter.post('/import-dpsreport', asyncHandler(async (req, res) => {
+accountRouter.post('/import-dpsreport', sensitiveLimiter, asyncHandler(async (req, res) => {
   const userToken = typeof req.body?.userToken === 'string' ? req.body.userToken.trim() : '';
   if (!userToken) {
     res.status(400).json({ error: 'userToken is required' });

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
 import { prisma } from '../db.js';
-import { parseWithEliteInsights } from '../lib/eliteInsights.js';
+import { parseWithEliteInsights, ParseQueueFullError } from '../lib/eliteInsights.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 import { getGroupRole } from '../lib/groupAccess.js';
@@ -169,7 +169,11 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       where: { id: job.id },
       data: { status: 'failed', errorMessage: message },
     });
-    res.status(502).json({ jobId: job.id, status: 'failed', error: message });
+    // Queue saturation is a transient "try again", not a parse failure — 503
+    // (with the job marked failed so it doesn't dangle) tells the client to
+    // retry rather than treating the log as broken.
+    const status = err instanceof ParseQueueFullError ? 503 : 502;
+    res.status(status).json({ jobId: job.id, status: 'failed', error: message });
   }
 });
 

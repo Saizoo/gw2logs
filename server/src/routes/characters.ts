@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sensitiveLimiter } from '../middleware/rateLimit.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { decrypt } from '../lib/crypto.js';
 import { syncCharactersForUser, MissingPermissionError } from '../lib/characterSync.js';
@@ -93,7 +94,7 @@ charactersRouter.put('/:id/templates/:tab', asyncHandler(async (req, res) => {
 // Re-pulls this user's characters/build-tabs/specializations from the GW2
 // API using the API key already linked via /api/account/link-gw2 — no
 // need to paste the key again just to sync characters.
-charactersRouter.post('/sync', asyncHandler(async (req, res) => {
+charactersRouter.post('/sync', sensitiveLimiter, asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { gw2ApiKeyEnc: true } });
   if (!user?.gw2ApiKeyEnc) {
     res.status(400).json({ error: 'Link your GW2 API key from the Account page first.' });

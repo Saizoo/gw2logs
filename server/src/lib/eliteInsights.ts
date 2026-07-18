@@ -14,6 +14,21 @@ const EI_CONFIG = process.env.EI_CONFIG_PATH ?? '/opt/ei/settings.conf';
 // nginx's proxy_read_timeout in deploy/nginx.conf.template.
 const EI_TIMEOUT_MS = 300_000;
 const MAX_CONCURRENT_PARSES = 2;
+// Hard ceiling on how many uploads may wait behind the running parses. Without
+// it the waiters list is unbounded, so anyone (uploads are anonymous by
+// design) could flood the endpoint and pin every future upload behind a queue
+// that never drains — a denial-of-service on the whole ingest path. Past this
+// depth new uploads are rejected fast with a 503 instead of queueing forever.
+const MAX_QUEUE_DEPTH = 20;
+
+// Thrown by acquireSlot when the queue is saturated so the upload route can
+// answer 503 (retry later) rather than holding the connection open.
+export class ParseQueueFullError extends Error {
+  constructor() {
+    super('The parser is busy — too many uploads are already queued. Please try again in a minute.');
+    this.name = 'ParseQueueFullError';
+  }
+}
 
 // A modest VPS can't usefully run more than a couple of EI processes (each
 // is a full .NET parse) at once — extra uploads queue instead of piling on.
@@ -28,6 +43,7 @@ export function getParseQueueState(): { active: number; queued: number } {
 
 async function acquireSlot(): Promise<() => void> {
   if (activeParses >= MAX_CONCURRENT_PARSES) {
+    if (waiters.length >= MAX_QUEUE_DEPTH) throw new ParseQueueFullError();
     await new Promise<void>((resolve) => waiters.push(resolve));
   }
   activeParses++;
