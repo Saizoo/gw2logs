@@ -5,7 +5,7 @@ import { toast } from '../../lib/toast';
 import { ArtImg, Card, GoldButton } from '../../components/atoms';
 import { Select } from '../../components/Select';
 import { EXPANSIONS } from '../../data/encounters';
-import { bossBgPathLoose, professionColor, professionIconPath } from '../../data/gw2-data';
+import { bossBgPathLoose, professionColor, professionIconPath, specBgPath } from '../../data/gw2-data';
 import { ghostBtnStyle, inputStyle, smallBtnStyle } from './shared';
 
 // This Week tab: the leader's agenda for the current reset week, organized
@@ -281,30 +281,39 @@ function CompositionRoster({ composition }: { composition: WeekPlanComposition }
             <div style={{ padding: '8px 14px', background: 'oklch(1 0 0 / 3%)', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase' }}>
               Subgroup {subgroup}
             </div>
-            {slots.map((slot) => (
-              <div key={`${slot.subgroup}-${slot.slotIndex}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderTop: '1px solid var(--border-faint)' }}>
+            {slots.map((slot) => {
+              const color = professionColor(slot.profession);
+              return (
+              <div key={`${slot.subgroup}-${slot.slotIndex}`} style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderTop: '1px solid var(--border-faint)' }}>
+                {/* Spec banner art under a profession-color wash, matching the Characters page rows. */}
+                <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden>
+                  <ArtImg src={specBgPath(slot.profession, slot.spec)} style={{ opacity: 0.42 }} />
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 45%, transparent) 0%, oklch(0.15 0.014 250 / 55%) 40%, oklch(0.15 0.014 250 / 94%) 68%)` }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 40%)' }} />
+                </div>
                 <img
                   src={professionIconPath(slot.profession, slot.spec)}
                   alt=""
                   width={22}
                   height={22}
-                  style={{ borderRadius: 5, flexShrink: 0 }}
+                  style={{ position: 'relative', borderRadius: 5, flexShrink: 0 }}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-                <div style={{ minWidth: 0 }}>
+                <div style={{ position: 'relative', minWidth: 0 }}>
                   <div style={{ font: '650 12.5px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {slot.player ?? slot.characterName ?? 'Open slot'}
                     {slot.player && slot.characterName && (
                       <span style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)' }}> · {slot.characterName}</span>
                     )}
                   </div>
-                  <div style={{ font: '500 10.5px var(--font-sans)', color: professionColor(slot.profession), marginTop: 1 }}>
+                  <div style={{ font: '500 10.5px var(--font-sans)', color, marginTop: 1 }}>
                     {slot.role}
                     <span style={{ color: 'var(--text-55)' }}> · {slot.spec ?? slot.profession}{slot.buildName ? ` · ${slot.buildName}` : ''}</span>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>
