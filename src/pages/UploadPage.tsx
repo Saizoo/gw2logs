@@ -3,18 +3,11 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { STATUS_META, type UploadStatus } from '../data/derived';
+import { STATUS_META } from '../data/derived';
+import { useUploads } from '../hooks/useUploads';
 import { Card, SectionLabel } from '../components/atoms';
 import { Select } from '../components/Select';
 import { EmptyState } from '../components/QueryStates';
-
-interface QueueItem {
-  id: string;
-  file: File;
-  status: UploadStatus;
-  logId?: string;
-  error?: string;
-}
 
 export default function UploadPage() {
   const { user } = useCurrentUser();
@@ -22,60 +15,22 @@ export default function UploadPage() {
   const [groupId, setGroupId] = useState('');
 
   const [dragOver, setDragOver] = useState(false);
-  const [queue, setQueue] = useState<QueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Each upload holds its HTTP connection open for the whole server-side
-  // parse. Firing every dropped file at once saturates the browser's ~6
-  // connections-per-host limit, which freezes the rest of the site for the
-  // uploader until they drain. Feed them through a small pool instead — the
-  // server only parses two at a time anyway, so this loses no throughput
-  // while leaving connections free for normal browsing.
-  const UPLOAD_CONCURRENCY = 2;
-  const pending = useRef<QueueItem[]>([]);
-  const active = useRef(0);
-  const groupIdRef = useRef(groupId);
-  groupIdRef.current = groupId;
-
-  const pump = useCallback(() => {
-    while (active.current < UPLOAD_CONCURRENCY && pending.current.length > 0) {
-      const item = pending.current.shift()!;
-      active.current += 1;
-      setQueue((q) => q.map((qi) => (qi.id === item.id ? { ...qi, status: 'uploading' } : qi)));
-      api
-        .upload(item.file, groupIdRef.current || undefined)
-        .then((result) => {
-          setQueue((q) => q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)));
-        })
-        .catch((err: unknown) => {
-          setQueue((q) =>
-            q.map((qi) =>
-              qi.id === item.id
-                ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
-                : qi,
-            ),
-          );
-        })
-        .finally(() => {
-          active.current -= 1;
-          pump();
-        });
-    }
-  }, []);
+  // The upload queue + concurrency pool live in the app-wide UploadProvider so
+  // parsing keeps running (and keeps reporting in the nav) after the user
+  // leaves this page. This page just feeds files in and renders the shared
+  // queue.
+  const { items: queue, submitFiles: submit, clearFinished } = useUploads();
 
   const submitFiles = useCallback(
     (files: FileList | File[]) => {
-      const items: QueueItem[] = Array.from(files).map((file) => ({
-        id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
-        file,
-        status: 'queued',
-      }));
-      setQueue((q) => [...items, ...q]);
-      pending.current.push(...items);
-      pump();
+      const groupName = groupId ? myGroups?.find((g) => g.id === groupId)?.name : undefined;
+      submit(files, { groupId: groupId || undefined, groupName });
     },
-    [pump],
+    [submit, groupId, myGroups],
   );
+  const hasFinished = queue.some((i) => i.status === 'success' || i.status === 'failed');
 
   return (
     <div>
@@ -160,13 +115,24 @@ export default function UploadPage() {
       </div>
 
       <div style={{ maxWidth: 960, marginTop: 24 }}>
-        <SectionLabel>Processing queue</SectionLabel>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <SectionLabel>Processing queue</SectionLabel>
+          {hasFinished && (
+            <button
+              type="button"
+              onClick={clearFinished}
+              style={{ font: '600 11px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Clear finished
+            </button>
+          )}
+        </div>
         {queue.length === 0 && <EmptyState>Nothing uploaded yet this session.</EmptyState>}
         {queue.length > 0 && (
           <Card style={{ overflow: 'hidden' }}>
             {queue.map((item, i) => {
               const meta = STATUS_META[item.status];
-              const sizeLabel = `${(item.file.size / 1024).toFixed(0)} KB`;
+              const sizeLabel = `${(item.fileSize / 1024).toFixed(0)} KB`;
               return (
                 <div
                   key={item.id}
@@ -176,7 +142,7 @@ export default function UploadPage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.file.name}</div>
+                    <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.fileName}</div>
                     <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 20, color: '#14120f', background: meta.color }}>
                       {meta.label}
                     </span>

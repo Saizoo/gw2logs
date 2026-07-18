@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { NotificationBell } from './NotificationBell';
+import { UploadIndicator } from './UploadIndicator';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 // Raid Planner is deliberately not here — it's only meaningful in the
@@ -139,29 +140,7 @@ export function NavHeader() {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link
-            to="/upload"
-            data-tour="upload"
-            className="u-btn-gold"
-            style={{
-              flex: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '9px 16px 9px 13px',
-              borderRadius: 20,
-              font: '700 12.5px var(--font-sans)',
-              whiteSpace: 'nowrap',
-              background: 'var(--gold-grad)',
-              color: 'var(--gold-fg)',
-              boxShadow: '0 4px 16px oklch(0.7 0.14 85 / 32%)',
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 4v16M4 12h16" stroke="oklch(0.15 0.02 85)" strokeWidth="2.6" strokeLinecap="round" />
-            </svg>
-            Upload
-          </Link>
+          <UploadIndicator />
           {user && <NotificationBell />}
           {user && (
             <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>

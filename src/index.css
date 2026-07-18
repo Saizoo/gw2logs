@@ -197,6 +197,24 @@ p {
   }
 }
 
+/* Nav upload-progress ring rotation + the live "uploading" status dot. */
+@keyframes spin {
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
 /* Custom Select dropdown panel entrance. */
 @keyframes selectPop {
   from {
