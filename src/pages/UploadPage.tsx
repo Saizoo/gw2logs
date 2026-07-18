@@ -25,35 +25,56 @@ export default function UploadPage() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Each upload holds its HTTP connection open for the whole server-side
+  // parse. Firing every dropped file at once saturates the browser's ~6
+  // connections-per-host limit, which freezes the rest of the site for the
+  // uploader until they drain. Feed them through a small pool instead — the
+  // server only parses two at a time anyway, so this loses no throughput
+  // while leaving connections free for normal browsing.
+  const UPLOAD_CONCURRENCY = 2;
+  const pending = useRef<QueueItem[]>([]);
+  const active = useRef(0);
+  const groupIdRef = useRef(groupId);
+  groupIdRef.current = groupId;
+
+  const pump = useCallback(() => {
+    while (active.current < UPLOAD_CONCURRENCY && pending.current.length > 0) {
+      const item = pending.current.shift()!;
+      active.current += 1;
+      setQueue((q) => q.map((qi) => (qi.id === item.id ? { ...qi, status: 'uploading' } : qi)));
+      api
+        .upload(item.file, groupIdRef.current || undefined)
+        .then((result) => {
+          setQueue((q) => q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)));
+        })
+        .catch((err: unknown) => {
+          setQueue((q) =>
+            q.map((qi) =>
+              qi.id === item.id
+                ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
+                : qi,
+            ),
+          );
+        })
+        .finally(() => {
+          active.current -= 1;
+          pump();
+        });
+    }
+  }, []);
+
   const submitFiles = useCallback(
     (files: FileList | File[]) => {
       const items: QueueItem[] = Array.from(files).map((file) => ({
         id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
         file,
-        status: 'uploading',
+        status: 'queued',
       }));
       setQueue((q) => [...items, ...q]);
-
-      for (const item of items) {
-        api
-          .upload(item.file, groupId || undefined)
-          .then((result) => {
-            setQueue((q) =>
-              q.map((qi) => (qi.id === item.id ? { ...qi, status: 'success', logId: result.logId } : qi)),
-            );
-          })
-          .catch((err: unknown) => {
-            setQueue((q) =>
-              q.map((qi) =>
-                qi.id === item.id
-                  ? { ...qi, status: 'failed', error: err instanceof Error ? err.message : 'Upload failed' }
-                  : qi,
-              ),
-            );
-          });
-      }
+      pending.current.push(...items);
+      pump();
     },
-    [groupId],
+    [pump],
   );
 
   return (
@@ -163,6 +184,7 @@ export default function UploadPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{sizeLabel}</div>
                     <div style={{ font: '500 11px var(--font-mono)', color: 'var(--text-55)' }}>
+                      {item.status === 'queued' && 'Waiting…'}
                       {item.status === 'uploading' && 'Uploading & parsing…'}
                       {item.status === 'failed' && item.error}
                       {item.status === 'success' && item.logId && <Link to={`/logs/${item.logId}`} style={{ color: 'var(--gold)', fontWeight: 700 }}>View log →</Link>}

@@ -79,7 +79,9 @@ const FIGHT_NAME_ALIASES: Record<string, string> = {
   Desmina: 'Soulless Horror',
   // Strikes logged by map / instance name
   'Shiverpeaks Pass': 'Legendary Icebrood Construct',
+  'Icebrood Construct': 'Legendary Icebrood Construct',
   'Voice of the Fallen and Claw of the Fallen': 'The Voice and the Claw',
+  'Super Kodan Brothers': 'The Voice and the Claw',
   'Forging Steel': 'Ancient Forgeman',
   'Cold War': 'Minister of Morale',
   'Aetherblade Hideout': 'Mai Trin',
@@ -122,9 +124,24 @@ const FIGHT_NAME_ALIASES_LC = new Map(
 // name resolves to.
 const CM_SUFFIX_RE = /\s*[[(]?\b(?:c\.?m\.?|l\.?c\.?m\.?|challenge mode|legendary challenge mode)\b[\])]?\s*$/i;
 
+// Elite Insights also appends parenthetical annotations describing HOW the
+// log was recorded rather than which boss it is — most commonly
+// "(Late Start)" when arcdps started mid-fight, but also things like
+// "(Skipped Phases)". These sit after the CM marker ("Mursaat Overseer CM
+// (Late Start)"), so they must be stripped first or the CM strip — and the
+// alias lookup — never matches, dropping the log into "other". None of our
+// canonical names contain parentheses, so removing a trailing "(...)" is safe.
+const TRAILING_ANNOTATION_RE = /\s*\([^)]*\)\s*$/;
+
 export function canonicalFightName(raw: string): string {
-  const trimmed = raw.trim();
-  const base = trimmed.replace(CM_SUFFIX_RE, '').trim() || trimmed;
+  let base = raw.trim();
+  // Peel any trailing "(...)" annotations, then the CM marker.
+  let prev: string;
+  do {
+    prev = base;
+    base = base.replace(TRAILING_ANNOTATION_RE, '').trim();
+  } while (base !== prev && base.length > 0);
+  base = base.replace(CM_SUFFIX_RE, '').trim() || raw.trim();
   return FIGHT_NAME_ALIASES[base] ?? FIGHT_NAME_ALIASES_LC.get(base.toLowerCase()) ?? base;
 }
 

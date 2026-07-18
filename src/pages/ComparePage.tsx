@@ -76,7 +76,10 @@ export default function ComparePage() {
       </div>
 
       {/* --- self-service picker --- */}
-      <Card style={{ padding: '16px 20px', marginBottom: 20 }}>
+      {/* Card's backdrop-filter makes it a stacking context, so lift the whole
+          picker above the result card below or the search dropdown is hidden
+          behind it. */}
+      <Card style={{ padding: '16px 20px', marginBottom: 20, position: 'relative', zIndex: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>
           <PlayerField label="Player A" value={accountA} onPick={(v) => setField('accountA', v)} accent="var(--gold)" />
           <PlayerField label="Player B" value={accountB} onPick={(v) => setField('accountB', v)} accent="var(--blue)" />

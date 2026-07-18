@@ -250,7 +250,7 @@ encountersRouter.get('/benchmarks', asyncHandler(async (req, res) => {
     JOIN "Log" l ON lp."logId" = l.id
     JOIN "Player" p ON lp."playerId" = p.id
     LEFT JOIN "User" u ON u.id = p."userId"
-    WHERE l.success = true AND lp.spec <> lp.profession
+    WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
     ORDER BY lp.spec, lp."totalDps" DESC
   `;
 
@@ -287,7 +287,7 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) =
     SELECT lp.spec, lp.profession, lp."totalDps"
     FROM "LogPlayer" lp
     JOIN "Log" l ON lp."logId" = l.id
-    WHERE l.success = true AND lp.spec <> lp.profession
+    WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
   `;
   const bestRows = await prisma.$queryRaw<
     { spec: string; logId: string; totalDps: number; characterName: string; account: string; userId: string | null; hideName: boolean | null; fightName: string; isCm: boolean; encounterTime: Date }[]
@@ -298,7 +298,7 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) =
     JOIN "Log" l ON lp."logId" = l.id
     JOIN "Player" p ON lp."playerId" = p.id
     LEFT JOIN "User" u ON u.id = p."userId"
-    WHERE l.success = true AND lp.spec <> lp.profession
+    WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
     ORDER BY lp.spec, lp."totalDps" DESC
   `;
 

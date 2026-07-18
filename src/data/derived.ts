@@ -1,6 +1,6 @@
 // Pure display helpers shared across pages (colors, zebra striping, medals).
 
-export type UploadStatus = 'uploading' | 'success' | 'failed';
+export type UploadStatus = 'queued' | 'uploading' | 'success' | 'failed';
 
 const EVENT_DOT_COLOR: Record<string, string> = {
   info: 'rgba(242,237,226,.4)',
@@ -41,6 +41,7 @@ export function heat(v: number): string {
 }
 
 export const STATUS_META: Record<UploadStatus, { label: string; color: string }> = {
+  queued: { label: 'Queued', color: '#8a8577' },
   uploading: { label: 'Uploading', color: '#e0b458' },
   success: { label: 'Parsed', color: '#4caf6d' },
   failed: { label: 'Failed', color: '#f55d4e' },
