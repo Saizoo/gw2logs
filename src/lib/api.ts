@@ -476,10 +476,38 @@ export interface SearchResults {
   bosses: { fightName: string; isCm: boolean; wing: string | null; logCount: number }[];
 }
 
+export interface CompareParse {
+  name: string;
+  account: string;
+  spec: string;
+  profession: string;
+  logId: string;
+  parsePct: number;
+  dps: number;
+  powerDps: number;
+  condiDps: number;
+  duration: number;
+  downs: number;
+  deaths: number;
+  damageTaken: number;
+}
+
+export interface CompareRow {
+  label: string;
+  a: number;
+  b: number;
+  aPct: number;
+  bPct: number;
+  lowerIsBetter: boolean;
+  winner: 'a' | 'b' | 'tie';
+}
+
 export interface CompareResult {
-  playerA: { name: string; spec: string; boss: string };
-  playerB: { name: string; spec: string; boss: string };
-  rows: { label: string; a: number; b: number; aPct: number; bPct: number }[];
+  boss: { fightName: string; isCm: boolean };
+  // Null when the chosen player has no matching parse (best-parse mode).
+  playerA: CompareParse | null;
+  playerB: CompareParse | null;
+  rows: CompareRow[];
 }
 
 export interface UploadResult {
@@ -682,10 +710,14 @@ export const api = {
   log: (id: string) => apiFetch<LogDetail>(`/logs/${encodeURIComponent(id)}`),
   claimLog: (id: string) => apiFetch<{ ok: true }>(`/logs/${encodeURIComponent(id)}/claim`, { method: 'POST' }),
   search: (q: string) => apiFetch<SearchResults>(`/search?q=${encodeURIComponent(q)}`),
-  compare: (logIdA: string, accountA: string, logIdB: string, accountB: string) =>
-    apiFetch<CompareResult>(
-      `/compare?logIdA=${encodeURIComponent(logIdA)}&accountA=${encodeURIComponent(accountA)}&logIdB=${encodeURIComponent(logIdB)}&accountB=${encodeURIComponent(accountB)}`,
-    ),
+  // Two modes: pass logIdA/logIdB to compare two specific parses (the compare
+  // picker's flow), or a fightName (+cm) to compare each player's best clear.
+  compare: (p: { accountA: string; accountB: string; logIdA?: string; logIdB?: string; fightName?: string; isCm?: boolean }) => {
+    const q = new URLSearchParams({ accountA: p.accountA, accountB: p.accountB });
+    if (p.logIdA && p.logIdB) { q.set('logIdA', p.logIdA); q.set('logIdB', p.logIdB); }
+    if (p.fightName) { q.set('fightName', p.fightName); q.set('cm', String(p.isCm ?? false)); }
+    return apiFetch<CompareResult>(`/compare?${q}`);
+  },
   upload: async (file: File, groupId?: string): Promise<UploadResult> => {
     const form = new FormData();
     form.append('file', file);
