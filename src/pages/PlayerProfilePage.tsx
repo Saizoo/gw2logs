@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -35,6 +35,69 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: 'activity', label: 'Activity' },
 ];
 
+type RecentKill = PlayerProfile['recent'][number];
+interface TrendPoint {
+  x: number;
+  y: number;
+  kill: RecentKill;
+}
+
+// Hover card for a single DPS-trend point: names the fight, spec and parse
+// behind the dot, plus how it compares to the player's recent average.
+// Positioned in the chart's viewBox coordinate space (720×150) converted to
+// container percentages, and nudged to stay inside the card near the edges.
+function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
+  const { kill } = pt;
+  const leftPct = Math.min(86, Math.max(14, (pt.x / 720) * 100));
+  const below = pt.y < 52; // dot near the top → drop the card below it instead
+  const delta = avg && avg > 0 ? Math.round(((kill.dps - avg) / avg) * 100) : null;
+  const when = new Date(kill.uploadedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const profColor = professionColor(professionForSpec(kill.spec));
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${leftPct}%`,
+        top: `${(pt.y / 150) * 100}%`,
+        transform: `translate(-50%, ${below ? '14px' : 'calc(-100% - 14px)'})`,
+        pointerEvents: 'none',
+        zIndex: 20,
+        width: 210,
+        background: 'oklch(0.17 0.014 250 / 98%)',
+        border: '1px solid oklch(1 0 0 / 14%)',
+        borderRadius: 12,
+        boxShadow: '0 18px 40px -14px rgba(0,0,0,.7)',
+        padding: '11px 13px',
+        animation: 'fadeIn .12s ease both',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+        <ProfDot color={profColor} />
+        <span style={{ font: '700 12.5px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {kill.boss}
+          {kill.isCm ? <span style={{ color: 'var(--gold)', fontWeight: 800 }}> CM</span> : ''}
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+        <span style={{ font: '800 20px var(--font-sans)', color: 'oklch(0.72 0.11 155)', fontVariantNumeric: 'tabular-nums' }}>
+          {kill.dps.toLocaleString()}
+        </span>
+        <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-50)' }}>DPS</span>
+        {delta !== null && (
+          <span style={{ marginLeft: 'auto', font: '700 11px var(--font-sans)', color: delta >= 0 ? 'var(--good)' : 'var(--bad)' }}>
+            {delta >= 0 ? '+' : ''}{delta}% vs avg
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', font: '500 10.5px var(--font-sans)', color: 'var(--text-50)' }}>
+        <span>{kill.spec} · {when}</span>
+        <span style={{ color: 'var(--gold)', fontWeight: 700 }}>View log →</span>
+      </div>
+    </div>
+  );
+}
+
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
   const { data, loading, error } = useApiQuery(() => api.player(name), [name]);
@@ -45,6 +108,7 @@ export default function PlayerProfilePage() {
   const [iconOverride, setIconOverride] = useState<string | null | undefined>(undefined);
   const [picking, setPicking] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('overview');
+  const navigate = useNavigate();
 
   // Private profiles resolve to a stub for non-owners; narrow to the full
   // profile for everything below.
@@ -63,19 +127,30 @@ export default function PlayerProfilePage() {
 
   const chart = useMemo(() => {
     if (recentKills.length < 2) return null;
-    const values = [...recentKills].reverse().map((r) => r.dps);
+    // Oldest kill on the left, newest on the right.
+    const ordered = [...recentKills].reverse();
+    const values = ordered.map((r) => r.dps);
     const w = 720;
     const h = 150;
     const pad = 14;
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min || 1;
-    const step = (w - pad * 2) / (values.length - 1);
-    const pts = values.map((v, i) => ({ x: pad + i * step, y: pad + (1 - (v - min) / range) * (h - pad * 2) }));
+    const step = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0;
+    // Each point carries its source kill so the hover tooltip can name the
+    // fight, spec and parse behind that dot. x/y stay in the 720×150 viewBox;
+    // the tooltip converts them to container percentages.
+    const pts = values.map((v, i) => ({
+      x: pad + i * step,
+      y: pad + (1 - (v - min) / range) * (h - pad * 2),
+      kill: ordered[i],
+    }));
     const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
     const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
-    return { line, area, pts };
+    return { line, area, pts, w, h, step };
   }, [recentKills]);
+
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   if (loading) return <LoadingState label="Loading profile…" />;
   if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
@@ -263,25 +338,77 @@ export default function PlayerProfilePage() {
           {chart && (
             <Card style={{ padding: '20px 20px 8px' }}>
               <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
-              <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible' }} preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
-                  <line x1="0" y1="10" x2="720" y2="10" />
-                  <line x1="0" y1="56" x2="720" y2="56" />
-                  <line x1="0" y1="102" x2="720" y2="102" />
-                  <line x1="0" y1="148" x2="720" y2="148" />
-                </g>
-                <path d={chart.area} fill="url(#dpsFill2)" />
-                <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                {chart.pts.map((pt, i) => (
-                  <circle key={i} cx={pt.x} cy={pt.y} r={3.5} fill="var(--bg)" stroke="oklch(0.65 0.1 155)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
-                ))}
-              </svg>
+              <div style={{ position: 'relative' }}>
+                <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible', display: 'block' }} preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
+                    <line x1="0" y1="10" x2="720" y2="10" />
+                    <line x1="0" y1="56" x2="720" y2="56" />
+                    <line x1="0" y1="102" x2="720" y2="102" />
+                    <line x1="0" y1="148" x2="720" y2="148" />
+                  </g>
+                  <path d={chart.area} fill="url(#dpsFill2)" />
+                  <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                  {/* Guide line dropped from the hovered point. */}
+                  {hoverIdx !== null && chart.pts[hoverIdx] && (
+                    <line
+                      x1={chart.pts[hoverIdx].x}
+                      y1={chart.pts[hoverIdx].y}
+                      x2={chart.pts[hoverIdx].x}
+                      y2={148}
+                      stroke="oklch(0.65 0.1 155 / 45%)"
+                      strokeWidth={1}
+                      strokeDasharray="3 3"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  )}
+                  {chart.pts.map((pt, i) => {
+                    const on = hoverIdx === i;
+                    return (
+                      <circle
+                        key={i}
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={on ? 5 : 3.5}
+                        fill={on ? 'oklch(0.65 0.1 155)' : 'var(--bg)'}
+                        stroke="oklch(0.65 0.1 155)"
+                        strokeWidth={2}
+                        vectorEffect="non-scaling-stroke"
+                        style={{ transition: 'r .1s ease' }}
+                      />
+                    );
+                  })}
+                  {/* Invisible full-height hit columns — hovering anywhere in a
+                      point's column selects it, so tiny dots aren't a chore to
+                      hit. Click jumps to that fight's log. */}
+                  {chart.pts.map((pt, i) => {
+                    const colW = chart.step || chart.w;
+                    return (
+                      <a key={`hit-${i}`} href={`/logs/${pt.kill.logId}`} onClick={(e) => { e.preventDefault(); navigate(`/logs/${pt.kill.logId}`); }}>
+                        <rect
+                          x={pt.x - colW / 2}
+                          y={0}
+                          width={colW}
+                          height={150}
+                          fill="transparent"
+                          style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setHoverIdx(i)}
+                          onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
+                        />
+                      </a>
+                    );
+                  })}
+                </svg>
+
+                {hoverIdx !== null && chart.pts[hoverIdx] && (
+                  <DpsTrendTooltip pt={chart.pts[hoverIdx]} avg={avgRecentDps} />
+                )}
+              </div>
             </Card>
           )}
         </>
