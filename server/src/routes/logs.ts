@@ -12,10 +12,19 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   const killsOnly = req.query.killsOnly === 'true';
   const mine = req.query.mine === 'true';
   const groupId = typeof req.query.groupId === 'string' ? req.query.groupId : undefined;
-  // Exact fightName filter — the Encounters page links each boss card here.
-  // Canonicalized so a raw-variant link still matches the (canonical) stored
-  // rows.
+  // fightName filter — the Encounters page links each boss card here. The
+  // card name is canonical, but rows ingested before canonicalization landed
+  // still carry raw EI spellings ("Cairn CM", "Icebrood Construct"), so an
+  // exact match on the canonical name would miss them. Match every stored
+  // spelling that canonicalizes to the requested boss instead, so a click
+  // works whether or not the fightname backfill has run.
   const boss = typeof req.query.boss === 'string' && req.query.boss ? canonicalFightName(req.query.boss) : undefined;
+  let bossNames: string[] | undefined;
+  if (boss) {
+    const distinct = await prisma.log.findMany({ distinct: ['fightName'], select: { fightName: true } });
+    bossNames = distinct.map((d) => d.fightName).filter((n) => canonicalFightName(n) === boss);
+    if (bossNames.length === 0) bossNames = [boss];
+  }
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);
 
@@ -31,7 +40,7 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     // there's no session to own them.
     ...(mine ? { uploadedBy: req.user?.id ?? '__none__' } : {}),
     ...(groupId ? { groupId } : {}),
-    ...(boss ? { fightName: boss } : {}),
+    ...(bossNames ? { fightName: { in: bossNames } } : {}),
   };
 
   let logs = await prisma.log.findMany({

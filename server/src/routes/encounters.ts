@@ -44,7 +44,10 @@ interface OverviewBestParse {
 
 interface OverviewEncounter {
   fightName: string;
-  hasCm: boolean;
+  // A CM *clear* has been logged (a CM kill) — not merely a CM attempt. The
+  // card's "CM" badge reads as "you've killed the challenge mode", so a squad
+  // that only wiped on CM must not light it up.
+  hasCmClear: boolean;
   logCount: number;
   kills: number;
   bestSquadDps: number;
@@ -93,7 +96,7 @@ encountersRouter.get('/overview', asyncHandler(async (req, res) => {
     if (!enc) {
       bosses.set(fightName, (enc = {
         fightName,
-        hasCm: false,
+        hasCmClear: false,
         logCount: 0,
         kills: 0,
         bestSquadDps: 0,
@@ -104,7 +107,7 @@ encountersRouter.get('/overview', asyncHandler(async (req, res) => {
       }));
     }
     enc.logCount += 1;
-    enc.hasCm ||= log.isCm;
+    enc.hasCmClear ||= log.isCm && log.success;
     if (log.success) {
       enc.kills += 1;
       if (enc.fastestKillMs === null || log.durationMs < enc.fastestKillMs) enc.fastestKillMs = log.durationMs;

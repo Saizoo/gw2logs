@@ -41,7 +41,8 @@ export interface OverviewBestParse {
 
 export interface OverviewEncounter {
   fightName: string;
-  hasCm: boolean;
+  // A CM clear (kill) has been logged — drives the card's "CM" badge.
+  hasCmClear: boolean;
   logCount: number;
   kills: number;
   bestSquadDps: number;

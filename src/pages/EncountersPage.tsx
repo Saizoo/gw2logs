@@ -99,8 +99,9 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
           >
             {enc.fightName}
           </Link>
-          {enc.hasCm && (
+          {enc.hasCmClear && (
             <span
+              title="A challenge-mode clear has been logged"
               style={{
                 font: '800 9.5px var(--font-sans)',
                 letterSpacing: '.5px',
