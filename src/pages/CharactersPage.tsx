@@ -309,9 +309,6 @@ function CharacterRow({
         <div style={{ font: '700 14px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={character.name}>
           {character.name}
         </div>
-        <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-60)', whiteSpace: 'nowrap', flex: 'none' }}>
-          {character.source === 'gw2' ? `Level 80${character.race ? ` ${character.race}` : ''}` : character.race || 'Manual'}
-        </div>
         {spec && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, font: '700 11px var(--font-sans)', color, whiteSpace: 'nowrap', flex: 'none' }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill={color} aria-hidden>
