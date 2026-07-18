@@ -311,6 +311,7 @@ const WEBHOOK_EVENTS: { key: string; label: string; desc: string }[] = [
   { key: 'schedule', label: 'Schedule changes', desc: 'When the recurring raid times change' },
   { key: 'plan', label: 'Weekly plan', desc: "When this week's raid plan is published" },
   { key: 'member', label: 'New members', desc: 'When someone joins the group' },
+  { key: 'log', label: 'Log uploaded', desc: 'A rich card with boss, result & top DPS for each new log' },
 ];
 
 function DiscordRemindersCard({ groupId }: { groupId: string }) {

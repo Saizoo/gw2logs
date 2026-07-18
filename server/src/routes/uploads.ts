@@ -7,6 +7,7 @@ import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 import { getGroupRole } from '../lib/groupAccess.js';
 import { getConfigBool } from '../lib/appConfig.js';
+import { postGroupWebhookEvent, logUploadedEmbed } from '../lib/raidReminders.js';
 
 // Raw .evtc/.zevtc uploads from big raid squads run 100-160MB — this needs
 // real headroom above that, not just above today's average. Must stay in
@@ -15,6 +16,65 @@ import { getConfigBool } from '../lib/appConfig.js';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
 
 export const uploadsRouter = Router();
+
+// Fire the "new log uploaded" webhook for a log now attached to a group.
+// Fully self-contained and fire-and-forget: it fetches the group name, the
+// uploader's display name, and the log's players (for the top-DPS podium),
+// then hands off to postGroupWebhookEvent, which itself no-ops unless the
+// group has a webhook configured with the 'log' event enabled.
+async function postLogUploadedWebhook(logId: string, groupId: string): Promise<void> {
+  try {
+    const [group, log] = await Promise.all([
+      prisma.group.findUnique({ where: { id: groupId }, select: { name: true } }),
+      prisma.log.findUnique({
+        where: { id: logId },
+        select: {
+          id: true,
+          fightName: true,
+          isCm: true,
+          success: true,
+          durationMs: true,
+          squadDps: true,
+          uploader: { select: { gw2AccountName: true, discordUsername: true } },
+          players: {
+            orderBy: { totalDps: 'desc' },
+            take: 10,
+            select: {
+              characterName: true,
+              profession: true,
+              spec: true,
+              totalDps: true,
+              player: { select: { account: true } },
+            },
+          },
+        },
+      }),
+    ]);
+    if (!group || !log) return;
+    await postGroupWebhookEvent(
+      groupId,
+      'log',
+      logUploadedEmbed(groupId, group.name, {
+        id: log.id,
+        fightName: log.fightName,
+        isCm: log.isCm,
+        success: log.success,
+        durationMs: log.durationMs,
+        squadDps: log.squadDps,
+        uploaderName: log.uploader?.gw2AccountName ?? log.uploader?.discordUsername ?? null,
+        players: log.players.map((p) => ({
+          account: p.player.account,
+          characterName: p.characterName,
+          profession: p.profession,
+          spec: p.spec,
+          totalDps: p.totalDps ?? 0,
+        })),
+      }),
+    );
+  } catch (err) {
+    console.error(`log-uploaded webhook failed for log ${logId}:`, err instanceof Error ? err.message : err);
+  }
+}
 
 uploadsRouter.post('/', upload.single('file'), async (req, res) => {
   // Maintenance switch, flipped from the admin Settings tab. Checked before
@@ -66,6 +126,9 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       // change, only who it's attributed/attached to).
       if (groupId && !alreadyIngested.groupId) {
         await prisma.log.update({ where: { id: alreadyIngested.id }, data: { groupId } });
+        // Newly landed in this group (re-upload that claimed the slot) — the
+        // channel hasn't seen it yet, so announce it just like a fresh log.
+        void postLogUploadedWebhook(alreadyIngested.id, groupId);
       }
       await prisma.uploadJob.update({
         where: { id: job.id },
@@ -94,6 +157,10 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       where: { id: job.id },
       data: { status: 'success', logId: log.id },
     });
+
+    // Fire-and-forget the "new log uploaded" Discord post — never let a
+    // webhook hiccup delay or fail the upload response.
+    if (groupId) void postLogUploadedWebhook(log.id, groupId);
 
     res.json({ jobId: job.id, logId: log.id, status: 'success' });
   } catch (err) {

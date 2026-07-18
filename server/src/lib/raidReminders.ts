@@ -1,6 +1,7 @@
 import { prisma } from '../db.js';
 import { decrypt } from './crypto.js';
 import { notifyUsers } from './notifications.js';
+import { canonicalFightName } from './bossMeta.js';
 
 // ---------------------------------------------------------------------------
 // Timezone resolution. The schedule's raidTimezone is free text ("EST",
@@ -185,9 +186,11 @@ export async function buildReminderPayload(groupId: string, raidDate: string) {
 // lands in their channel.
 // ---------------------------------------------------------------------------
 
-export type WebhookEvent = 'reminder' | 'schedule' | 'plan' | 'member';
-export const WEBHOOK_EVENT_KEYS: WebhookEvent[] = ['reminder', 'schedule', 'plan', 'member'];
+export type WebhookEvent = 'reminder' | 'schedule' | 'plan' | 'member' | 'log';
+export const WEBHOOK_EVENT_KEYS: WebhookEvent[] = ['reminder', 'schedule', 'plan', 'member', 'log'];
 const GOLD = 0xd4a94a;
+const GREEN = 0x4caf6d;
+const RED = 0xf55d4e;
 
 function groupUrlField(groupId: string, path = ''): { url: string } | Record<string, never> {
   const base = siteBaseUrl();
@@ -239,7 +242,103 @@ export function planPublishedEmbed(
 }
 
 export function memberJoinedEmbed(groupId: string, name: string, memberName: string) {
-  return { title: `👋 ${memberName} joined ${name}`, color: 0x4caf6d, ...groupUrlField(groupId) };
+  return { title: `👋 ${memberName} joined ${name}`, color: GREEN, ...groupUrlField(groupId) };
+}
+
+// ---------------------------------------------------------------------------
+// New-log-uploaded embed. Turns a freshly ingested log into a rich Discord
+// card: boss + result headline, the top of the DPS chart, and the fight's
+// headline stats — enough for the channel to know how the pull went without
+// opening the site, but the title still links straight to the full report.
+// ---------------------------------------------------------------------------
+
+export interface LogEmbedPlayer {
+  account: string;
+  characterName: string | null;
+  profession: string;
+  spec: string | null;
+  totalDps: number;
+}
+
+export interface LogEmbedData {
+  id: string;
+  fightName: string;
+  isCm: boolean;
+  success: boolean;
+  durationMs: number | null;
+  squadDps: number | null;
+  players: LogEmbedPlayer[]; // any order; top-by-DPS picked here
+  uploaderName?: string | null;
+}
+
+function formatDuration(ms: number | null): string {
+  if (!ms || ms <= 0) return '—';
+  const total = Math.round(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}m ${s.toString().padStart(2, '0')}s`;
+}
+
+function formatDps(dps: number | null): string {
+  if (!dps || dps <= 0) return '—';
+  if (dps >= 1000) return `${(dps / 1000).toFixed(1)}k`;
+  return String(Math.round(dps));
+}
+
+// Discord doesn't fetch localhost art, but a real public deployment can serve
+// the shipped profession icons — reuse them as the card thumbnail so each
+// boss card leads with the top parser's spec.
+function specIconUrl(profession: string, spec: string | null): string | null {
+  const base = siteBaseUrl();
+  if (!base) return null;
+  const key = (spec && spec.trim() ? spec : profession).toLowerCase();
+  return `${base}/professions/${encodeURIComponent(key)}.png`;
+}
+
+// groupId is accepted for call-site symmetry with the other embed builders,
+// but this card links to the log report itself rather than the group page.
+export function logUploadedEmbed(_groupId: string, groupName: string, log: LogEmbedData) {
+  const boss = canonicalFightName(log.fightName);
+  const result = log.success ? 'Kill ✅' : 'Wipe 💀';
+  // Discord embed *titles* don't render markdown, so keep the CM marker plain.
+  const cm = log.isCm ? ' CM' : '';
+
+  const ranked = [...log.players].sort((a, b) => (b.totalDps ?? 0) - (a.totalDps ?? 0));
+  const top = ranked.slice(0, 3);
+  const medals = ['🥇', '🥈', '🥉'];
+  const topLines = top
+    .map((p, i) => {
+      const who = p.characterName?.trim() || p.account;
+      const build = p.spec?.trim() || p.profession;
+      return `${medals[i]} **${who}** · ${build} — \`${formatDps(p.totalDps)}\` DPS`;
+    })
+    .join('\n');
+
+  const thumb = top[0] ? specIconUrl(top[0].profession, top[0].spec) : null;
+
+  const fields = [
+    { name: 'Duration', value: formatDuration(log.durationMs), inline: true },
+    { name: 'Squad DPS', value: formatDps(log.squadDps), inline: true },
+    { name: 'Players', value: String(log.players.length || '—'), inline: true },
+  ];
+
+  return {
+    author: { name: groupName },
+    title: `${log.success ? '⚔️' : '💥'} ${boss}${cm} — ${result}`,
+    description: topLines ? `**Top DPS**\n${topLines}` : 'Log uploaded.',
+    color: log.success ? GREEN : RED,
+    fields,
+    ...(thumb ? { thumbnail: { url: thumb } } : {}),
+    ...groupUrlEmbedUrl(log.id),
+    footer: { text: log.uploaderName ? `Uploaded by ${log.uploaderName}` : 'New log uploaded' },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// The log embed's title should deep-link to the log report, not the group.
+function groupUrlEmbedUrl(logId: string): { url: string } | Record<string, never> {
+  const base = siteBaseUrl();
+  return base ? { url: `${base}/logs/${logId}` } : {};
 }
 
 export async function sendWebhook(webhookUrl: string, payload: unknown): Promise<void> {
