@@ -4,6 +4,7 @@ import { api, type SpecDistribution } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, PageHeader, SubNav } from '../components/atoms';
+import { TooltipPortal } from '../components/TooltipPortal';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 export const BENCH_SUBNAV = [
@@ -64,7 +65,9 @@ export default function BenchmarksPage() {
 
 function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
   const navigate = useNavigate();
-  const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
+  // Cursor position is stored in viewport coords so the tooltip can be
+  // portalled to <body> (never clipped by the chart card's overflow).
+  const [hover, setHover] = useState<{ index: number; cx: number; cy: number } | null>(null);
 
   const { xMin, xMax, ticks } = useMemo(() => {
     const lo = Math.min(...rows.map((r) => r.min));
@@ -151,10 +154,7 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
                 height={ROW_H}
                 fill="transparent"
                 style={{ cursor: row.best ? 'pointer' : 'default' }}
-                onMouseMove={(e) => {
-                  const bounds = (e.currentTarget.ownerSVGElement?.parentElement as HTMLElement)?.getBoundingClientRect();
-                  if (bounds) setHover({ index: i, x: e.clientX - bounds.left, y: e.clientY - bounds.top });
-                }}
+                onMouseMove={(e) => setHover({ index: i, cx: e.clientX, cy: e.clientY })}
                 onClick={() => {
                   if (row.best) navigate(`/logs/${row.best.logId}`);
                 }}
@@ -165,19 +165,15 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
       </svg>
 
       {hovered && hover && (
+        <TooltipPortal anchor={{ kind: 'point', x: hover.cx, y: hover.cy }}>
         <div
           style={{
-            position: 'absolute',
-            left: Math.min(hover.x + 16, CHART_W - 260),
-            top: hover.y + 14,
-            zIndex: 5,
-            pointerEvents: 'none',
             width: 244,
             padding: '12px 14px',
             borderRadius: 12,
             background: 'oklch(0.16 0.016 250 / 97%)',
             border: '1px solid var(--border)',
-            boxShadow: '0 8px 28px -8px rgba(0,0,0,.6)',
+            boxShadow: '0 18px 44px -14px rgba(0,0,0,.7)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -206,6 +202,7 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
             </div>
           )}
         </div>
+        </TooltipPortal>
       )}
     </div>
   );

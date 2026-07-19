@@ -62,19 +62,17 @@ export default function LoginPage() {
             }}
           />
         ))}
+        {/* Readability wash — lighter than before so the art actually reads,
+            darkening toward the bottom-left where the copy sits — plus a
+            horizontal fade on the right that blends the panel into the sign-in
+            column (var(--bg-card)) so there's no hard seam between them. */}
         <div
           aria-hidden
           style={{
             position: 'absolute', inset: 0,
             background:
-              'linear-gradient(160deg, oklch(0.16 0.02 60 / 74%), oklch(0.09 0.015 55 / 93%) 82%)',
-          }}
-        />
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute', inset: 0,
-            background: 'repeating-linear-gradient(115deg, oklch(0.78 0.14 85 / 6%) 0 12px, oklch(0.78 0.14 85 / 1.5%) 12px 24px)',
+              'linear-gradient(90deg, oklch(0.09 0.015 55 / 20%) 0%, oklch(0.09 0.015 55 / 10%) 40%, transparent 62%, var(--bg-card) 100%),' +
+              'linear-gradient(180deg, oklch(0.05 0.01 55 / 30%) 0%, oklch(0.05 0.01 55 / 12%) 40%, oklch(0.05 0.01 55 / 78%) 100%)',
           }}
         />
         <div style={{ position: 'relative' }}>

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HeroPanel">
+  <rect width="100" height="100" rx="22" fill="#000"/>
+  <g transform="skewX(-9)" fill="#fff">
+    <!-- H left leg -->
+    <rect x="20" y="26" width="12.5" height="52" rx="2.5"/>
+    <!-- crossbar tying the H into the D stem -->
+    <rect x="20" y="45.5" width="34" height="11" rx="2.5"/>
+    <!-- shared H-right-leg / D stem -->
+    <rect x="44" y="26" width="12.5" height="52" rx="2.5"/>
+    <!-- D bowl: a crescent hung off the stem -->
+    <path d="M50 26 h6 a26 26 0 0 1 0 52 h-6 v-11.5 h5 a14.5 14.5 0 0 0 0 -29 h-5 z"/>
+  </g>
+</svg>

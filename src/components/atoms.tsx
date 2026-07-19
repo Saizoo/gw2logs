@@ -35,24 +35,19 @@ export function SubNav({ tabs }: { tabs: { label: string; to: string }[] }) {
 export function Logo() {
   return (
     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div
+      <img
+        src="/logo.svg"
+        alt=""
+        width={32}
+        height={32}
         style={{
           width: 32,
           height: 32,
           borderRadius: 10,
-          background: 'linear-gradient(135deg, oklch(0.8 0.15 85), oklch(0.58 0.1 45))',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 800,
-          fontSize: 15,
-          color: 'oklch(0.16 0.02 85)',
           flex: 'none',
-          boxShadow: '0 3px 12px oklch(0.7 0.14 85 / 35%), 0 0 0 1px oklch(1 0 0 / 12%) inset',
+          boxShadow: '0 3px 12px oklch(0 0 0 / 45%), 0 0 0 1px oklch(1 0 0 / 12%) inset',
         }}
-      >
-        H
-      </div>
+      />
       <div style={{ font: '700 15px var(--font-sans)', letterSpacing: '.2px', whiteSpace: 'nowrap' }}>
         Hero<span style={{ color: 'var(--gold)' }}>Panel</span>
         <span className="nav-logo-sub" style={{ color: 'var(--text-55)', fontWeight: 500 }}> GW2</span>

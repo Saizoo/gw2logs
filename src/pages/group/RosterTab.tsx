@@ -1,66 +1,45 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { api, ApiError, type GroupDetail, type RosterCharacter } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { Avatar, Card, GoldButton } from '../../components/atoms';
 import { MemberClassRoleCard } from '../../components/MemberClassRoleCard';
+import { TooltipPortal } from '../../components/TooltipPortal';
 import { CAT, toBuildEntry, type BuildCategory, type BuildEntry } from '../../data/builds';
 import { inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from './shared';
 
 // Wraps a roster member's name/identity block so hovering (or focusing) it
 // reveals a compact Class & Role card — a mini version of that player's
-// profile panel — without leaving the group page. The card is rendered in a
-// portal with fixed positioning (not absolutely inside the row): the Members
-// list lives in an overflow:hidden Card, which would clip a popover on a short
-// roster, hiding it entirely. Fixed + portal escapes that clip, and the card
-// flips above the row when there isn't room below. Members without a linked
-// GW2 account have no profile to preview and render plain.
-const HOVER_CARD_WIDTH = 260;
-const HOVER_CARD_EST_HEIGHT = 240; // for the flip-up decision only
-
+// profile panel — without leaving the group page. Rendered through the shared
+// TooltipPortal (fixed + portalled), so the overflow:hidden Members card can't
+// clip it on a short roster and it flips above the row near the viewport
+// bottom. Members without a linked GW2 account have no profile and render plain.
 function MemberHover({ account, children }: { account: string | null; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number; above: boolean } | null>(null);
+  const [rect, setRect] = useState<{ top: number; bottom: number; left: number } | null>(null);
 
   function open() {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - r.bottom;
-    const above = spaceBelow < HOVER_CARD_EST_HEIGHT + 16 && r.top > spaceBelow;
-    const left = Math.max(12, Math.min(r.left, window.innerWidth - HOVER_CARD_WIDTH - 12));
-    setPos({ left, top: above ? r.top - 8 : r.bottom + 8, above });
+    const r = ref.current?.getBoundingClientRect();
+    if (r) setRect({ top: r.top, bottom: r.bottom, left: r.left });
   }
 
   if (!account) return <div style={{ flex: 1, minWidth: 0 }}>{children}</div>;
   return (
     <div
       ref={ref}
-      style={{ position: 'relative', flex: 1, minWidth: 0 }}
+      style={{ flex: 1, minWidth: 0 }}
       onMouseEnter={open}
-      onMouseLeave={() => setPos(null)}
+      onMouseLeave={() => setRect(null)}
       onFocus={open}
-      onBlur={() => setPos(null)}
+      onBlur={() => setRect(null)}
     >
       {children}
-      {pos &&
-        createPortal(
-          <div
-            style={{
-              position: 'fixed',
-              left: pos.left,
-              top: pos.top,
-              transform: pos.above ? 'translateY(-100%)' : undefined,
-              zIndex: 200,
-              pointerEvents: 'none',
-            }}
-          >
-            <MemberClassRoleCard account={account} />
-          </div>,
-          document.body,
-        )}
+      {rect && (
+        <TooltipPortal anchor={{ kind: 'rect', rect }}>
+          <MemberClassRoleCard account={account} />
+        </TooltipPortal>
+      )}
     </div>
   );
 }
