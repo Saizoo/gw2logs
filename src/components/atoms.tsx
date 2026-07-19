@@ -36,7 +36,7 @@ export function Logo() {
   return (
     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt=""
         width={32}
         height={32}
