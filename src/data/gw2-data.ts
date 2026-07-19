@@ -161,6 +161,13 @@ export function bossBgPath(fightName: string): string | null {
   return file ? `/assets/raid_backgrounds/${file}` : null;
 }
 
+// Every unique raid/strike backdrop we ship, as ready-to-use paths — for
+// decorative cycling backgrounds (e.g. the login page). Derived from BOSS_BG
+// so it only ever points at art that exists.
+export const RAID_BACKGROUNDS: string[] = [...new Set(Object.values(BOSS_BG))].map(
+  (file) => `/assets/raid_backgrounds/${file}`,
+);
+
 // Loose variant for raid-planner catalog names, which shorten or
 // re-punctuate some fightNames ("Gorseval" vs "Gorseval the Multifarious",
 // "Greer, the Blightbringer" vs "Greer the Blightbringer"): exact match

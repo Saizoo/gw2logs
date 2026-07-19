@@ -1,10 +1,35 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/atoms';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { RAID_BACKGROUNDS } from '../data/gw2-data';
+
+// Fisher–Yates — so the backdrop leads with a different encounter each visit.
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const CYCLE_MS = 7000;
 
 export default function LoginPage() {
   const { data: stats } = useApiQuery(() => api.stats(), []);
+
+  // Cycle raid encounter art behind the panel, crossfading one to the next.
+  // Capped to a shuffled handful — every layer fetches immediately, so this
+  // keeps the login page light while still varying the set per visit.
+  const images = useMemo(() => shuffle(RAID_BACKGROUNDS).slice(0, 10), []);
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (images.length < 2) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % images.length), CYCLE_MS);
+    return () => clearInterval(t);
+  }, [images.length]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.1fr 1fr' }}>
@@ -12,16 +37,43 @@ export default function LoginPage() {
         style={{
           position: 'relative',
           padding: 36,
-          background: 'linear-gradient(160deg,#241a10,#0f0d0a 80%)',
+          background: '#0f0d0a',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           overflow: 'hidden',
         }}
       >
+        {/* Cycling raid encounter backdrop — stacked layers crossfaded by
+            opacity, behind a dark scrim that keeps the text readable. */}
+        {images.map((src, i) => (
+          <div
+            key={src}
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url(${src})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: i === active ? 1 : 0,
+              transform: i === active ? 'scale(1.05)' : 'scale(1)',
+              transition: 'opacity 1.4s ease, transform 8s ease',
+            }}
+          />
+        ))}
         <div
+          aria-hidden
           style={{
-            position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
+            position: 'absolute', inset: 0,
+            background:
+              'linear-gradient(160deg, oklch(0.16 0.02 60 / 74%), oklch(0.09 0.015 55 / 93%) 82%)',
+          }}
+        />
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0,
             background: 'repeating-linear-gradient(115deg, oklch(0.78 0.14 85 / 6%) 0 12px, oklch(0.78 0.14 85 / 1.5%) 12px 24px)',
           }}
         />
