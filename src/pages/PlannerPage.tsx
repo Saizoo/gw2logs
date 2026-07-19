@@ -5,7 +5,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { PROF, PROF_ORDER, CAT, buildSpec, toBuildEntry, type BuildEntry } from '../data/builds';
 import { Select } from '../components/Select';
-import { catalogFor, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO, type EncounterCategory } from '../data/encounters';
+import { catalogFor, encounterCategory, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO, type EncounterCategory } from '../data/encounters';
 import { COV_BOONS, coverageFor } from '../data/boonCoverage';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, GoldButton, ProfDot } from '../components/atoms';
@@ -369,26 +369,36 @@ export default function PlannerPage() {
 
       {composition && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-            {SUBGROUPS.map((sub) => (
-              <SubgroupCard
-                key={sub}
-                subgroup={sub}
-                composition={composition}
-                canEdit={canEdit}
-                roster={roster ?? []}
-                builds={builds}
-                onChanged={() => setReloadNonce((n) => n + 1)}
-              />
-            ))}
-          </div>
+          {/* Fractals run a single 5-player party, not two raid subgroups. Keyed
+              off the composition's own encounter so a fractal comp always shows
+              as one Party regardless of the Raids/Fractals browser toggle. */}
+          {(() => {
+            const isParty = composition.fightName ? encounterCategory(composition.fightName) === 'fractal' : category === 'fractal';
+            const groups = isParty ? [1] : SUBGROUPS;
+            const covs = isParty ? [coverage1] : [coverage1, coverage2];
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: isParty ? 'minmax(0, 480px)' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                  {groups.map((sub) => (
+                    <SubgroupCard
+                      key={sub}
+                      subgroup={sub}
+                      label={isParty ? 'Party' : `Subgroup ${sub}`}
+                      composition={composition}
+                      canEdit={canEdit}
+                      roster={roster ?? []}
+                      builds={builds}
+                      onChanged={() => setReloadNonce((n) => n + 1)}
+                    />
+                  ))}
+                </div>
 
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ font: '700 13px var(--font-sans)', marginBottom: 12 }}>Boon Coverage</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              {[coverage1, coverage2].map((cov, i) => (
-                <div key={i} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', width: '100%', marginBottom: 2 }}>Subgroup {i + 1}</div>
+                <Card style={{ padding: '18px 20px' }}>
+                  <div style={{ font: '700 13px var(--font-sans)', marginBottom: 12 }}>Boon Coverage</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isParty ? 'minmax(0, 480px)' : '1fr 1fr', gap: 24 }}>
+                    {covs.map((cov, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', width: '100%', marginBottom: 2 }}>{isParty ? 'Party' : `Subgroup ${i + 1}`}</div>
                   {COV_BOONS.map((b) => {
                     const ok = cov.has(b.k);
                     return (
@@ -410,11 +420,14 @@ export default function PlannerPage() {
                         {ok ? '✓' : b.core ? '!' : '·'} {b.short}
                       </span>
                     );
-                  })}
-                </div>
-              ))}
-            </div>
-          </Card>
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </>
+            );
+          })()}
         </>
       )}
     </div>
@@ -423,6 +436,7 @@ export default function PlannerPage() {
 
 function SubgroupCard({
   subgroup,
+  label,
   composition,
   canEdit,
   roster,
@@ -430,6 +444,7 @@ function SubgroupCard({
   onChanged,
 }: {
   subgroup: number;
+  label: string;
   composition: CompositionDetail;
   canEdit: boolean;
   roster: RosterCharacter[];
@@ -441,7 +456,7 @@ function SubgroupCard({
   return (
     <Card style={{ overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid var(--border-soft)' }}>
-        Subgroup {subgroup}
+        {label}
       </div>
       {Array.from({ length: SLOTS_PER_SUBGROUP }, (_, i) => (
         <SlotRow

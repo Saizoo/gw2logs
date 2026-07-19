@@ -6,7 +6,7 @@ import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { Avatar, Card, GoldButton } from '../../components/atoms';
 import { MemberClassRoleCard } from '../../components/MemberClassRoleCard';
-import { CAT, PROF, toBuildEntry, type BuildCategory, type BuildEntry } from '../../data/builds';
+import { CAT, toBuildEntry, type BuildCategory, type BuildEntry } from '../../data/builds';
 import { inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from './shared';
 
 // Wraps a roster member's name/identity block so hovering (or focusing) it
@@ -403,39 +403,39 @@ function RosterReadinessCard({
                 <div style={{ font: '600 12.5px var(--font-sans)', paddingTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={label}>
                   {label}
                 </div>
-                {assigned.length === 0 ? (
-                  <div style={{ gridColumn: 'span 4', font: '400 11.5px var(--font-sans)', color: 'var(--text-50)', paddingTop: 2 }}>
-                    No builds assigned — assign builds on the Characters page to appear here.
-                  </div>
-                ) : (
-                  READINESS_BUCKETS.map((bucket) => (
-                    <div key={bucket.key} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {assigned
-                        .filter((a) => bucket.cats.includes(a.build.cat))
-                        .map((a, j) => (
-                          <span
-                            key={`${a.build.id}-${j}`}
-                            title={`${a.charName} — ${a.build.name} (${CAT[a.build.cat].label})`}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                              padding: '3px 8px',
-                              borderRadius: 10,
-                              font: '600 10.5px var(--font-sans)',
-                              background: 'oklch(1 0 0 / 5%)',
-                              border: '1px solid var(--border)',
-                              color: 'var(--text-80)',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: PROF[a.build.p]?.c ?? 'var(--text-55)', flex: 'none' }} />
-                            {a.build.name}
-                          </span>
-                        ))}
+                {/* One ✓/✗ per role instead of listing every assigned build —
+                    keeps the board scannable. The exact builds covering a role
+                    (and the character they're on) stay available on hover. */}
+                {READINESS_BUCKETS.map((bucket) => {
+                  const have = assigned.filter((a) => bucket.cats.includes(a.build.cat));
+                  const has = have.length > 0;
+                  return (
+                    <div key={bucket.key} style={{ paddingTop: 1 }}>
+                      <span
+                        aria-label={`${bucket.label}: ${has ? 'ready' : 'missing'}`}
+                        title={
+                          has
+                            ? have.map((a) => `${a.build.name} · ${a.charName} (${CAT[a.build.cat].label})`).join('\n')
+                            : `No ${bucket.label.toLowerCase()} build assigned`
+                        }
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 22,
+                          height: 22,
+                          borderRadius: 6,
+                          font: '700 12px var(--font-sans)',
+                          background: has ? 'var(--good-dim)' : 'oklch(1 0 0 / 4%)',
+                          color: has ? 'var(--good)' : 'var(--text-40)',
+                          border: `1px solid ${has ? 'var(--good)' : 'var(--border)'}`,
+                        }}
+                      >
+                        {has ? '✓' : '✕'}
+                      </span>
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
             );
           })}

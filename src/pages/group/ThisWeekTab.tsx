@@ -293,7 +293,7 @@ function PlannedFight({ item, index }: { item: WeekPlanItem; index: number }) {
       )}
 
       {item.composition ? (
-        <CompositionRoster composition={item.composition} />
+        <CompositionRoster composition={item.composition} isParty={encounterCategory(item.encounterName) === 'fractal'} />
       ) : (
         <div style={{ padding: '10px 22px 14px', font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>
           No squad composition attached — the leader can link one from the raid planner.
@@ -303,7 +303,7 @@ function PlannedFight({ item, index }: { item: WeekPlanItem; index: number }) {
   );
 }
 
-function CompositionRoster({ composition }: { composition: WeekPlanComposition }) {
+function CompositionRoster({ composition, isParty }: { composition: WeekPlanComposition; isParty: boolean }) {
   const subgroups = useMemo(() => {
     const bySub = new Map<number, WeekPlanComposition['slots']>();
     for (const slot of composition.slots) {
@@ -331,7 +331,7 @@ function CompositionRoster({ composition }: { composition: WeekPlanComposition }
         {subgroups.map(([subgroup, slots]) => (
           <div key={subgroup} style={{ border: '1px solid var(--border-faint)', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ padding: '8px 14px', background: 'oklch(1 0 0 / 3%)', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase' }}>
-              Subgroup {subgroup}
+              {isParty ? 'Party' : `Subgroup ${subgroup}`}
             </div>
             {slots.map((slot) => {
               const color = professionColor(slot.profession);
