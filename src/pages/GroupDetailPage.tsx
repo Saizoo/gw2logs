@@ -60,7 +60,7 @@ export default function GroupDetailPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {isMember && <GoldButton to={`/planner?group=${id}`}>Open Raid Planner</GoldButton>}
+          {isMember && <GoldButton to={`/planner?group=${id}`}>Open Encounter Planner</GoldButton>}
           {!isMember && user && (
             <GoldButton onClick={() => run(() => api.requestToJoinGroup(id), 'Join request sent')}>Request to join</GoldButton>
           )}

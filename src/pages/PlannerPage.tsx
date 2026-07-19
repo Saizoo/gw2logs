@@ -5,7 +5,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { PROF, PROF_ORDER, CAT, buildSpec, toBuildEntry, type BuildEntry } from '../data/builds';
 import { Select } from '../components/Select';
-import { EXPANSIONS, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO } from '../data/encounters';
+import { catalogFor, findEncounter, DMG_PREF, DMG_VERIFIED, ENC_INFO, type EncounterCategory } from '../data/encounters';
 import { COV_BOONS, coverageFor } from '../data/boonCoverage';
 import { professionColor, professionIconPath } from '../data/gw2-data';
 import { Card, GoldButton, ProfDot } from '../components/atoms';
@@ -41,15 +41,28 @@ export default function PlannerPage() {
   );
 
   // --- encounter browser ---
-  const [expId, setExpId] = useState(searchParams.get('exp') ?? EXPANSIONS[0].id);
-  const expansion = EXPANSIONS.find((e) => e.id === expId) ?? EXPANSIONS[0];
+  // Raid vs Fractal is the top-level split — it swaps the whole catalog the
+  // expansion/wing/encounter pickers browse.
+  const [category, setCategory] = useState<EncounterCategory>(searchParams.get('cat') === 'fractal' ? 'fractal' : 'raid');
+  const catalog = catalogFor(category);
+  const [expId, setExpId] = useState(searchParams.get('exp') ?? catalog[0].id);
+  const expansion = catalog.find((e) => e.id === expId) ?? catalog[0];
   const [wingId, setWingId] = useState(searchParams.get('wing') ?? expansion.wings[0].id);
   const wing = expansion.wings.find((w) => w.id === wingId) ?? expansion.wings[0];
   const [encId, setEncId] = useState(searchParams.get('enc') ?? wing.encs[0].id);
   const found = findEncounter(encId) ?? findEncounter(wing.encs[0].id)!;
 
+  function selectCategory(cat: EncounterCategory) {
+    if (cat === category) return;
+    const first = catalogFor(cat)[0];
+    setCategory(cat);
+    setExpId(first.id);
+    setWingId(first.wings[0].id);
+    setEncId(first.wings[0].encs[0].id);
+    updateEncounterParams({ cat, exp: first.id, wing: first.wings[0].id, enc: first.wings[0].encs[0].id });
+  }
   function selectExpansion(id: string) {
-    const exp = EXPANSIONS.find((e) => e.id === id)!;
+    const exp = catalog.find((e) => e.id === id)!;
     setExpId(id);
     setWingId(exp.wings[0].id);
     setEncId(exp.wings[0].encs[0].id);
@@ -106,8 +119,9 @@ export default function PlannerPage() {
     setReloadNonce((n) => n + 1);
   }
 
-  function updateEncounterParams(next: { exp?: string; wing?: string; enc?: string }) {
+  function updateEncounterParams(next: { cat?: string; exp?: string; wing?: string; enc?: string }) {
     const params = new URLSearchParams(searchParams);
+    if (next.cat) params.set('cat', next.cat);
     if (next.exp) params.set('exp', next.exp);
     if (next.wing) params.set('wing', next.wing);
     if (next.enc) params.set('enc', next.enc);
@@ -132,20 +146,43 @@ export default function PlannerPage() {
         </Link>
       )}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Raid Composition Planner</div>
+        <div style={{ font: '800 22px var(--font-sans)', marginBottom: 6 }}>Encounter Composition Planner</div>
         <div style={{ font: '400 13px var(--font-sans)', color: 'var(--text-62)', maxWidth: 640, lineHeight: 1.5 }}>
-          Browse any encounter across all seven wings, build a ten-slot squad from the full community build catalog,
+          Browse any raid wing or fractal challenge mode, build a squad from the full community build catalog,
           and pull real characters from your group once you're logged in.
         </div>
       </div>
 
       {/* --- encounter browser --- */}
       <Card style={{ padding: '16px 18px', marginBottom: 20 }}>
+        {/* Raid vs Fractal — the top-level catalog switch. */}
+        <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 12, background: 'oklch(0.12 0.014 250 / 55%)', border: '1px solid var(--border)', marginBottom: 16 }}>
+          {(['raid', 'fractal'] as const).map((cat) => {
+            const active = category === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => selectCategory(cat)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  font: '700 12px var(--font-sans)',
+                  background: active ? 'var(--gold-grad)' : 'transparent',
+                  color: active ? 'var(--gold-fg)' : 'var(--text-60)',
+                }}
+              >
+                {cat === 'raid' ? 'Raids' : 'Fractals'}
+              </button>
+            );
+          })}
+        </div>
         <div style={{ font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 8 }}>
-          Expansion
+          {category === 'fractal' ? 'Tier' : 'Expansion'}
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-          {EXPANSIONS.map((e) => (
+          {catalog.map((e) => (
             <button
               key={e.id}
               onClick={() => {
@@ -159,7 +196,7 @@ export default function PlannerPage() {
           ))}
         </div>
         <div style={{ font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 8 }}>
-          {expansion.strikesOnly ? 'Strike' : 'Wing'}
+          {category === 'fractal' ? 'Fractal' : expansion.strikesOnly ? 'Strike' : 'Wing'}
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
           {expansion.wings.map((w) => (

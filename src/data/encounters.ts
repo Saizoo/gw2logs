@@ -607,8 +607,79 @@ export const EXPANSIONS: ExpansionEntry[] = [
 
 export const WINGS: WingEntry[] = EXPANSIONS.flatMap((x) => x.wings);
 
+// Fractal Challenge-Mode catalog — the CM fractals a group actually plans
+// runs for, grouped by instance. Deliberately stubs (guide link + a factual
+// one-liner, no invented strategy notes), matching the raid-catalog
+// convention above. Names mirror the canonical fractal boss set the ingest
+// pipeline recognizes (server/src/lib/bossMeta.ts FRACTAL_CM_BOSSES), so a
+// planned fight lines up with the logs that come back for it. Ids are
+// `fr-`-prefixed to stay globally unique alongside the raid ids.
+const FRACTAL_GUIDE = 'https://snowcrows.com/guides/fractals';
+function fractalEnc(id: string, name: string): EncounterEntry {
+  return { id: `fr-${id}`, name, guide: FRACTAL_GUIDE, tag: 'Fractal Challenge Mode encounter.', notes: [] };
+}
+
+export const FRACTALS: ExpansionEntry[] = [
+  {
+    id: 'fractals',
+    name: 'Challenge Mode Fractals',
+    logo: '',
+    wings: [
+      {
+        id: 'fr-nightmare',
+        name: 'Nightmare (99 CM)',
+        encs: [
+          fractalEnc('mama', 'MAMA'),
+          fractalEnc('siax', 'Siax the Corrupted'),
+          fractalEnc('ensolyss', 'Ensolyss of the Endless Torment'),
+        ],
+      },
+      {
+        id: 'fr-shattered',
+        name: 'Shattered Observatory (100 CM)',
+        encs: [
+          fractalEnc('skorvald', 'Skorvald the Shattered'),
+          fractalEnc('artsariiv', 'Artsariiv'),
+          fractalEnc('arkk', 'Arkk'),
+        ],
+      },
+      { id: 'fr-sunqua', name: 'Sunqua Peak (CM)', encs: [fractalEnc('ai', 'Ai, Keeper of the Peak')] },
+      { id: 'fr-silent-surf', name: 'Silent Surf (CM)', encs: [fractalEnc('kanaxai', 'Kanaxai, Scythe of House Aurkus')] },
+      {
+        id: 'fr-lonely-tower',
+        name: 'Lonely Tower (CM)',
+        encs: [
+          fractalEnc('whispering-shadow', 'Whispering Shadow'),
+          fractalEnc('sorrowful-spellcaster', 'Sorrowful Spellcaster'),
+          fractalEnc('eparch', 'Eparch'),
+        ],
+      },
+    ],
+  },
+];
+
+export type EncounterCategory = 'raid' | 'fractal';
+
+// The expansion catalog for a given planning category — the Raid/Fractal
+// planner toggle and the This Week sub-tabs both pick from these.
+export function catalogFor(category: EncounterCategory): ExpansionEntry[] {
+  return category === 'fractal' ? FRACTALS : EXPANSIONS;
+}
+
+const FRACTAL_ENCOUNTER_NAMES = new Set(FRACTALS.flatMap((x) => x.wings).flatMap((w) => w.encs).map((e) => e.name));
+
+// Which planner tab an encounter belongs to, keyed by its display name (what
+// week-plan items store). Fractal names win the tie; everything else — raids,
+// strikes, and any name not in the fractal set — is treated as raid, since
+// that's the catalog it came from.
+export function encounterCategory(name: string): EncounterCategory {
+  return FRACTAL_ENCOUNTER_NAMES.has(name) ? 'fractal' : 'raid';
+}
+
+const ALL_EXPANSIONS: ExpansionEntry[] = [...EXPANSIONS, ...FRACTALS];
+
 export function findEncounter(encId: string): { encounter: EncounterEntry; wing: WingEntry; expansion: ExpansionEntry } | null {
-  for (const expansion of EXPANSIONS) {
+  for (const expansion of ALL_EXPANSIONS) {
     for (const wing of expansion.wings) {
       const encounter = wing.encs.find((e) => e.id === encId);
       if (encounter) return { encounter, wing, expansion };

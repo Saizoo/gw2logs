@@ -1,11 +1,37 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, type GroupDetail, type RosterCharacter } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { Avatar, Card, GoldButton } from '../../components/atoms';
+import { MemberClassRoleCard } from '../../components/MemberClassRoleCard';
 import { CAT, PROF, toBuildEntry, type BuildCategory, type BuildEntry } from '../../data/builds';
 import { inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from './shared';
+
+// Wraps a roster member's name/identity block so hovering (or focusing) it
+// reveals a compact Class & Role card — a mini version of that player's
+// profile panel — without leaving the group page. Only members with a linked
+// GW2 account have a profile to preview; everyone else renders plain.
+function MemberHover({ account, children }: { account: string | null; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (!account) return <div style={{ flex: 1, minWidth: 0 }}>{children}</div>;
+  return (
+    <div
+      style={{ position: 'relative', flex: 1, minWidth: 0 }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      {children}
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 90, animation: 'fadeIn .13s ease both' }}>
+          <MemberClassRoleCard account={account} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Roster tab: who's in the group and what they can play — members list,
 // invite + join-request management, and the role-coverage readiness board.
@@ -112,7 +138,7 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
                   Discord stays as a secondary line. Members without a linked
                   API key fall back to Discord-only with no profile link. */}
               <Avatar size={28} name={m.account ?? m.username} imgSrc={m.avatar} to={m.account ? `/players/${encodeURIComponent(m.account)}` : null} />
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <MemberHover account={m.account}>
                 {m.account ? (
                   <>
                     <Link to={`/players/${encodeURIComponent(m.account)}`} style={{ font: '600 13px var(--font-sans)' }}>
@@ -126,7 +152,7 @@ export default function RosterTab({ group, groupId, onGroupChanged }: { group: G
                     <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-50)' }}>GW2 account not linked</div>
                   </>
                 )}
-              </div>
+              </MemberHover>
               {m.guildRank && (
                 <span
                   title="In-game guild rank (from rank sync)"

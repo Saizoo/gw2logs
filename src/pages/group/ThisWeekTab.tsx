@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { api, ApiError, type GroupDetail, type GroupWeekPlan, type WeekPlanComposition, type WeekPlanItem } from '../../lib/api';
+import { api, ApiError, type GroupDetail, type WeekPlanComposition, type WeekPlanItem } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';
 import { ArtImg, Card, GoldButton } from '../../components/atoms';
 import { Select } from '../../components/Select';
-import { EXPANSIONS } from '../../data/encounters';
+import { catalogFor, encounterCategory, type EncounterCategory, type ExpansionEntry } from '../../data/encounters';
 import { bossBgPathLoose, professionColor, professionIconPath, specBgPath } from '../../data/gw2-data';
 import { ghostBtnStyle, inputStyle, smallBtnStyle } from './shared';
 
@@ -22,21 +22,30 @@ interface CatalogEncounter {
   notes: string[];
 }
 
-// Flattened once — the catalog is static data.
-const CATALOG: { wing: string; encs: CatalogEncounter[] }[] = EXPANSIONS.flatMap((exp) =>
-  exp.wings.map((wing) => ({
-    wing: `${exp.name} — ${wing.name}`,
-    encs: wing.encs.map((enc) => ({
-      name: enc.name,
-      wing: wing.name,
-      guide: enc.guide,
-      tag: enc.tag,
-      notes: enc.notes,
+// Flattened once — the catalog is static data. Built per category so the
+// Raid Plan / Fractal Plan sub-tabs each offer only their own encounters.
+function buildCatalog(expansions: ExpansionEntry[]): { wing: string; encs: CatalogEncounter[] }[] {
+  return expansions.flatMap((exp) =>
+    exp.wings.map((wing) => ({
+      wing: exp.wings.length === 1 ? wing.name : `${exp.name} — ${wing.name}`,
+      encs: wing.encs.map((enc) => ({
+        name: enc.name,
+        wing: wing.name,
+        guide: enc.guide,
+        tag: enc.tag,
+        notes: enc.notes,
+      })),
     })),
-  })),
-);
+  );
+}
+const CATALOG_BY_CAT: Record<EncounterCategory, { wing: string; encs: CatalogEncounter[] }[]> = {
+  raid: buildCatalog(catalogFor('raid')),
+  fractal: buildCatalog(catalogFor('fractal')),
+};
+// Read-view info lookup spans both catalogs — a planned fight renders the same
+// however its plan was filed.
 const CATALOG_BY_NAME = new Map<string, CatalogEncounter>(
-  CATALOG.flatMap((g) => g.encs).map((e) => [e.name, e]),
+  [...CATALOG_BY_CAT.raid, ...CATALOG_BY_CAT.fractal].flatMap((g) => g.encs).map((e) => [e.name, e]),
 );
 
 // Reset week runs Monday → Sunday (GW2 reset is Monday 07:30 UTC), so day
@@ -87,6 +96,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
   const [nonce, setNonce] = useState(0);
   const { data: plan, loading, error } = useApiQuery(() => api.groupWeekPlan(groupId), [groupId, nonce]);
   const [editing, setEditing] = useState(false);
+  const [planTab, setPlanTab] = useState<EncounterCategory>('raid');
 
   if (loading) {
     return (
@@ -104,27 +114,67 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
 
   const resetLabel = new Date(`${plan.weekStart}T07:30:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+  // Split the week's fights by planner category so each sub-tab shows only its
+  // own; the other category's items are carried through untouched on save.
+  const tabItems = plan.items.filter((it) => encounterCategory(it.encounterName) === planTab);
+  const otherItems = plan.items.filter((it) => encounterCategory(it.encounterName) !== planTab);
+  const raidCount = plan.items.filter((it) => encounterCategory(it.encounterName) === 'raid').length;
+  const fractalCount = plan.items.length - raidCount;
+
   const dayGroups = sortDayGroups(
-    [...plan.items.reduce((acc, item) => {
+    [...tabItems.reduce((acc, item) => {
       const key = item.day ?? '';
       acc.set(key, [...(acc.get(key) ?? []), item]);
       return acc;
     }, new Map<string, WeekPlanItem[]>())].map(([key, items]) => ({ day: key || null, items })),
   );
   const today = groupToday(group.resolvedTimezone);
+  const tabLabel = planTab === 'fractal' ? 'Fractal' : 'Raid';
+
+  const SUB_TABS: { id: EncounterCategory; label: string; count: number }[] = [
+    { id: 'raid', label: 'Raid Plan', count: raidCount },
+    { id: 'fractal', label: 'Fractal Plan', count: fractalCount },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Raid Plan / Fractal Plan sub-tabs. */}
+      <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 12, background: 'oklch(0.12 0.014 250 / 55%)', border: '1px solid var(--border)', alignSelf: 'flex-start' }}>
+        {SUB_TABS.map((t) => {
+          const active = planTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => { setPlanTab(t.id); setEditing(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                font: '700 12.5px var(--font-sans)',
+                background: active ? 'var(--gold-grad)' : 'transparent',
+                color: active ? 'var(--gold-fg)' : 'var(--text-60)',
+              }}
+            >
+              {t.label}
+              {t.count > 0 && (
+                <span style={{ font: '800 10px var(--font-sans)', padding: '1px 6px', borderRadius: 10, background: active ? 'var(--gold-fg)' : 'oklch(1 0 0 / 10%)', color: active ? 'var(--gold)' : 'var(--text-60)' }}>
+                  {t.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       <Card style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ font: '700 13.5px var(--font-sans)' }}>This Week's Raid Plan</div>
+          <div style={{ font: '700 13.5px var(--font-sans)' }}>This Week's {tabLabel} Plan</div>
           <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
-            Reset week of {resetLabel} · {plan.items.length} fight{plan.items.length === 1 ? '' : 's'} across {dayGroups.length} night{dayGroups.length === 1 ? '' : 's'}
+            Reset week of {resetLabel} · {tabItems.length} fight{tabItems.length === 1 ? '' : 's'} across {dayGroups.length} night{dayGroups.length === 1 ? '' : 's'}
           </div>
         </div>
         {plan.canEdit && !editing && (
           <GoldButton onClick={() => setEditing(true)} style={{ marginLeft: 'auto' }}>
-            {plan.items.length > 0 ? 'Edit plan' : 'Plan this week'}
+            {tabItems.length > 0 ? `Edit ${tabLabel.toLowerCase()} plan` : `Plan ${tabLabel.toLowerCase()}s`}
           </GoldButton>
         )}
       </Card>
@@ -132,21 +182,23 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
       {editing && plan.canEdit ? (
         <PlanEditor
           groupId={groupId}
+          category={planTab}
           raidDays={group.raidDays}
           weekStart={plan.weekStart}
-          initial={plan}
+          initialItems={tabItems}
+          preserveItems={otherItems}
           onDone={(changed) => {
             setEditing(false);
             if (changed) setNonce((n) => n + 1);
           }}
         />
-      ) : plan.items.length === 0 ? (
+      ) : tabItems.length === 0 ? (
         <Card style={{ padding: '28px 24px', textAlign: 'center' }}>
-          <div style={{ font: '700 14px var(--font-sans)', marginBottom: 6 }}>Nothing planned yet</div>
+          <div style={{ font: '700 14px var(--font-sans)', marginBottom: 6 }}>No {tabLabel.toLowerCase()}s planned yet</div>
           <div style={{ font: '400 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
             {plan.canEdit
-              ? 'Pick a raid night, add the fights for it, and attach squad compositions from the raid planner.'
-              : "The group leader hasn't planned this week's fights yet — check back later."}
+              ? `Pick a night, add the ${tabLabel.toLowerCase()} fights for it, and attach squad compositions from the encounter planner.`
+              : `The group leader hasn't planned this week's ${tabLabel.toLowerCase()}s yet — check back later.`}
           </div>
         </Card>
       ) : (
@@ -325,21 +377,26 @@ function CompositionRoster({ composition }: { composition: WeekPlanComposition }
 
 function PlanEditor({
   groupId,
+  category,
   raidDays,
   weekStart,
-  initial,
+  initialItems,
+  preserveItems,
   onDone,
 }: {
   groupId: string;
+  category: EncounterCategory;
   raidDays: string[];
   weekStart: string;
-  initial: GroupWeekPlan;
+  initialItems: WeekPlanItem[];
+  preserveItems: WeekPlanItem[];
   onDone: (changed: boolean) => void;
 }) {
+  const catalog = CATALOG_BY_CAT[category];
   const { data: compositions } = useApiQuery(() => api.compositions(groupId), [groupId]);
   const [days, setDays] = useState<DraftDay[]>(() => {
     const byDay = new Map<string, DraftItem[]>();
-    for (const item of initial.items) {
+    for (const item of initialItems) {
       const key = item.day ?? '';
       byDay.set(key, [
         ...(byDay.get(key) ?? []),
@@ -359,7 +416,7 @@ function PlanEditor({
   const addFight = (dayIndex: number) =>
     setDays((prev) =>
       prev.map((d, i) =>
-        i === dayIndex ? { ...d, fights: [...d.fights, { encounterName: CATALOG[0].encs[0].name, compositionId: null, note: '' }] } : d,
+        i === dayIndex ? { ...d, fights: [...d.fights, { encounterName: catalog[0].encs[0].name, compositionId: null, note: '' }] } : d,
       ),
     );
   const updateFight = (dayIndex: number, fightIndex: number, patch: Partial<DraftItem>) =>
@@ -385,17 +442,23 @@ function PlanEditor({
   async function save() {
     setSaving(true);
     try {
-      await api.setGroupWeekPlan(
-        groupId,
-        days.flatMap((d) =>
-          d.fights.map((f) => ({
-            day: d.day,
-            encounterName: f.encounterName,
-            compositionId: f.compositionId,
-            note: f.note.trim() || null,
-          })),
-        ),
+      // The plan is stored whole, so the edited category's fights are merged
+      // back with the other category's untouched items before saving.
+      const preserved = preserveItems.map((it) => ({
+        day: it.day,
+        encounterName: it.encounterName,
+        compositionId: it.composition?.id ?? null,
+        note: it.note ?? null,
+      }));
+      const edited = days.flatMap((d) =>
+        d.fights.map((f) => ({
+          day: d.day,
+          encounterName: f.encounterName,
+          compositionId: f.compositionId,
+          note: f.note.trim() || null,
+        })),
       );
+      await api.setGroupWeekPlan(groupId, [...preserved, ...edited]);
       toast.success('Weekly plan saved');
       onDone(true);
     } catch (err) {
@@ -449,7 +512,7 @@ function PlanEditor({
                 ariaLabel="Encounter"
                 value={fight.encounterName}
                 onChange={(v) => updateFight(di, fi, { encounterName: v })}
-                options={CATALOG.flatMap((g) =>
+                options={catalog.flatMap((g) =>
                   g.encs.map((enc) => ({ value: enc.name, label: enc.name, group: g.wing })),
                 )}
                 style={{ minWidth: 190 }}
@@ -498,7 +561,7 @@ function PlanEditor({
 
       <Card style={{ padding: '14px 20px' }}>
         <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 10 }}>
-          Add a raid night
+          Add a night
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {WEEK_ORDER.map((day) => (
