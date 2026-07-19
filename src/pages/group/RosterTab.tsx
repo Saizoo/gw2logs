@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { api, ApiError, type GroupDetail, type RosterCharacter } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
@@ -10,25 +11,56 @@ import { inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from '.
 
 // Wraps a roster member's name/identity block so hovering (or focusing) it
 // reveals a compact Class & Role card — a mini version of that player's
-// profile panel — without leaving the group page. Only members with a linked
-// GW2 account have a profile to preview; everyone else renders plain.
+// profile panel — without leaving the group page. The card is rendered in a
+// portal with fixed positioning (not absolutely inside the row): the Members
+// list lives in an overflow:hidden Card, which would clip a popover on a short
+// roster, hiding it entirely. Fixed + portal escapes that clip, and the card
+// flips above the row when there isn't room below. Members without a linked
+// GW2 account have no profile to preview and render plain.
+const HOVER_CARD_WIDTH = 260;
+const HOVER_CARD_EST_HEIGHT = 240; // for the flip-up decision only
+
 function MemberHover({ account, children }: { account: string | null; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; above: boolean } | null>(null);
+
+  function open() {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const above = spaceBelow < HOVER_CARD_EST_HEIGHT + 16 && r.top > spaceBelow;
+    const left = Math.max(12, Math.min(r.left, window.innerWidth - HOVER_CARD_WIDTH - 12));
+    setPos({ left, top: above ? r.top - 8 : r.bottom + 8, above });
+  }
+
   if (!account) return <div style={{ flex: 1, minWidth: 0 }}>{children}</div>;
   return (
     <div
+      ref={ref}
       style={{ position: 'relative', flex: 1, minWidth: 0 }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
+      onMouseEnter={open}
+      onMouseLeave={() => setPos(null)}
+      onFocus={open}
+      onBlur={() => setPos(null)}
     >
       {children}
-      {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 90, animation: 'fadeIn .13s ease both' }}>
-          <MemberClassRoleCard account={account} />
-        </div>
-      )}
+      {pos &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              left: pos.left,
+              top: pos.top,
+              transform: pos.above ? 'translateY(-100%)' : undefined,
+              zIndex: 200,
+              pointerEvents: 'none',
+            }}
+          >
+            <MemberClassRoleCard account={account} />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
