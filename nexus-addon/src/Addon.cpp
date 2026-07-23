@@ -161,11 +161,12 @@ static void AddonLoad(AddonAPI_t* aApi) {
     g_api = aApi;
 
     // Share Nexus's ImGui context + allocators so our widgets draw into the
-    // same context (identical to the official addon template's Load()).
-    if (g_api->ImguiContext) ImGui::SetCurrentContext(static_cast<ImGuiContext*>(g_api->ImguiContext));
+    // same context. Raw function-pointer casts (not ImGuiMemAllocFunc) to match
+    // the official template — Nexus's ImGui fork doesn't expose those typedefs.
+    if (g_api->ImguiContext) ImGui::SetCurrentContext((ImGuiContext*)g_api->ImguiContext);
     if (g_api->ImguiMalloc && g_api->ImguiFree)
-        ImGui::SetAllocatorFunctions(reinterpret_cast<ImGuiMemAllocFunc>(g_api->ImguiMalloc),
-                                     reinterpret_cast<ImGuiMemFreeFunc>(g_api->ImguiFree));
+        ImGui::SetAllocatorFunctions((void* (*)(size_t, void*))g_api->ImguiMalloc,
+                                     (void  (*)(void*, void*))g_api->ImguiFree);
 
     g_settingsPath = NxAddonDir("gw2logs\\settings.json");
     {
