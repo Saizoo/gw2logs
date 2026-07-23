@@ -6,7 +6,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CountBadge, GoldButton } from '../components/atoms';
 import { Select } from '../components/Select';
 import { LoadingState, EmptyState } from '../components/QueryStates';
-import { WEEKDAYS, formatSchedule } from '../data/schedule';
+import { WEEKDAYS, formatSchedule, nextRaid } from '../data/schedule';
 
 type SortOption = 'members' | 'newest' | 'name';
 
@@ -148,7 +148,7 @@ export default function MyGroupsPage() {
               <div style={{ font: '600 12px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
                 My guild
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 22 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 22 }}>
                 {myGroups?.filter((g) => g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
               </div>
             </>
@@ -159,7 +159,7 @@ export default function MyGroupsPage() {
               <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
                 My statics
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
                 {myGroups?.filter((g) => !g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
               </div>
             </>
@@ -219,24 +219,9 @@ export default function MyGroupsPage() {
         {searchResults && searchResults.length === 0 && (
           <EmptyState>{search.trim() ? `No groups match "${search}".` : 'No groups match those filters.'}</EmptyState>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {searchResults?.map((g) => (
-            <Card key={g.id} className="u-card-link" style={{ padding: 16 }}>
-              <Link to={`/groups/${g.id}`}>
-                <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
-                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
-                  Led by {g.leader} · {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
-                </div>
-                {formatSchedule(g) && (
-                  <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
-                )}
-              </Link>
-              {user && (
-                <button className="u-btn-ghost" onClick={() => handleRequestJoin(g.id)} style={{ ...ghostBtnStyle, marginTop: 10 }}>
-                  Request to join
-                </button>
-              )}
-            </Card>
+            <GroupBrowseRow key={g.id} group={g} canJoin={!!user} onJoin={() => handleRequestJoin(g.id)} />
           ))}
         </div>
       </div>
@@ -286,23 +271,130 @@ export function GuildBadge({ tag }: { tag: string }) {
   );
 }
 
+// Direction A — poster tile. A grayscale hero strip (procedural, seeded by the
+// group so each keeps a stable look), the name set big over a scrim, a 2px
+// accent base rule, then a quiet meta foot. The `background`/`icon` fields
+// aren't wired to real art yet, so the poster is generated; drop a real image
+// in here later and the layout doesn't change.
 function GroupCard({ group: g }: { group: GroupSummary }) {
+  const next = nextRaid(g);
   return (
     <Link to={`/groups/${g.id}`} style={{ display: 'block' }}>
-      <Card className="u-card-link" style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ font: '700 14px var(--font-sans)' }}>{g.name}</div>
-          {g.guild && <GuildBadge tag={g.guild.tag} />}
-          <CountBadge count={g.pendingRequestCount ?? 0} />
+      <Card className="u-card-link" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: 116, background: groupPoster(g.id || g.name) }}>
+          {/* legibility scrim + a faint diagonal light streak */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(114deg, transparent 42%, rgba(255,255,255,.07) 50%, transparent 58%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,7,7,.9) 0%, rgba(8,7,7,.35) 42%, transparent 72%)' }} />
+          <div style={{ position: 'absolute', inset: 0, padding: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              {next?.soon ? <TonightTag time={next.time} /> : <span />}
+              <CountBadge count={g.pendingRequestCount ?? 0} />
+            </div>
+            <div style={{ font: '800 19px/1.05 var(--font-sans)', letterSpacing: '-.01em', color: 'var(--on-art)', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
+              {g.name}
+            </div>
+          </div>
         </div>
-        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
-          {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
-          {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending request${g.pendingRequestCount === 1 ? '' : 's'}` : ''}
+        <div style={{ height: 2, background: 'var(--gold)' }} />
+        <div style={{ padding: '12px 13px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-70)' }}>
+            {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
+            {g.pendingRequestCount ? ` · ${g.pendingRequestCount} pending` : ''}
+          </div>
+          {g.guild ? (
+            <GuildBadge tag={g.guild.tag} />
+          ) : next && !next.soon ? (
+            <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-60)' }}>Next · {next.label}</span>
+          ) : formatSchedule(g) ? (
+            <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{g.raidDays?.join(' · ')}</span>
+          ) : null}
         </div>
-        {formatSchedule(g) && (
-          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--gold)', marginTop: 4 }}>{formatSchedule(g)}</div>
-        )}
       </Card>
     </Link>
   );
+}
+
+// Direction D — full-width fixture row for the "find a group" browse. Big name,
+// a schedule sub-line, and the next raid pinned right with a join action.
+function GroupBrowseRow({ group: g, canJoin, onJoin }: { group: GroupSummary; canJoin: boolean; onJoin: () => void }) {
+  const next = nextRaid(g);
+  const sched = formatSchedule(g);
+  return (
+    <div
+      className="u-card-link"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto',
+        alignItems: 'center',
+        gap: 18,
+        padding: '14px 18px',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-faint)',
+        borderLeft: '3px solid var(--gold)',
+      }}
+    >
+      <Link to={`/groups/${g.id}`} style={{ display: 'block', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+          <div style={{ font: '800 16px var(--font-sans)', letterSpacing: '-.01em', color: 'var(--text)' }}>{g.name}</div>
+          {g.guild && <GuildBadge tag={g.guild.tag} />}
+        </div>
+        <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-60)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {g.leader ? `Led by ${g.leader} · ` : ''}
+          {g.memberCount} member{g.memberCount === 1 ? '' : 's'}
+          {sched ? ` · ${sched}` : ''}
+        </div>
+      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        {next?.soon ? (
+          <TonightTag time={next.time} />
+        ) : next ? (
+          <span style={{ font: '600 12px var(--font-sans)', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>Next · {next.label}</span>
+        ) : null}
+        {canJoin && (
+          <button className="u-btn-ghost" onClick={onJoin} style={ghostBtnStyle}>
+            Request to join
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// The "Raids tonight" flag — accent fill, live dot. Shared by A and D.
+function TonightTag({ time }: { time: string | null }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        font: '800 10px var(--font-sans)',
+        letterSpacing: '.05em',
+        textTransform: 'uppercase',
+        color: 'var(--gold-fg)',
+        background: 'var(--gold-grad)',
+        padding: '3px 8px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+      Tonight{time ? ` · ${time}` : ''}
+    </span>
+  );
+}
+
+// Deterministic grayscale "poster" per group — a stable pick from a small set
+// of neutral-ramp gradients so a group always renders the same tile. The
+// neutral ramp is fixed across light/dark, so posters stay dark in both.
+const POSTER_PRESETS = [
+  'radial-gradient(120% 110% at 22% -5%, var(--color-neutral-600), transparent 58%), linear-gradient(158deg, var(--color-neutral-800), #0e0d0d)',
+  'radial-gradient(95% 120% at 82% 8%, var(--color-neutral-600), transparent 52%), linear-gradient(202deg, var(--color-neutral-700), #0d0c0c)',
+  'radial-gradient(100% 100% at 50% 128%, var(--color-neutral-600), transparent 60%), linear-gradient(180deg, var(--color-neutral-800), #0c0b0b)',
+  'radial-gradient(90% 130% at 12% 30%, var(--color-neutral-700), transparent 55%), linear-gradient(135deg, var(--color-neutral-800), #100e0e)',
+  'radial-gradient(110% 110% at 70% -10%, var(--color-neutral-600), transparent 55%), linear-gradient(168deg, var(--color-neutral-700), #0e0d0d)',
+];
+function groupPoster(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return POSTER_PRESETS[Math.abs(h) % POSTER_PRESETS.length];
 }
