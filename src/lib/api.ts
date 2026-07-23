@@ -755,10 +755,15 @@ export const api = {
     return apiFetch<SpecDistribution[]>(`/encounters/benchmarks/distribution${query ? `?${query}` : ''}`);
   },
   activeAnnouncements: () => apiFetch<Announcement[]>('/announcements/active'),
-  leaderboard: (fightName: string, isCm: boolean, opts: { profession?: string; role?: 'power' | 'condi' } = {}) => {
+  leaderboard: (
+    fightName: string,
+    isCm: boolean,
+    opts: { profession?: string; role?: 'power' | 'condi'; squadRole?: 'dps' | 'boon_dps' | 'boon_heal' } = {},
+  ) => {
     const params = new URLSearchParams({ cm: String(isCm) });
     if (opts.profession) params.set('profession', opts.profession);
     if (opts.role) params.set('role', opts.role);
+    if (opts.squadRole) params.set('squadRole', opts.squadRole);
     return apiFetch<LeaderboardRow[]>(`/encounters/${encodeURIComponent(fightName)}/leaderboard?${params}`);
   },
   encounterStats: (fightName: string, isCm: boolean) =>

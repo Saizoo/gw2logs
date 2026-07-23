@@ -18,10 +18,24 @@ export default function LeaderboardPage() {
   const boss = params.get('boss') ?? '';
   const isCm = params.get('cm') === 'true';
   const role = params.get('role') === 'condi' ? 'condi' : 'power';
+  const squadRoleParam = params.get('squadRole');
+  const squadRole =
+    squadRoleParam === 'dps' || squadRoleParam === 'boon_dps' || squadRoleParam === 'boon_heal' ? squadRoleParam : 'all';
+
+  // Power/condi is a damage-type split — only meaningful for the DPS boards.
+  // On the Boon-DPS and Healer boards, rank everyone in that role regardless
+  // of damage type, so a healer board isn't narrowed to "power healers".
+  const damageApplies = squadRole === 'all' || squadRole === 'dps';
 
   const { data: leaderboard, loading, error } = useApiQuery(
-    () => (boss ? api.leaderboard(boss, isCm, { role }) : Promise.resolve([])),
-    [boss, isCm, role],
+    () =>
+      boss
+        ? api.leaderboard(boss, isCm, {
+            role: damageApplies ? role : undefined,
+            squadRole: squadRole === 'all' ? undefined : squadRole,
+          })
+        : Promise.resolve([]),
+    [boss, isCm, role, squadRole, damageApplies],
   );
 
   function setParam(key: string, value: string) {
@@ -63,15 +77,29 @@ export default function LeaderboardPage() {
               style={{ minWidth: 160 }}
             />
             <Select
-              ariaLabel="Role"
-              value={role}
-              onChange={(v) => setParam('role', v === 'condi' ? 'condi' : 'power')}
+              ariaLabel="Squad role"
+              value={squadRole}
+              onChange={(v) => setParam('squadRole', v)}
               options={[
-                { value: 'power', label: 'Power DPS' },
-                { value: 'condi', label: 'Condition DPS' },
+                { value: 'all', label: 'All roles' },
+                { value: 'dps', label: 'DPS' },
+                { value: 'boon_dps', label: 'Boon DPS' },
+                { value: 'boon_heal', label: 'Healer' },
               ]}
-              style={{ minWidth: 160 }}
+              style={{ minWidth: 150 }}
             />
+            {damageApplies && (
+              <Select
+                ariaLabel="Damage type"
+                value={role}
+                onChange={(v) => setParam('role', v === 'condi' ? 'condi' : 'power')}
+                options={[
+                  { value: 'power', label: 'Power DPS' },
+                  { value: 'condi', label: 'Condition DPS' },
+                ]}
+                style={{ minWidth: 160 }}
+              />
+            )}
           </>
         }
       />
@@ -176,7 +204,15 @@ export default function LeaderboardPage() {
 
       {leaderboard && leaderboard.length === 0 && !loading && (
         <EmptyState>
-          No {role === 'power' ? 'power' : 'condition'} DPS parses logged for {boss}
+          No{' '}
+          {squadRole === 'boon_heal'
+            ? 'healer'
+            : squadRole === 'boon_dps'
+              ? 'boon DPS'
+              : role === 'power'
+                ? 'power DPS'
+                : 'condition DPS'}{' '}
+          parses logged for {boss}
           {isCm ? ' CM' : ''} yet.
         </EmptyState>
       )}

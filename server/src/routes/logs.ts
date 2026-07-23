@@ -211,19 +211,21 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     return;
   }
 
-  // Same convention as the leaderboard/list routes: each player's parse
-  // badge is their percentile against the global population for this exact
-  // boss+CM, computed via one window-function query rather than N lookups.
-  // Scoped by logId (not just characterName) so a character that has
-  // played this same boss in other logs doesn't leak its best-ever
-  // percentile onto this specific log's row. Single-row populations are
-  // forced to the 100th percentile (see the /:id list route above for why
-  // PERCENT_RANK() alone would wrongly give the only performer a 0).
+  // Each player's parse badge is their percentile against the population for
+  // this exact boss+CM *within the same squad role* — a DPS parse ranked
+  // against other DPS parses, a healer against other healers — so a support
+  // build isn't shown a low badge for the damage its role trades away. Same
+  // role-segmentation as the profile score. Computed via one window-function
+  // query rather than N lookups; scoped by logId (not just characterName) so a
+  // character that played this boss in other logs doesn't leak its best-ever
+  // percentile onto this row. Single-row (role) populations are forced to the
+  // 100th percentile (PERCENT_RANK() alone would wrongly give a lone performer
+  // a 0).
   const playerPercentiles = await prisma.$queryRaw<{ characterName: string; pct: number }[]>`
     WITH ranked AS (
       SELECT lp."logId", lp."characterName",
-        CASE WHEN COUNT(*) OVER (PARTITION BY l."fightName", l."isCm") <= 1 THEN 1.0
-             ELSE PERCENT_RANK() OVER (PARTITION BY l."fightName", l."isCm" ORDER BY lp."totalDps")
+        CASE WHEN COUNT(*) OVER (PARTITION BY l."fightName", l."isCm", lp."squadRole") <= 1 THEN 1.0
+             ELSE PERCENT_RANK() OVER (PARTITION BY l."fightName", l."isCm", lp."squadRole" ORDER BY lp."totalDps")
         END AS pct_rank
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id

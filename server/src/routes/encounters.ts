@@ -438,6 +438,13 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
   // Role isn't stored — a player is classed "power" or "condi" by whichever
   // of their own powerDps/condiDps split is larger for that parse.
   const role = roleParam === 'power' || roleParam === 'condi' ? roleParam : undefined;
+  // Squad role (dps / boon_dps / boon_heal) IS stored per parse. Filtering by
+  // it turns the board into a role-specific leaderboard — healers ranked
+  // against healers by their damage, etc. — and the rank/percentile is then
+  // naturally within that role since the whole population is filtered.
+  const squadRoleParam = req.query.squadRole;
+  const squadRole =
+    squadRoleParam === 'dps' || squadRoleParam === 'boon_dps' || squadRoleParam === 'boon_heal' ? squadRoleParam : undefined;
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
 
   const professionCondition = profession ? Prisma.sql`AND lp.profession = ${profession}` : Prisma.empty;
@@ -447,6 +454,7 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       : role === 'condi'
         ? Prisma.sql`AND lp."powerDps" < lp."condiDps"`
         : Prisma.empty;
+  const squadRoleCondition = squadRole ? Prisma.sql`AND lp."squadRole" = ${squadRole}` : Prisma.empty;
 
   // Pull the total count separately so percentile rank stays correct against
   // the whole population — the row fetch itself is capped at `limit` so a
@@ -461,7 +469,7 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       FROM "LogPlayer" lp
       JOIN "Log" l ON lp."logId" = l.id
       WHERE l."fightName" = ${fightName} AND l."isCm" = ${isCm} AND l.success = true
-      ${professionCondition} ${roleCondition}
+      ${professionCondition} ${roleCondition} ${squadRoleCondition}
     `,
     prisma.$queryRaw<LeaderboardRawRow[]>`
       SELECT lp."logId", lp."characterName", lp.profession, lp.spec, lp."totalDps", lp."powerDps", lp."condiDps",
@@ -471,7 +479,7 @@ encountersRouter.get('/:fightName/leaderboard', asyncHandler(async (req, res) =>
       JOIN "Player" p ON lp."playerId" = p.id
       LEFT JOIN "User" u ON u.id = p."userId"
       WHERE l."fightName" = ${fightName} AND l."isCm" = ${isCm} AND l.success = true
-      ${professionCondition} ${roleCondition}
+      ${professionCondition} ${roleCondition} ${squadRoleCondition}
       ORDER BY lp."totalDps" DESC
       LIMIT ${limit}
     `,
