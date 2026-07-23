@@ -109,7 +109,7 @@ export default function LogDetailPage() {
               {log.boss}
               {log.isCm ? ' CM' : ''}
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <ResultPill success={log.success} />
               <Pill>{formatDuration(log.durationMs)}</Pill>
               {log.private && (
