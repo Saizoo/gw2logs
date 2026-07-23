@@ -11,72 +11,36 @@ addon. Two features, both headless (no in-game browsing):
 Both authenticate with a **personal access token** you generate on the website
 (Account → *Desktop & addon access*) and paste into the addon once.
 
----
-
-## Status: scaffold
-
-This is a working **starting point**, not a shipped binary. The standard C++ /
-Win32 pieces (HTTP, file-watching, settings, reminder scheduling) are complete;
-the **Nexus glue is isolated in `src/Nexus.h` + the `Load`/`Unload` path of
-`Addon.cpp`** and must be reconciled against the exact Nexus API version you
-build against — the `AddonAPI` struct layout and field names have shifted
-between Nexus API versions, and only the official header is authoritative.
-
-> Search for `NEXUS-RECONCILE` in the source for every spot to check against the
-> real SDK.
-
-It cannot be compiled on the build server this was authored on (needs Windows +
-MSVC + the DirectX/Nexus/ImGui headers); build it locally per below.
+> **New to this? Read [`GETTING_STARTED.md`](GETTING_STARTED.md)** — a complete,
+> assume-nothing walkthrough from installing the tools to seeing your first
+> auto-uploaded log in-game.
 
 ---
 
-## Prerequisites
+## What's here
 
-- Windows, Visual Studio 2022 (or Build Tools) with the **Desktop C++** workload
-- CMake ≥ 3.21
-- The **Nexus SDK header** (`Nexus.h`) from <https://github.com/RaidcoreGG/Nexus>
-  — drop the real one over `include/Nexus.official.h` and flip the include (see
-  `src/Nexus.h`). The trimmed `include/Nexus.h` here exists only so the scaffold
-  reads cleanly.
-- **Dear ImGui** headers (the same version Nexus ships) on the include path, for
-  the options panel.
-- **[nlohmann/json](https://github.com/nlohmann/json)** single header at
-  `include/nlohmann/json.hpp`.
+| File | Role |
+|---|---|
+| `src/Addon.cpp` | Entry points (`GetAddonDef`/`Load`/`Unload`), the ImGui options panel, orchestration |
+| `src/HttpClient.h` | WinHTTP: authenticated GET + multipart file POST (no external HTTP lib) |
+| `src/LogWatcher.h` | `ReadDirectoryChangesW` thread → new, size-stable `.zevtc` → upload |
+| `src/Reminders.h` | Polls `GET /reminders` → fires an alert before each raid/fractal |
+| `src/Settings.h` | Config load/save as JSON |
+| `CMakeLists.txt` | Alternative build (the template `.sln` route is easier — see the guide) |
 
-No other third-party libraries: HTTP uses **WinHTTP** (built into Windows), file
-watching uses **ReadDirectoryChangesW**.
+The code targets **Nexus API v6** (`RCGG-lib-nexus-api`) and calls the real API
+members (`GUI_Register`, `GUI_SendAlert`, `Paths_GetAddonDirectory`, `Log`, …).
+All Nexus calls funnel through small glue helpers at the top of `Addon.cpp`, so
+if a future SDK renames something, that's the only place to touch.
 
-## Build
+## Dependencies (git submodules, template layout)
 
-```powershell
-cmake -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
-```
+- `src/nexus/` ← https://github.com/RaidcoreGG/RCGG-lib-nexus-api (the `Nexus.h` API)
+- `src/imgui/` ← https://github.com/RaidcoreGG/imgui (options panel UI)
+- `src/mumble/` ← https://github.com/RaidcoreGG/RCGG-lib-mumble-api (optional)
+- `include/nlohmann/json.hpp` ← https://github.com/nlohmann/json (single header)
 
-Output: `build/Release/gw2logs.dll`.
-
-## Install
-
-Copy `gw2logs.dll` into your Guild Wars 2 `addons` folder (the same folder
-Nexus lives in), then enable it from Nexus's **Addons** panel. For sharing,
-publish the DLL on a GitHub release and set the addon's update provider to
-GitHub (see `AddonDefinition` in `Addon.cpp`) so Nexus can auto-update it.
-
-## Configure (in-game)
-
-Open Nexus → **Addons → gw2logs → Options**:
-
-- **Server URL** — your gw2logs API base, e.g. `https://gw2logs.example.com/api`
-- **Access token** — paste the token from the website (Account → *Desktop &
-  addon access*). The addon calls `GET /auth/me` to validate it and greet you.
-- **Log folder** — defaults to
-  `%USERPROFILE%\Documents\Guild Wars 2\addons\arcdps\arcdps.cbtlogs`
-- **Auto-upload** on/off, **upload as private** on/off, optional **default group**
-- **Reminders** on/off and **lead time** (minutes before start)
-
-Settings persist to `<addon dir>/gw2logs/settings.json`.
-
----
+Everything else uses the Windows SDK only (WinHTTP, `ReadDirectoryChangesW`).
 
 ## How it maps to the gw2logs API
 
@@ -90,16 +54,10 @@ The server precomputes each schedule's next occurrence as an absolute UTC
 instant, so the addon only compares against the system clock — no timezone math
 on the client.
 
-## Architecture
+## Heads-up
 
-```
-Addon.cpp      entry points (GetAddonDef / Load / Unload), options UI, orchestration
-Nexus.h        trimmed Nexus API subset — RECONCILE with the official SDK header
-Settings.h     load/save config as JSON
-HttpClient.h   WinHTTP: GET (+bearer) and POST multipart/form-data
-LogWatcher.h   ReadDirectoryChangesW thread → new .zevtc → upload queue
-Reminders.h    poll /reminders → fire an alert at (nextStart - leadTime), once each
-```
-
-Everything network- or disk-facing runs on background threads; the only main-
-thread work is the ImGui options panel.
+This can't be compiled on the gw2logs web repo's CI (it needs Windows + MSVC +
+the DirectX/Nexus/ImGui headers). Build it locally per
+[`GETTING_STARTED.md`](GETTING_STARTED.md). The Win32/C++ pieces are complete;
+the first Windows build is where you confirm the SDK member names against your
+exact `src/nexus/Nexus.h`.

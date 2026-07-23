@@ -1,0 +1,9 @@
+[submodule "nexus-addon/src/nexus"]
+	path = nexus-addon/src/nexus
+	url = https://github.com/RaidcoreGG/RCGG-lib-nexus-api
+[submodule "nexus-addon/src/imgui"]
+	path = nexus-addon/src/imgui
+	url = https://github.com/RaidcoreGG/imgui
+[submodule "nexus-addon/src/mumble"]
+	path = nexus-addon/src/mumble
+	url = https://github.com/RaidcoreGG/RCGG-lib-mumble-api

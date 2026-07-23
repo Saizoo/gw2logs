@@ -1,17 +1,17 @@
 // gw2logs — Nexus addon entry point. Wires the log watcher + reminder poller to
 // the gw2logs API and renders the in-game options panel.
 //
-// NEXUS-RECONCILE: the Load()/Unload() glue and the g_api->* calls target the
-// trimmed AddonAPI in include/Nexus.h. Swap in the official Nexus SDK header and
-// adjust the accessor names/paths if your API version groups them differently.
+// Targets Nexus API v6 (RCGG-lib-nexus-api). All Nexus calls go through the
+// small glue helpers below; if your SDK submodule uses different member names,
+// that's the only place to adjust.
 #include <Windows.h>
 #include <mutex>
 #include <string>
 
-#include <imgui.h>            // provided by the Nexus SDK include path
+#include "nexus/Nexus.h"     // Nexus SDK submodule (RCGG-lib-nexus-api)
+#include "imgui/imgui.h"     // ImGui submodule (RaidcoreGG/imgui)
 #include <nlohmann/json.hpp>
 
-#include "Nexus.h"
 #include "Settings.h"
 #include "HttpClient.h"
 #include "LogWatcher.h"
@@ -20,7 +20,7 @@
 using namespace gw2logs;
 
 // --- global state -----------------------------------------------------------
-static AddonAPI*  g_api = nullptr;
+static AddonAPI_t* g_api = nullptr;
 static std::mutex g_mtx;              // guards g_settings
 static Settings   g_settings;
 static std::string g_settingsPath;
@@ -28,16 +28,18 @@ static std::string g_status = "Not connected yet.";
 static LogWatcher  g_watcher;
 static Reminders   g_reminders;
 
-// --- Nexus glue (single choke point; see NEXUS-RECONCILE) -------------------
+// --- Nexus glue (single choke point) ----------------------------------------
+// Names target Nexus API v6 (RCGG-lib-nexus-api). If your submodule differs,
+// open src/nexus/Nexus.h and adjust these member names.
 static void NxLog(ELogLevel level, const std::string& msg) {
     if (g_api && g_api->Log) g_api->Log(level, "gw2logs", msg.c_str());
 }
 static void NxAlert(const std::string& msg) {
-    if (g_api && g_api->SendAlert) g_api->SendAlert(msg.c_str());
-    NxLog(ELogLevel_INFO, "alert: " + msg);
+    if (g_api && g_api->GUI_SendAlert) g_api->GUI_SendAlert(msg.c_str());
+    NxLog(LOGL_INFO, "alert: " + msg);
 }
 static std::string NxAddonDir(const char* append) {
-    if (g_api && g_api->GetAddonDirectory) return std::string(g_api->GetAddonDirectory(append));
+    if (g_api && g_api->Paths_GetAddonDirectory) return std::string(g_api->Paths_GetAddonDirectory(append));
     return append ? std::string(append) : std::string();
 }
 
@@ -65,15 +67,15 @@ static void OnNewLog(const std::string& fullPath) {
     if (!s.defaultGroupId.empty()) fields.push_back({ "groupId", s.defaultGroupId });
 
     const std::string name = BaseName(fullPath);
-    NxLog(ELogLevel_INFO, "uploading " + name);
+    NxLog(LOGL_INFO, "uploading " + name);
     HttpResponse res = PostMultipartFile(s.serverUrl + "/uploads", s.token, fullPath, "file", name, fields);
     if (res.ok) {
         SetStatus("Uploaded " + name);
-        NxLog(ELogLevel_INFO, "uploaded " + name);
+        NxLog(LOGL_INFO, "uploaded " + name);
     } else {
         const std::string why = res.error.empty() ? ("HTTP " + std::to_string(res.status)) : res.error;
         SetStatus("Upload failed (" + name + "): " + why);
-        NxLog(ELogLevel_WARNING, "upload failed for " + name + ": " + why);
+        NxLog(LOGL_WARNING, "upload failed for " + name + ": " + why);
     }
 }
 
@@ -155,11 +157,11 @@ static void OptionsRender() {
 }
 
 // --- lifecycle --------------------------------------------------------------
-static void AddonLoad(void* aApi) {
-    g_api = static_cast<AddonAPI*>(aApi);
+static void AddonLoad(AddonAPI_t* aApi) {
+    g_api = aApi;
 
-    // NEXUS-RECONCILE: share Nexus's ImGui context + allocators so our widgets
-    // draw into the same context. Names/casts may differ by SDK version.
+    // Share Nexus's ImGui context + allocators so our widgets draw into the
+    // same context (identical to the official addon template's Load()).
     if (g_api->ImguiContext) ImGui::SetCurrentContext(static_cast<ImGuiContext*>(g_api->ImguiContext));
     if (g_api->ImguiMalloc && g_api->ImguiFree)
         ImGui::SetAllocatorFunctions(reinterpret_cast<ImGuiMemAllocFunc>(g_api->ImguiMalloc),
@@ -172,31 +174,31 @@ static void AddonLoad(void* aApi) {
     }
     s_uiInit = false;
 
-    if (g_api->RegisterRender) g_api->RegisterRender(ERenderType_OptionsRender, OptionsRender);
+    if (g_api->GUI_Register) g_api->GUI_Register(RT_OptionsRender, OptionsRender);
 
     RestartWatcher();
     g_reminders.Start([] { return SnapshotSettings(); },
                       [](const std::string& m) { NxAlert(m); },
-                      [](const std::string& m) { NxLog(ELogLevel_INFO, m); });
+                      [](const std::string& m) { NxLog(LOGL_INFO, m); });
 
-    NxLog(ELogLevel_INFO, "gw2logs addon loaded");
+    NxLog(LOGL_INFO, "gw2logs addon loaded");
 }
 
 static void AddonUnload() {
-    if (g_api && g_api->DeregisterRender) g_api->DeregisterRender(OptionsRender);
+    if (g_api && g_api->GUI_Deregister) g_api->GUI_Deregister(OptionsRender);
     g_watcher.Stop();
     g_reminders.Stop();
     {
         std::lock_guard<std::mutex> lk(g_mtx);
         if (!g_settingsPath.empty()) SaveSettings(g_settingsPath, g_settings);
     }
-    NxLog(ELogLevel_INFO, "gw2logs addon unloaded");
+    NxLog(LOGL_INFO, "gw2logs addon unloaded");
     g_api = nullptr;
 }
 
 // --- addon definition -------------------------------------------------------
-extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef() {
-    static AddonDefinition def{};
+extern "C" __declspec(dllexport) AddonDefinition_t* GetAddonDef() {
+    static AddonDefinition_t def{};
     def.Signature = 0x6732004C;              // unique id for this addon ("g2..L")
     def.APIVersion = NEXUS_API_VERSION;
     def.Name = "gw2logs";
@@ -205,9 +207,9 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef() {
     def.Description = "Auto-uploads arcdps logs to gw2logs and shows in-game raid reminders.";
     def.Load = AddonLoad;
     def.Unload = AddonUnload;
-    def.Flags = EAddonFlags_None;
-    // NEXUS-RECONCILE: point at your GitHub releases for auto-update.
-    def.Provider = EUpdateProvider_GitHub;
+    def.Flags = AF_None;
+    // Point these at your GitHub releases for Nexus auto-update (or use UP_None).
+    def.Provider = UP_GitHub;
     def.UpdateLink = "https://github.com/your-org/gw2logs-nexus";
     return &def;
 }
