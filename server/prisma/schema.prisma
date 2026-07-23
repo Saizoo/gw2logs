@@ -79,6 +79,7 @@ model User {
   displayedGuildId String?
   displayedGuild   Guild?         @relation("DisplayedGuild", fields: [displayedGuildId], references: [id], onDelete: SetNull)
   sessions         Session[]
+  apiTokens        ApiToken[]
   player           Player?
   compositions     Composition[]
   characters       Character[]
@@ -100,6 +101,22 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Personal access tokens for non-browser clients (the desktop / Nexus addon).
+// Only the SHA-256 of the raw token is stored — the raw value is shown to the
+// user once at creation and never again, same defense as Session. `id` is a
+// separate public handle used to list/revoke a token without exposing its hash.
+model ApiToken {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@index([userId])
 }

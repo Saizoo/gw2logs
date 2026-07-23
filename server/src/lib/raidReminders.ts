@@ -88,6 +88,63 @@ function addDays(date: string, days: number): { date: string; weekday: string } 
   };
 }
 
+// The zone's offset from UTC (ms, positive = ahead of UTC) at a given instant,
+// derived from Intl — no tz library. Used to invert a wall-clock time back to
+// an absolute instant.
+function tzOffsetMs(timeZone: string, at: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(at);
+  const m: Record<string, number> = {};
+  for (const p of parts) if (p.type !== 'literal') m[p.type] = Number(p.value);
+  const asIfUtc = Date.UTC(m.year, m.month - 1, m.day, m.hour % 24, m.minute, m.second);
+  return asIfUtc - at.getTime();
+}
+
+// Convert a wall-clock time in `timeZone` to its absolute UTC instant. Standard
+// offset-correction trick, refined once so instants near a DST transition land
+// on the correct side.
+function zonedWallTimeToUtc(y: number, mo: number, d: number, h: number, mi: number, timeZone: string): Date {
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  const offset = tzOffsetMs(timeZone, new Date(guess));
+  let instant = guess - offset;
+  const refined = tzOffsetMs(timeZone, new Date(instant));
+  if (refined !== offset) instant = guess - refined;
+  return new Date(instant);
+}
+
+// The next absolute UTC instant a recurring weekly schedule fires (as an ISO
+// string), or null if it has no days/time. Scans today..+7 days in the group's
+// own zone. Lets a client (the Nexus addon) show reminders by comparing to the
+// system clock, with zero timezone logic of its own.
+export function nextOccurrenceUtc(
+  days: string[],
+  startTime: string | null,
+  rawTimezone: string | null,
+  now = new Date(),
+): string | null {
+  if (!startTime || days.length === 0) return null;
+  const [h, mi] = startTime.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(mi)) return null;
+  const tz = resolveTimezone(rawTimezone);
+  const today = zonedNow(tz, now).date;
+  for (let offset = 0; offset <= 7; offset++) {
+    const cand = addDays(today, offset);
+    if (!days.includes(cand.weekday)) continue;
+    const [y, mo, d] = cand.date.split('-').map(Number);
+    const instant = zonedWallTimeToUtc(y, mo, d, h, mi, tz);
+    if (instant.getTime() > now.getTime()) return instant.toISOString();
+  }
+  return null;
+}
+
 export interface ReminderGroup {
   raidDays: string[];
   raidStartTime: string | null; // HH:MM

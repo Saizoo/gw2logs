@@ -560,6 +560,13 @@ export interface CurrentUser {
   pendingGroupRequests: number;
 }
 
+export interface ApiTokenSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
 export interface Build {
   id: string;
   profession: string;
@@ -802,6 +809,16 @@ export const api = {
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
   completeOnboarding: () => apiFetch<{ ok: true }>('/account/onboarding-complete', { method: 'POST' }),
+  // Personal access tokens for the desktop / Nexus addon. createApiToken
+  // returns the raw token exactly once — it's never retrievable again.
+  listApiTokens: () => apiFetch<ApiTokenSummary[]>('/tokens'),
+  createApiToken: (name: string) =>
+    apiFetch<{ id: string; name: string; token: string }>('/tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }),
+  revokeApiToken: (id: string) => apiFetch<{ ok: true }>(`/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   updatePrivacy: (data: { hideName?: boolean; privateProfile?: boolean }) =>
     apiFetch<{ hideName: boolean; privateProfile: boolean }>('/account/privacy', {
       method: 'PUT',

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { REPLAY_TOUR_EVENT } from '../components/OnboardingTour';
-import { api, ApiError, type CurrentUser, type DpsReportImportStatus } from '../lib/api';
+import { api, ApiError, type ApiTokenSummary, type CurrentUser, type DpsReportImportStatus } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge, Card, GoldButton } from '../components/atoms';
@@ -276,6 +276,8 @@ export default function AccountPage() {
 
       <PrivacyCard user={user} onSaved={refresh} />
 
+      <ApiTokensCard />
+
       <div style={{ textAlign: 'center', marginTop: 22 }}>
         <button
           onClick={() => {
@@ -289,6 +291,131 @@ export default function AccountPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+const tokenInputStyle = {
+  background: 'var(--bg-input)',
+  border: '1px solid var(--border)',
+  color: 'var(--text)',
+  fontSize: 12.5,
+  padding: '9px 12px',
+  borderRadius: 0,
+  fontFamily: 'var(--font-sans)',
+} as const;
+
+const tokenGhostSmall = {
+  font: '600 12px var(--font-sans)',
+  padding: '8px 14px',
+  borderRadius: 0,
+  background: 'var(--bg-chip)',
+  color: 'var(--text-80)',
+  border: '1px solid var(--border)',
+} as const;
+
+// Personal access tokens for the desktop / Nexus addon. The raw token is shown
+// once, right after creation, then only ever listed by name + usage.
+function ApiTokensCard() {
+  const [tokens, setTokens] = useState<ApiTokenSummary[] | null>(null);
+  const [name, setName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [fresh, setFresh] = useState<{ name: string; token: string } | null>(null);
+
+  function load() {
+    api.listApiTokens().then(setTokens).catch(() => setTokens([]));
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function create() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCreating(true);
+    try {
+      const res = await api.createApiToken(trimmed);
+      setFresh({ name: res.name, token: res.token });
+      setName('');
+      load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to create token');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function revoke(id: string, tokenName: string) {
+    if (!window.confirm(`Revoke "${tokenName}"? Any device using it will stop working immediately.`)) return;
+    try {
+      await api.revokeApiToken(id);
+      toast.success('Token revoked');
+      load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to revoke token');
+    }
+  }
+
+  return (
+    <Card style={{ padding: 22, marginTop: 16 }}>
+      <div style={{ font: '800 15px var(--font-sans)', marginBottom: 4 }}>Desktop &amp; addon access</div>
+      <div style={{ font: '400 12px/1.6 var(--font-sans)', color: 'var(--text-58)', marginBottom: 16 }}>
+        Create a personal access token to connect the Nexus addon for automatic log uploads and in-game raid
+        reminders. Paste it into the addon once. Treat it like a password — it can upload logs and read your groups
+        on your behalf.
+      </div>
+
+      {fresh && (
+        <div style={{ padding: 14, marginBottom: 16, background: 'var(--gold-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)' }}>
+          <div style={{ font: '700 11px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+            Copy your token now — you won&apos;t be able to see it again
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <code style={{ font: '600 12.5px var(--font-mono)', color: 'var(--text)', background: 'var(--bg-input)', border: '1px solid var(--border)', padding: '9px 11px', wordBreak: 'break-all', flex: 1, minWidth: 220 }}>
+              {fresh.token}
+            </code>
+            <button className="u-btn-ghost" style={tokenGhostSmall} onClick={() => { void navigator.clipboard?.writeText(fresh.token); toast.success('Copied to clipboard'); }}>
+              Copy
+            </button>
+            <button className="u-btn-ghost" style={tokenGhostSmall} onClick={() => setFresh(null)}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: tokens && tokens.length ? 16 : 0 }}>
+        <input
+          placeholder="Token name (e.g. My desktop)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && create()}
+          maxLength={60}
+          style={{ ...tokenInputStyle, flex: 1, minWidth: 200 }}
+        />
+        <GoldButton onClick={create} disabled={creating || !name.trim()}>
+          {creating ? 'Creating…' : 'Create token'}
+        </GoldButton>
+      </div>
+
+      {tokens && tokens.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {tokens.map((t) => (
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg-chip)', border: '1px solid var(--border-faint)', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ font: '700 13px var(--font-sans)' }}>{t.name}</div>
+                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 2 }}>
+                  Created {new Date(t.createdAt).toLocaleDateString()} ·{' '}
+                  {t.lastUsedAt ? `last used ${new Date(t.lastUsedAt).toLocaleDateString()}` : 'never used'}
+                </div>
+              </div>
+              <button className="u-btn-ghost" style={{ ...tokenGhostSmall, color: 'var(--bad)' }} onClick={() => revoke(t.id, t.name)}>
+                Revoke
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 

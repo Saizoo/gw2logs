@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { getSessionUser } from '../lib/session.js';
+import { bearerToken, resolveApiToken } from '../lib/apiToken.js';
 
 type SessionUser = Awaited<ReturnType<typeof getSessionUser>>;
 
@@ -13,7 +14,16 @@ declare global {
 }
 
 export function attachUser(req: Request, _res: Response, next: NextFunction): void {
+  // Browser requests carry the session cookie; the desktop / Nexus addon sends
+  // an `Authorization: Bearer <personal token>` instead. Cookie wins when both
+  // are present. Either resolves to the same req.user, so every existing
+  // authenticated route works for the addon unchanged.
   getSessionUser(req)
+    .then((user) => {
+      if (user) return user;
+      const bearer = bearerToken(req);
+      return bearer ? resolveApiToken(bearer) : null;
+    })
     .then((user) => {
       req.user = user;
       next();

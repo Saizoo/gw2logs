@@ -32,6 +32,8 @@ import { adminSettingsRouter } from './routes/admin/settings.js';
 import { announcementsRouter } from './routes/announcements.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { invitesRouter } from './routes/invites.js';
+import { tokensRouter } from './routes/tokens.js';
+import { remindersRouter } from './routes/reminders.js';
 
 // Origins allowed to make credentialed cross-origin calls. Pinned rather than
 // reflecting any origin (the old `origin: true`): with credentials enabled, a
@@ -126,6 +128,8 @@ export function createApp() {
   app.use('/api/announcements', announcementsRouter);
   app.use('/api/notifications', notificationsRouter);
   app.use('/api/invites', invitesRouter);
+  app.use('/api/tokens', tokensRouter);
+  app.use('/api/reminders', remindersRouter);
 
   // Every /api/admin/* route needs both a valid session and isAdmin — gated
   // once here rather than per-file, so a new admin route file can't
