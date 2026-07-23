@@ -189,10 +189,12 @@ If the build fails, jump to **Troubleshooting** below.
 
 1. In Nexus → **Addons**, click **gw2logs**, then its **Options**.
 2. Fill in:
-   - **Server URL** — your gw2logs API base. This is your site address with
-     `/api` on the end, e.g. `https://gw2logs.example.com/api` (no trailing slash).
+   - **Server** — fixed to `https://gw2.hero-panel.com/api` and shown for
+     reference; there's nothing to enter.
    - **Access token** — paste the `gw2logs_pat_…` token from Part 3.
-   - **Log folder** — leave the default unless your arcdps logs live elsewhere.
+   - **Log folder** — leave the default, or click **Browse...** to pick your
+     arcdps `arcdps.cbtlogs` folder if it lives somewhere else (e.g. under
+     OneDrive).
    - **Auto-upload logs** — on.
    - **Upload as private** — optional (keeps uploads off the public site).
    - **Raid reminders** — on, and set **Lead time** (e.g. 15 minutes before).

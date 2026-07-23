@@ -24,7 +24,9 @@ inline std::string NarrowUtf8(const wchar_t* w) {
 }
 
 struct Settings {
-    std::string serverUrl = "https://gw2logs.example.com/api"; // trailing /api, no slash
+    // Fixed server — not user-editable. Never read from / written to the
+    // settings file (see to_json/from_json), so it always stays this value.
+    std::string serverUrl = "https://gw2.hero-panel.com/api";
     std::string token;                                          // personal access token
     std::string logFolder;                                      // arcdps cbtlogs dir; empty => default
     bool        uploadEnabled = true;
@@ -59,8 +61,9 @@ struct Settings {
 };
 
 inline void to_json(nlohmann::json& j, const Settings& s) {
+    // serverUrl is intentionally omitted — it's a fixed compile-time value.
     j = nlohmann::json{
-        {"serverUrl", s.serverUrl},        {"token", s.token},
+        {"token", s.token},
         {"logFolder", s.logFolder},        {"uploadEnabled", s.uploadEnabled},
         {"uploadPrivate", s.uploadPrivate},{"defaultGroupId", s.defaultGroupId},
         {"remindersEnabled", s.remindersEnabled}, {"leadMinutes", s.leadMinutes},
@@ -68,8 +71,8 @@ inline void to_json(nlohmann::json& j, const Settings& s) {
 }
 
 inline void from_json(const nlohmann::json& j, Settings& s) {
-    // value(key, default) tolerates older/partial files.
-    s.serverUrl = j.value("serverUrl", s.serverUrl);
+    // value(key, default) tolerates older/partial files. serverUrl is never
+    // read back — it stays the fixed default even if an old file has one.
     s.token = j.value("token", s.token);
     s.logFolder = j.value("logFolder", s.logFolder);
     s.uploadEnabled = j.value("uploadEnabled", s.uploadEnabled);

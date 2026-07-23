@@ -5,8 +5,11 @@
 // small glue helpers below; if your SDK submodule uses different member names,
 // that's the only place to adjust.
 #include <Windows.h>
+#include <shobjidl.h>        // IFileOpenDialog (folder picker)
 #include <mutex>
 #include <string>
+#include <thread>
+#include <atomic>
 
 #include "nexus/Nexus.h"     // Nexus SDK submodule (RCGG-lib-nexus-api)
 #include "imgui/imgui.h"     // ImGui submodule (RaidcoreGG/imgui)
@@ -92,9 +95,57 @@ static void RestartWatcher() {
     g_watcher.Start(s.EffectiveLogFolder(), OnNewLog, [](const std::string& m) { NxLog(LOGL_INFO, m); });
 }
 
+// --- native folder picker ---------------------------------------------------
+// Shown on its own STA/COM thread so the modal OS dialog never blocks the game's
+// render thread. The picked path is handed back to the options panel via the
+// pending globals below, consumed on the next frame.
+static std::atomic<bool> s_pickerOpen{false};
+static std::atomic<bool> s_pickedReady{false};
+static std::mutex        s_pickMtx;
+static std::string       s_pickedFolder;
+
+static bool ShowFolderDialog(std::string& out) {
+    bool ok = false;
+    HRESULT hrInit = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    IFileOpenDialog* dlg = nullptr;
+    if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dlg)))) {
+        DWORD opts = 0;
+        dlg->GetOptions(&opts);
+        dlg->SetOptions(opts | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
+        dlg->SetTitle(L"Pick your arcdps log folder (arcdps.cbtlogs)");
+        if (SUCCEEDED(dlg->Show(nullptr))) {
+            IShellItem* item = nullptr;
+            if (SUCCEEDED(dlg->GetResult(&item))) {
+                PWSTR path = nullptr;
+                if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)) && path) {
+                    out = NarrowUtf8(path);
+                    ok = !out.empty();
+                    CoTaskMemFree(path);
+                }
+                item->Release();
+            }
+        }
+        dlg->Release();
+    }
+    if (SUCCEEDED(hrInit)) CoUninitialize();
+    return ok;
+}
+
+static void OpenFolderPicker() {
+    if (s_pickerOpen.exchange(true)) return; // one dialog at a time
+    std::thread([] {
+        std::string picked;
+        if (ShowFolderDialog(picked)) {
+            std::lock_guard<std::mutex> lk(s_pickMtx);
+            s_pickedFolder = picked;
+            s_pickedReady = true;
+        }
+        s_pickerOpen = false;
+    }).detach();
+}
+
 // --- options panel (ImGui, main render thread) ------------------------------
 static bool  s_uiInit = false;
-static char  s_url[512]{};
 static char  s_token[256]{};
 static char  s_folder[1024]{};
 static char  s_group[128]{};
@@ -102,7 +153,6 @@ static Settings s_ui; // working copy edited by the panel, committed on Save
 
 static void SyncUiFromSettings() {
     s_ui = SnapshotSettings();
-    strncpy_s(s_url, s_ui.serverUrl.c_str(), _TRUNCATE);
     strncpy_s(s_token, s_ui.token.c_str(), _TRUNCATE);
     strncpy_s(s_folder, s_ui.EffectiveLogFolder().c_str(), _TRUNCATE);
     strncpy_s(s_group, s_ui.defaultGroupId.c_str(), _TRUNCATE);
@@ -112,16 +162,25 @@ static void SyncUiFromSettings() {
 static void OptionsRender() {
     if (!s_uiInit) SyncUiFromSettings();
 
+    // A folder was just chosen in the OS dialog — pull it into the field.
+    if (s_pickedReady.exchange(false)) {
+        std::lock_guard<std::mutex> lk(s_pickMtx);
+        strncpy_s(s_folder, s_pickedFolder.c_str(), _TRUNCATE);
+    }
+
     ImGui::TextDisabled("gw2logs — auto-upload & raid reminders");
     ImGui::Separator();
 
-    ImGui::InputText("Server URL", s_url, sizeof(s_url));
+    // Server is fixed — shown for reference, not editable.
+    ImGui::TextDisabled("Server: %s", s_ui.serverUrl.c_str());
     ImGui::InputText("Access token", s_token, sizeof(s_token), ImGuiInputTextFlags_Password);
     ImGui::TextDisabled("Generate on the website: Account -> Desktop & addon access");
 
     ImGui::Spacing();
     ImGui::Checkbox("Auto-upload logs", &s_ui.uploadEnabled);
     ImGui::InputText("Log folder", s_folder, sizeof(s_folder));
+    ImGui::SameLine();
+    if (ImGui::Button(s_pickerOpen ? "Opening..." : "Browse...")) OpenFolderPicker();
     ImGui::Checkbox("Upload as private", &s_ui.uploadPrivate);
     ImGui::InputText("Default group id (optional)", s_group, sizeof(s_group));
 
@@ -135,7 +194,6 @@ static void OptionsRender() {
         {
             std::lock_guard<std::mutex> lk(g_mtx);
             g_settings = s_ui;
-            g_settings.serverUrl = s_url;
             g_settings.token = s_token;
             g_settings.logFolder = s_folder;
             g_settings.defaultGroupId = s_group;
@@ -146,7 +204,7 @@ static void OptionsRender() {
     }
     ImGui::SameLine();
     if (ImGui::Button("Test connection")) {
-        HttpResponse me = Get(std::string(s_url) + "/auth/me", s_token);
+        HttpResponse me = Get(SnapshotSettings().serverUrl + "/auth/me", s_token);
         if (me.ok) {
             std::string who = "connected";
             try { who = "connected as " + nlohmann::json::parse(me.body).value("gw2AccountName", std::string("your account")); }
