@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/atoms';
 
 // Plain-language privacy promise, grounded in how the site actually stores and
-// handles data. Edit CONTACT / EFFECTIVE below for your deployment.
-const CONTACT = 'our Discord';
+// handles data. Edit EFFECTIVE below for your deployment.
 const EFFECTIVE = 'July 23, 2026';
 
 export default function PrivacyPage() {
@@ -104,12 +103,6 @@ export default function PrivacyPage() {
           and character names from every log</b> (the anonymized numbers stay so shared squad logs aren&apos;t
           broken). Logs you uploaded become anonymous, and any group you lead is handed to another member. This
           can&apos;t be undone.
-        </p>
-      </Section>
-
-      <Section title="Changes & contact">
-        <p style={para}>
-          We&apos;ll note any material change to this promise. Questions or requests: {CONTACT}.
         </p>
       </Section>
 
