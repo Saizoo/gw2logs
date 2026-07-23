@@ -111,10 +111,6 @@ export default function PrivacyPage() {
         <p style={para}>
           We&apos;ll note any material change to this promise. Questions or requests: {CONTACT}.
         </p>
-        <p style={{ ...para, color: 'var(--text-50)', fontStyle: 'italic' }}>
-          This is a plain-language commitment, not legal advice. If you operate commercially or serve users in regions
-          with laws like GDPR or CCPA, have a lawyer review it.
-        </p>
       </Section>
 
       <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-50)', marginTop: 28, borderTop: '2px solid var(--border)', paddingTop: 14 }}>
