@@ -176,7 +176,8 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
   );
 }
 
-// A discovery tile: raid art with the encounter's headline records overlaid.
+// A discovery tile: grayscale raid art as a dark poster, headline records in
+// light type over a bottom scrim so the boss name reads over any artwork.
 function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossBgPath(enc.fightName);
   return (
@@ -187,32 +188,33 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
         position: 'relative',
         borderRadius: 0,
         overflow: 'hidden',
-        height: 130,
+        height: 132,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
         padding: 12,
         border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
-        boxShadow: '0 10px 26px -16px rgba(0,0,0,.55)',
-        background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))',
+        boxShadow: 'var(--shadow-md)',
+        background: 'var(--color-neutral-800)',
       }}
     >
       {bg && <ArtImg src={bg} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-surface) 92%, transparent) 0%, color-mix(in srgb, var(--color-surface) 15%, transparent) 65%)' }} />
+      {/* Dark bottom scrim → light text stays legible over any grayscale art */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-900) 92%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 55%, transparent) 42%, transparent 80%)' }} />
       {enc.hasCmClear && (
         <span style={{ position: 'absolute', top: 10, right: 10, font: '800 9px var(--font-sans)', letterSpacing: '.06em', padding: '3px 7px', borderRadius: 0, color: 'var(--gold-fg)', background: 'var(--gold-grad)' }}>
           CM
         </span>
       )}
-      <div style={{ position: 'relative', font: '700 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ position: 'relative', font: '800 14.5px var(--font-sans)', letterSpacing: '-.1px', color: 'var(--color-bg)', textShadow: '0 1px 3px rgba(0,0,0,.55)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {enc.fightName}
       </div>
-      <div style={{ position: 'relative', font: '500 10.5px var(--font-sans)', color: 'var(--text-65)', marginTop: 2 }}>
+      <div style={{ position: 'relative', font: '600 10.5px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 72%, transparent)', marginTop: 2 }}>
         {enc.logCount.toLocaleString()} log{enc.logCount === 1 ? '' : 's'}
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 4, font: '700 11px var(--font-sans)' }}>
         {enc.bestSquadDps > 0 && <span style={{ color: 'var(--gold)' }}>{enc.bestSquadDps.toLocaleString()} dps</span>}
-        {enc.fastestKillMs != null && <span style={{ color: 'var(--text-70)', fontWeight: 500 }}>{formatDuration(enc.fastestKillMs)}</span>}
+        {enc.fastestKillMs != null && <span style={{ color: 'color-mix(in srgb, var(--color-bg) 78%, transparent)', fontWeight: 600 }}>{formatDuration(enc.fastestKillMs)}</span>}
       </div>
     </Link>
   );
@@ -225,7 +227,7 @@ function PopularEncounters() {
   const flat = flattenEncounters(data)
     .filter((e) => e.logCount > 0)
     .sort((a, b) => b.logCount - a.logCount)
-    .slice(0, 6);
+    .slice(0, 9);
   if (flat.length === 0) return null;
   return (
     <div style={{ marginBottom: 28 }}>
@@ -235,7 +237,7 @@ function PopularEncounters() {
           View all →
         </Link>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14 }}>
         {flat.map((e) => (
           <EncounterTile key={`${e.fightName}-${e.wing}`} enc={e} />
         ))}
