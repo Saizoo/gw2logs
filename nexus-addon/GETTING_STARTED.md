@@ -219,6 +219,7 @@ to cover it. When the moment arrives you'll get an in-game Nexus alert like
 
 | Symptom | Fix |
 |---|---|
+| `The source directory does not appear to contain CMakeLists.txt` | You're in the wrong folder. `CMakeLists.txt` is in **`nexus-addon`**, not the repo root. Run `cd <your clone>\gw2logs\nexus-addon`, confirm with `dir CMakeLists.txt`, then re-run cmake. In VS "Open Folder", open the `nexus-addon` subfolder specifically. |
 | `cmake` isn't recognized | You're not in the **x64 Native Tools Command Prompt for VS 2026**. Open that specific prompt (Start menu), not a plain `cmd`. |
 | `Cannot open include file: 'nexus/Nexus.h'` | Submodules didn't download. From `nexus-addon` run `git submodule update --init --recursive`. |
 | `Cannot open include file: 'nlohmann/json.hpp'` | You missed Part 4.2. Put `json.hpp` at `nexus-addon\include\nlohmann\json.hpp`. |
