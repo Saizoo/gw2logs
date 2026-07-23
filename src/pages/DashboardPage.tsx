@@ -183,7 +183,9 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossImage(enc.fightName);
   return (
     <Link
-      to="/raids"
+      // Open this encounter's own page — the boss rankings ladder — defaulting
+      // to CM when the encounter has a challenge-mode clear on record.
+      to={`/rankings?boss=${encodeURIComponent(enc.fightName)}&cm=${enc.hasCmClear}`}
       className="u-card-link"
       style={{
         position: 'relative',
