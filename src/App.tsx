@@ -18,6 +18,7 @@ import BenchmarksPage from './pages/BenchmarksPage';
 import MyGroupsPage from './pages/MyGroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
 import AdminPage from './pages/AdminPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 // Redirect that carries the query string across — the old paths are linked
 // from elsewhere on the web with ?boss=/?encounter= etc.
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/search" element={<SearchResultsPage />} />

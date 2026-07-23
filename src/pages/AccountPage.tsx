@@ -278,6 +278,8 @@ export default function AccountPage() {
 
       <ApiTokensCard />
 
+      <DangerZoneCard />
+
       <div style={{ textAlign: 'center', marginTop: 22 }}>
         <button
           onClick={() => {
@@ -312,6 +314,70 @@ const tokenGhostSmall = {
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
 } as const;
+
+// Permanent account deletion + data wipe. Type-to-confirm so it can't be a
+// stray click; the server does the actual wipe (see routes/account.ts).
+function DangerZoneCard() {
+  const navigate = useNavigate();
+  const { refresh } = useCurrentUser();
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const phrase = 'delete my account';
+  const armed = confirm.trim().toLowerCase() === phrase;
+
+  async function handleDelete() {
+    if (!armed || busy) return;
+    setBusy(true);
+    try {
+      await api.deleteAccount();
+      toast.success('Your account and data have been deleted');
+      await refresh();
+      navigate('/');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete account');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card style={{ padding: 22, marginTop: 16, border: '1px solid color-mix(in srgb, var(--bad) 45%, transparent)' }}>
+      <div style={{ font: '800 15px var(--font-sans)', color: 'var(--bad)', marginBottom: 4 }}>Delete account</div>
+      <div style={{ font: '400 12px/1.65 var(--font-sans)', color: 'var(--text-58)', marginBottom: 14 }}>
+        Permanently deletes your account and wipes your data. Your Discord sign-in, linked GW2 API key, settings,
+        sessions and addon tokens are removed, and your account and character names are erased from every log — the
+        anonymised numbers stay so shared squad logs aren&apos;t broken. Logs you uploaded become anonymous, and any
+        group you lead is handed to another member.{' '}
+        <strong style={{ color: 'var(--text-80)' }}>This can&apos;t be undone.</strong>
+      </div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder={`Type "${phrase}" to confirm`}
+          aria-label="Type to confirm account deletion"
+          style={{ ...tokenInputStyle, flex: 1, minWidth: 260 }}
+        />
+        <button
+          onClick={handleDelete}
+          disabled={!armed || busy}
+          style={{
+            font: '700 12.5px var(--font-sans)',
+            padding: '10px 18px',
+            borderRadius: 0,
+            background: armed ? 'var(--bad)' : 'var(--bg-chip)',
+            color: armed ? 'var(--on-art)' : 'var(--text-50)',
+            border: `1px solid ${armed ? 'var(--bad)' : 'var(--border)'}`,
+            cursor: armed && !busy ? 'pointer' : 'default',
+            opacity: busy ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {busy ? 'Deleting…' : 'Delete my account'}
+        </button>
+      </div>
+    </Card>
+  );
+}
 
 // Personal access tokens for the desktop / Nexus addon. The raw token is shown
 // once, right after creation, then only ever listed by name + usage.

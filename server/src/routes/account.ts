@@ -6,6 +6,7 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { fetchAccount, fetchAccountGuilds, fetchGuildInfo, fetchTokenInfo } from '../lib/gw2Api.js';
 import { addToGuildGroup, ensureGuildGroup, removeFromGuildGroup } from '../lib/guildGroups.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { clearSessionCookie } from '../lib/session.js';
 import { isValidProfileIcon } from '../lib/gw2Specs.js';
 import { fetchDpsReportJson, fetchDpsReportUploads } from '../lib/dpsReportImport.js';
 import { normalizeEiJson } from '../lib/ingest.js';
@@ -227,6 +228,70 @@ accountRouter.post('/unlink-gw2', asyncHandler(async (req, res) => {
     }),
   ]);
 
+  res.json({ ok: true });
+}));
+
+// Permanent, self-serve account deletion + data wipe. Removes the Discord
+// identity, GW2 API key, settings, sessions and addon tokens outright, and
+// anonymises the parse identity: the account/character names embedded in logs
+// (the user's own and every squad they appeared in) are overwritten to
+// "Anonymous", while the anonymised numbers stay so shared logs aren't
+// corrupted. Uploaded logs are de-attributed (uploadedBy -> null). Irreversible.
+accountRouter.post('/delete', asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+
+  await prisma.$transaction(async (tx) => {
+    // Groups this user leads (Group.leaderId is a required, Restrict FK — the
+    // delete would fail otherwise). Hand leadership to a subleader, else the
+    // longest-standing other member; if they were the only member, remove the
+    // now-empty group.
+    const ledGroups = await tx.group.findMany({
+      where: { leaderId: userId },
+      select: {
+        id: true,
+        members: {
+          where: { userId: { not: userId } },
+          select: { userId: true, role: true, joinedAt: true },
+        },
+      },
+    });
+    for (const g of ledGroups) {
+      const successor =
+        g.members.find((m) => m.role === 'subleader') ??
+        [...g.members].sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0];
+      if (successor) {
+        await tx.group.update({ where: { id: g.id }, data: { leaderId: successor.userId } });
+        await tx.groupMember.update({
+          where: { groupId_userId: { groupId: g.id, userId: successor.userId } },
+          data: { role: 'leader' },
+        });
+      } else {
+        await tx.group.delete({ where: { id: g.id } });
+      }
+    }
+
+    // Compositions this user authored (createdById is also a Restrict FK).
+    await tx.composition.deleteMany({ where: { createdById: userId } });
+
+    // Anonymise the parse identity: overwrite the names denormalised into the
+    // logs, then sever the Player from the account. Numbers are left intact so
+    // the (now anonymous) parses don't vanish from shared logs or aggregates.
+    const player = await tx.player.findUnique({ where: { userId }, select: { id: true } });
+    if (player) {
+      await tx.logPlayer.updateMany({ where: { playerId: player.id }, data: { characterName: 'Anonymous' } });
+      await tx.player.update({
+        where: { id: player.id },
+        data: { account: `deleted:${player.id}`, displayName: 'Anonymous', userId: null },
+      });
+    }
+
+    // Finally delete the account. Cascades sessions, addon tokens, group
+    // memberships/requests/signups/invites, notifications, saved characters,
+    // audit rows and announcements; de-attributes uploaded logs.
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  clearSessionCookie(res);
   res.json({ ok: true });
 }));
 

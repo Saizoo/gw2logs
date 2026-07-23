@@ -813,6 +813,8 @@ export const api = {
       body: JSON.stringify({ apiKey }),
     }),
   unlinkGw2: () => apiFetch<{ ok: true }>('/account/unlink-gw2', { method: 'POST' }),
+  // Permanent account deletion + data wipe. Irreversible.
+  deleteAccount: () => apiFetch<{ ok: true }>('/account/delete', { method: 'POST' }),
   completeOnboarding: () => apiFetch<{ ok: true }>('/account/onboarding-complete', { method: 'POST' }),
   // Personal access tokens for the desktop / Nexus addon. createApiToken
   // returns the raw token exactly once — it's never retrievable again.
