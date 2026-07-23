@@ -284,8 +284,8 @@ function GroupCard({ group: g }: { group: GroupSummary }) {
     <Link to={`/groups/${g.id}`} style={{ display: 'block' }}>
       <Card className="u-card-link" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ position: 'relative', height: 116, overflow: 'hidden', background: bg ? 'var(--color-neutral-900)' : groupPoster(g.id || g.name) }}>
-          {/* a chosen image (grayscale, Modernist) when set, else the procedural poster */}
-          {bg && <img src={bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1)' }} />}
+          {/* a chosen image (full colour) when set, else the procedural poster */}
+          {bg && <img src={bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
           {/* legibility scrim + a faint diagonal light streak */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(114deg, transparent 42%, rgba(255,255,255,.07) 50%, transparent 58%)' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,7,7,.9) 0%, rgba(8,7,7,.35) 42%, transparent 72%)' }} />

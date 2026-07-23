@@ -177,8 +177,8 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
   );
 }
 
-// A discovery tile: grayscale raid art as a dark poster, headline records in
-// light type over a bottom scrim so the boss name reads over any artwork.
+// A discovery tile: raid art as a dark poster, headline records in light type
+// over a bottom scrim so the boss name reads over any artwork.
 function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossImage(enc.fightName);
   return (

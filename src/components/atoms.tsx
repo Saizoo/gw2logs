@@ -153,9 +153,9 @@ export function ArtImg({ src, style }: { src: string; style?: CSSProperties }) {
       onError={(e) => {
         e.currentTarget.style.display = 'none';
       }}
-      // Modernist prints photography in black and white (readme: the .grayscale
-      // wrapper). Every raid/spec backdrop goes through it here.
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1) contrast(1.05)', ...style }}
+      // Every raid/spec backdrop renders here — in full colour, with a light
+      // contrast bump so it reads under the dark scrims.
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.05)', ...style }}
     />
   );
 }

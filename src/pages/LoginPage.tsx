@@ -56,7 +56,7 @@ export default function LoginPage() {
               backgroundImage: `url(${src})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              filter: 'grayscale(1) contrast(1.05)',
+              filter: 'contrast(1.05)',
               opacity: i === active ? 1 : 0,
               transform: i === active ? 'scale(1.05)' : 'scale(1)',
               transition: 'opacity 1.4s ease, transform 8s ease',

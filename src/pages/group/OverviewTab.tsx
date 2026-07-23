@@ -284,7 +284,7 @@ function GroupImageCard({ group, groupId, onSaved }: { group: GroupDetail; group
         )}
       </div>
       <div style={{ font: '400 11.5px/1.5 var(--font-sans)', color: 'var(--text-55)', marginBottom: 12 }}>
-        Pick the backdrop for this group's card. Shown in grayscale to match the site.
+        Pick the backdrop for this group's card.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(116px, 1fr))', gap: 8 }}>
         {GROUP_BACKGROUNDS.map((b) => {
@@ -310,7 +310,7 @@ function GroupImageCard({ group, groupId, onSaved }: { group: GroupDetail; group
               <img
                 src={`/assets/raid_backgrounds/${b.file}`}
                 alt={b.label}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: active ? 'grayscale(1)' : 'grayscale(1) brightness(0.85)' }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: active ? 'none' : 'brightness(0.85)' }}
               />
               <span
                 style={{
