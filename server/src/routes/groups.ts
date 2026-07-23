@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
@@ -39,6 +40,37 @@ const SCHEDULE_SELECT = {
   raidDurationMins: true,
   raidTimezone: true,
 } as const;
+
+// A rolling 7-day activity histogram per group (oldest day first) plus the
+// window total, for the browse-list spark and "logs this week" figure. Bucketed
+// by encounterTime — when the raid happened — matching the group clears' notion
+// of recent activity. All the date math is done in the DB to avoid timezone
+// drift. Includes private logs: it's an aggregate count that never exposes a
+// log, consistent with how the rest of the stats treat private.
+async function groupActivity(groupIds: string[]): Promise<Map<string, { activity: number[]; logsThisWeek: number }>> {
+  const out = new Map<string, { activity: number[]; logsThisWeek: number }>();
+  for (const id of groupIds) out.set(id, { activity: [0, 0, 0, 0, 0, 0, 0], logsThisWeek: 0 });
+  if (groupIds.length === 0) return out;
+
+  const rows = await prisma.$queryRaw<{ groupId: string; days_ago: number; n: number }[]>(Prisma.sql`
+    SELECT "groupId", (CURRENT_DATE - "encounterTime"::date) AS days_ago, COUNT(*)::int AS n
+    FROM "Log"
+    WHERE "groupId" IN (${Prisma.join(groupIds)})
+      AND "encounterTime" >= (CURRENT_DATE - INTERVAL '6 days')
+    GROUP BY "groupId", days_ago
+  `);
+
+  for (const row of rows) {
+    const daysAgo = Number(row.days_ago);
+    if (daysAgo < 0 || daysAgo > 6) continue; // guard clock skew (future encounterTime)
+    const entry = out.get(row.groupId);
+    if (!entry) continue;
+    const n = Number(row.n);
+    entry.activity[6 - daysAgo] += n; // index 6 = today, 0 = six days ago
+    entry.logsThisWeek += n;
+  }
+  return out;
+}
 
 groupsRouter.get('/', asyncHandler(async (req, res) => {
   // ?mine=true is the only thing that switches this into "groups I've
@@ -102,18 +134,24 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
       _count: { select: { members: true } },
     },
   });
+  const activity = await groupActivity(groups.map((g) => g.id));
   res.json(
-    groups.map((g) => ({
-      id: g.id,
-      name: g.name,
-      icon: g.icon,
-      leader: g.leader.gw2AccountName ?? g.leader.discordUsername,
-      memberCount: g._count.members,
-      raidDays: g.raidDays,
-      raidStartTime: g.raidStartTime,
-      raidDurationMins: g.raidDurationMins,
-      raidTimezone: g.raidTimezone,
-    })),
+    groups.map((g) => {
+      const a = activity.get(g.id);
+      return {
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        leader: g.leader.gw2AccountName ?? g.leader.discordUsername,
+        memberCount: g._count.members,
+        raidDays: g.raidDays,
+        raidStartTime: g.raidStartTime,
+        raidDurationMins: g.raidDurationMins,
+        raidTimezone: g.raidTimezone,
+        activity: a?.activity ?? [0, 0, 0, 0, 0, 0, 0],
+        logsThisWeek: a?.logsThisWeek ?? 0,
+      };
+    }),
   );
 }));
 

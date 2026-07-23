@@ -372,6 +372,10 @@ export interface GroupSummary {
   raidStartTime?: string | null;
   raidDurationMins?: number | null;
   raidTimezone?: string | null;
+  // Present on the browse/search list only: a rolling 7-day log histogram
+  // (oldest day first) and its total, powering the browse-row activity spark.
+  activity?: number[];
+  logsThisWeek?: number;
 }
 
 export interface GroupMemberData {

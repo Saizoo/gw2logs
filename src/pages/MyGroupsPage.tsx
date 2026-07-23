@@ -324,9 +324,9 @@ function GroupBrowseRow({ group: g, canJoin, onJoin }: { group: GroupSummary; ca
       className="u-card-link"
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr auto',
+        gridTemplateColumns: '1fr auto auto',
         alignItems: 'center',
-        gap: 18,
+        gap: 20,
         padding: '14px 18px',
         background: 'var(--bg-card)',
         border: '1px solid var(--border-faint)',
@@ -344,6 +344,7 @@ function GroupBrowseRow({ group: g, canJoin, onJoin }: { group: GroupSummary; ca
           {sched ? ` · ${sched}` : ''}
         </div>
       </Link>
+      <ActivitySpark data={g.activity} total={g.logsThisWeek} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         {next?.soon ? (
           <TonightTag time={next.time} />
@@ -380,6 +381,44 @@ function TonightTag({ time }: { time: string | null }) {
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
       Tonight{time ? ` · ${time}` : ''}
     </span>
+  );
+}
+
+// The 7-day activity spark for a browse row — one bar per day, oldest first,
+// today's bar in full accent. Falls back to a quiet label when a group had no
+// logs in the window, so it reads honestly rather than as seven empty bars.
+function ActivitySpark({ data, total }: { data?: number[]; total?: number }) {
+  const bars = data && data.length === 7 ? data : null;
+  if (!bars || !total) {
+    return (
+      <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-45)', whiteSpace: 'nowrap', minWidth: 78 }}>
+        Quiet this week
+      </div>
+    );
+  }
+  const max = Math.max(...bars, 1);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 28 }} aria-hidden>
+        {bars.map((v, i) => (
+          <div
+            key={i}
+            style={{
+              width: 6,
+              height: `${v === 0 ? 2 : Math.max(4, Math.round((v / max) * 28))}px`,
+              background: v === 0
+                ? 'color-mix(in srgb, var(--color-text) 12%, transparent)'
+                : i === bars.length - 1
+                  ? 'var(--gold)'
+                  : 'color-mix(in srgb, var(--color-accent) 78%, transparent)',
+            }}
+          />
+        ))}
+      </div>
+      <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--text-50)', whiteSpace: 'nowrap' }}>
+        {total} log{total === 1 ? '' : 's'} · 7 days
+      </span>
+    </div>
   );
 }
 
