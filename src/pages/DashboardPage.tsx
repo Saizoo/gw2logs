@@ -1,13 +1,55 @@
-import { useState, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { api, ApiError, type OverviewEncounter, type OverviewWing, type SignupStatus } from '../lib/api';
+import {
+  api,
+  type DashboardSummary,
+  type LogDetailPlayer,
+  type OverviewEncounter,
+  type OverviewWing,
+  type PlayerPrivateProfile,
+  type PlayerProfile,
+} from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { toast } from '../lib/toast';
-import { bossBgPath, professionColor, professionIconPath } from '../data/gw2-data';
-import { ArtImg, Card, GoldButton, ParseBadge, ParseLegend, ProfDot, ResultPill, StatCard } from '../components/atoms';
+import { bossBgPath, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { ArtImg, GoldButton, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
-import { SIGNUP_META, signupDateLabel } from './group/shared';
+
+/* -------------------------------------------------------------------------- */
+/* Design tokens lifted from the GW2 Stats Platform handoff                    */
+/* -------------------------------------------------------------------------- */
+
+const PANEL: CSSProperties = {
+  background: 'oklch(0.19 0.014 250 / 70%)',
+  border: '1px solid oklch(1 0 0 / 8%)',
+  borderRadius: 16,
+  boxShadow: '0 1px 0 oklch(1 0 0 / 6%) inset, 0 14px 34px -18px rgba(0,0,0,.55)',
+};
+const CARD_LABEL: CSSProperties = {
+  font: '700 11px var(--font-sans)',
+  color: 'var(--text-55)',
+  textTransform: 'uppercase',
+  letterSpacing: '.5px',
+};
+const SECTION_LABEL: CSSProperties = { font: '700 13px var(--font-sans)', color: 'var(--text-70)' };
+
+// Role labels/colors for the "Logs by Role" donut — the server's role keys
+// mapped to readable names; colours cycle through the palette in order.
+const ROLE_LABELS: Record<string, string> = {
+  dps: 'DPS',
+  power: 'Power DPS',
+  condi: 'Condi DPS',
+  boon_dps: 'Boon DPS',
+  boon_heal: 'Healer',
+  heal: 'Healer',
+  support: 'Support',
+  tank: 'Tank',
+};
+const ROLE_PALETTE = ['var(--gold)', 'var(--blue)', 'var(--good)', 'var(--parse-75)', 'var(--parse-95)', 'var(--parse-25)'];
+
+function roleLabel(role: string): string {
+  return ROLE_LABELS[role] ?? role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
@@ -16,12 +58,7 @@ function formatDuration(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function signed(n: number): string {
-  return n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString();
-}
-
-// Compact "2m ago" / "3h ago" / "5d ago" for the upload/activity feeds — the
-// same relative phrasing the mockup's sidebar uses.
+// Compact "2m ago" / "3h ago" / "5d ago" for the feed timestamps.
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return '';
@@ -38,6 +75,14 @@ function timeAgo(iso: string): string {
   return `${Math.floor(months / 12)}y ago`;
 }
 
+function isPublicProfile(p: PlayerProfile | PlayerPrivateProfile | null): p is PlayerProfile {
+  return !!p && !('private' in p && p.private === true);
+}
+
+function flattenEncounters(wings: OverviewWing[]): (OverviewEncounter & { wing: string })[] {
+  return wings.flatMap((w) => w.encounters.map((e) => ({ ...e, wing: w.wing })));
+}
+
 export default function DashboardPage() {
   const { user, loading: userLoading } = useCurrentUser();
 
@@ -50,311 +95,169 @@ export default function DashboardPage() {
 /* Shared building blocks                                                     */
 /* -------------------------------------------------------------------------- */
 
-// Section title with an optional right-aligned "view all" link — the header
-// treatment repeated above every band in the mockup.
-function SectionHeader({ title, action }: { title: ReactNode; action?: { label: string; to: string } }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-      <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-70)' }}>
-        {title}
-      </div>
-      {action && (
-        <Link to={action.to} className="u-link" style={{ font: '700 11px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--gold)' }}>
-          {action.label} →
-        </Link>
-      )}
-    </div>
-  );
+function Panel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return <div style={{ ...PANEL, ...style }}>{children}</div>;
 }
 
-// One big number + caption in the hero's counter strip.
 function HeroStat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div>
-      <div style={{ font: '800 26px var(--font-mono)', color: 'var(--gold)', letterSpacing: '-.5px', lineHeight: 1 }}>{value}</div>
-      <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 6 }}>
+      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px' }}>{value}</div>
+      <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-62)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
         {label}
       </div>
     </div>
   );
 }
 
-// Cinematic banner shared by both dashboard states. Raid art sits behind a
-// legibility gradient; ArtImg hides itself if the asset isn't shipped, so the
-// gradient alone still reads.
-function Hero({
-  eyebrow,
-  title,
-  tagline,
-  blurb,
-  actions,
-  stats,
-  bg,
-}: {
-  eyebrow: string;
-  title: ReactNode;
-  tagline: ReactNode;
-  blurb: ReactNode;
-  actions: ReactNode;
-  stats?: ReactNode;
-  bg?: string | null;
-}) {
+// Bottom-aligned cinematic banner over raid art (design's hero treatment).
+// ArtImg hides itself when the asset is missing, so the gradient still reads.
+function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
   return (
-    <Card style={{ position: 'relative', overflow: 'hidden', padding: 0 }}>
-      {bg && <ArtImg src={bg} style={{ opacity: 0.32, objectPosition: 'center 30%' }} />}
+    <div
+      style={{
+        position: 'relative',
+        borderRadius: 20,
+        overflow: 'hidden',
+        padding: 'clamp(32px, 5vw, 48px) clamp(22px, 4vw, 40px)',
+        marginBottom: 20,
+        minHeight: 300,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        boxShadow: '0 24px 60px -24px rgba(0,0,0,.65)',
+        border: '1px solid oklch(1 0 0 / 8%)',
+      }}
+    >
+      {bg && <ArtImg src={bg} style={{ objectPosition: 'center 28%' }} />}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'linear-gradient(100deg, oklch(0.14 0.02 260 / 94%) 0%, oklch(0.15 0.02 260 / 78%) 46%, oklch(0.17 0.04 30 / 34%) 100%)',
+          background: 'linear-gradient(0deg, oklch(0.1 0.012 250 / 96%) 0%, oklch(0.1 0.012 250 / 55%) 55%, oklch(0.1 0.012 250 / 25%) 100%)',
         }}
       />
-      <div style={{ position: 'relative', padding: 'clamp(30px, 5vw, 56px) clamp(24px, 4.5vw, 52px)' }}>
-        <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '.28em', textTransform: 'uppercase', color: 'var(--gold)' }}>
-          {eyebrow}
+      <div style={{ position: 'relative' }}>
+        <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '2px', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
+          Guild Wars 2
         </div>
-        <h1 style={{ font: '800 clamp(30px, 5.5vw, 54px) var(--font-sans)', letterSpacing: '-1px', lineHeight: 1.02, marginTop: 10 }}>
-          {title}
-        </h1>
-        <div style={{ font: '700 clamp(14px, 2vw, 18px) var(--font-sans)', letterSpacing: '.02em', marginTop: 14 }}>{tagline}</div>
-        <div style={{ font: '500 13.5px var(--font-sans)', color: 'var(--text-65)', marginTop: 12, maxWidth: 520, lineHeight: 1.55 }}>
-          {blurb}
+        <div style={{ font: '800 clamp(30px, 5vw, 42px) var(--font-sans)', letterSpacing: '-1px', lineHeight: 1.05, marginBottom: 10 }}>
+          Combat Analytics
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>{actions}</div>
-        {stats && (
-          <div style={{ display: 'flex', gap: 'clamp(24px, 5vw, 52px)', marginTop: 34, flexWrap: 'wrap' }}>{stats}</div>
-        )}
+        <div style={{ font: '500 14px var(--font-sans)', color: 'var(--text-75, oklch(0.75 0.015 90))', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
+          Analyze your logs, track your parses, and climb the leaderboards with your guild.
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 26, flexWrap: 'wrap' }}>
+          <GoldButton to="/upload" style={{ padding: '11px 20px', font: '700 13px var(--font-sans)', boxShadow: '0 4px 16px oklch(0.7 0.14 85 / 32%)' }}>
+            Upload Log
+          </GoldButton>
+          <Link
+            to="/leaderboards"
+            className="u-btn-ghost"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              font: '600 13px var(--font-sans)',
+              padding: '11px 20px',
+              borderRadius: 10,
+              background: 'oklch(1 0 0 / 8%)',
+              backdropFilter: 'blur(6px)',
+              color: 'var(--text-92)',
+              border: '1px solid oklch(1 0 0 / 14%)',
+            }}
+          >
+            View Leaderboards
+          </Link>
+        </div>
+        <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 36px)', flexWrap: 'wrap' }}>{stats}</div>
       </div>
-    </Card>
+    </div>
   );
 }
 
-// A ghost/outline call-to-action to sit beside the gold primary button.
-function GhostLink({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="u-btn-ghost"
-      style={{
-        padding: '9px 18px',
-        borderRadius: 10,
-        font: '600 12.5px var(--font-sans)',
-        color: 'var(--text-85)',
-        border: '1px solid var(--border)',
-        background: 'oklch(1 0 0 / 3%)',
-      }}
-    >
-      {children}
-    </Link>
-  );
-}
-
-// A discovery card for one encounter: boss art, name, log count, and the two
-// headline records (best parse + fastest kill) exactly like the mockup's
-// "Popular Encounters" tiles. Falls back to squad DPS when no ranked parse
-// exists yet.
-function EncounterCard({ enc }: { enc: OverviewEncounter }) {
+// A discovery tile: raid art with the encounter's headline records overlaid.
+function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossBgPath(enc.fightName);
   return (
     <Link
       to="/encounters"
       className="u-card-link"
       style={{
-        display: 'block',
-        borderRadius: 16,
+        position: 'relative',
+        borderRadius: 14,
         overflow: 'hidden',
-        border: '1px solid var(--border)',
-        background: 'var(--bg-card)',
+        height: 130,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: 12,
+        border: '1px solid oklch(1 0 0 / 8%)',
+        boxShadow: '0 10px 26px -16px rgba(0,0,0,.55)',
+        background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.15 0.01 250))',
       }}
     >
-      <div style={{ position: 'relative', height: 92, background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.15 0.01 250))' }}>
-        {bg && <ArtImg src={bg} style={{ opacity: 0.85 }} />}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 30%, oklch(0.15 0.014 250 / 92%))' }} />
-        {enc.hasCmClear && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              font: '800 9.5px var(--font-sans)',
-              letterSpacing: '.06em',
-              padding: '3px 7px',
-              borderRadius: 6,
-              color: 'var(--gold-fg)',
-              background: 'var(--gold-grad)',
-            }}
-          >
-            CM
-          </span>
-        )}
+      {bg && <ArtImg src={bg} />}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, oklch(0.1 0.012 250 / 92%) 0%, oklch(0.1 0.012 250 / 15%) 65%)' }} />
+      {enc.hasCmClear && (
+        <span style={{ position: 'absolute', top: 10, right: 10, font: '800 9px var(--font-sans)', letterSpacing: '.06em', padding: '3px 7px', borderRadius: 6, color: 'var(--gold-fg)', background: 'var(--gold-grad)' }}>
+          CM
+        </span>
+      )}
+      <div style={{ position: 'relative', font: '700 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {enc.fightName}
       </div>
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ font: '700 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {enc.fightName}
-        </div>
-        <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 2 }}>
-          {enc.logCount.toLocaleString()} log{enc.logCount === 1 ? '' : 's'}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginTop: 12 }}>
-          <div>
-            {enc.bestParse ? (
-              <ParseBadge pct={enc.bestParse.pct} />
-            ) : (
-              <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{enc.bestSquadDps.toLocaleString()}</div>
-            )}
-            <div style={{ font: '600 9px var(--font-sans)', color: 'var(--text-50)', textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 4 }}>
-              {enc.bestParse ? 'Best parse' : 'Squad DPS'}
-            </div>
-          </div>
-          {enc.fastestKillMs != null && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ font: '700 13px var(--font-mono)', color: 'var(--text-85)' }}>{formatDuration(enc.fastestKillMs)}</div>
-              <div style={{ font: '600 9px var(--font-sans)', color: 'var(--text-50)', textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 4 }}>
-                Fastest kill
-              </div>
-            </div>
-          )}
-        </div>
+      <div style={{ position: 'relative', font: '500 10.5px var(--font-sans)', color: 'var(--text-65)', marginTop: 2 }}>
+        {enc.logCount.toLocaleString()} log{enc.logCount === 1 ? '' : 's'}
+      </div>
+      <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 4, font: '700 11px var(--font-sans)' }}>
+        {enc.bestSquadDps > 0 && <span style={{ color: 'var(--gold)' }}>{enc.bestSquadDps.toLocaleString()} dps</span>}
+        {enc.fastestKillMs != null && <span style={{ color: 'var(--text-70)', fontWeight: 500 }}>{formatDuration(enc.fastestKillMs)}</span>}
       </div>
     </Link>
   );
 }
 
-// Self-contained "Popular Encounters" band — fetches the encounter overview,
-// flattens every wing, and surfaces the most-logged fights as cards. Dropped
-// into both the logged-out and signed-in dashboards.
-function PopularEncounters({ limit = 6 }: { limit?: number }) {
-  const { data, loading } = useApiQuery(() => api.encountersOverview(), []);
-  if (loading || !data) return null;
-
+// Self-contained "Popular Encounters" band shared by both dashboard states.
+function PopularEncounters() {
+  const { data } = useApiQuery(() => api.encountersOverview(), []);
+  if (!data) return null;
   const flat = flattenEncounters(data)
     .filter((e) => e.logCount > 0)
     .sort((a, b) => b.logCount - a.logCount)
-    .slice(0, limit);
+    .slice(0, 6);
   if (flat.length === 0) return null;
-
   return (
-    <div style={{ marginTop: 32 }}>
-      <SectionHeader title="Popular Encounters" action={{ label: 'View all encounters', to: '/encounters' }} />
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={SECTION_LABEL}>Popular Encounters</div>
+        <Link to="/encounters" style={{ font: '600 11.5px var(--font-sans)', color: 'var(--gold)' }}>
+          View all →
+        </Link>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
         {flat.map((e) => (
-          <EncounterCard key={`${e.fightName}-${e.wing}`} enc={e} />
+          <EncounterTile key={`${e.fightName}-${e.wing}`} enc={e} />
         ))}
       </div>
     </div>
   );
 }
 
-function flattenEncounters(wings: OverviewWing[]): (OverviewEncounter & { wing: string })[] {
-  return wings.flatMap((w) => w.encounters.map((e) => ({ ...e, wing: w.wing })));
-}
-
-// Card wrapper for the right-hand sidebar feeds (title bar + body).
+// Sidebar feed card (title bar + rows).
 function FeedCard({ title, action, children }: { title: string; action?: { label: string; to: string }; children: ReactNode }) {
   return (
-    <Card style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '14px 18px', borderBottom: '1px solid var(--border-soft)' }}>
-        <div style={{ font: '700 11.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-70)' }}>{title}</div>
+    <Panel style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '14px 18px', borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
+        <div style={{ font: '700 12px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{title}</div>
         {action && (
-          <Link to={action.to} style={{ font: '700 10px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+          <Link to={action.to} style={{ font: '600 11px var(--font-sans)', color: 'var(--gold)' }}>
             {action.label}
           </Link>
         )}
       </div>
       {children}
-    </Card>
-  );
-}
-
-// SVG area/line sparkline for the "Performance Trend" band. Non-scaling stroke
-// keeps the line an even weight even though the chart stretches to fit.
-function TrendChart({ points }: { points: { label: string; count: number }[] }) {
-  const w = 320;
-  const h = 96;
-  const pad = 8;
-  const max = Math.max(...points.map((p) => p.count), 1);
-  const n = points.length;
-  const x = (i: number) => pad + (i * (w - 2 * pad)) / Math.max(n - 1, 1);
-  const y = (v: number) => h - pad - (v / max) * (h - 2 * pad - 6);
-  const line = points.map((p, i) => `${x(i).toFixed(1)},${y(p.count).toFixed(1)}`).join(' ');
-  const area = `${x(0).toFixed(1)},${h - pad} ${line} ${x(n - 1).toFixed(1)},${h - pad}`;
-  return (
-    <div>
-      <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" style={{ display: 'block' }} role="img" aria-label="Uploads over the last week">
-        <defs>
-          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.78 0.14 85 / 34%)" />
-            <stop offset="100%" stopColor="oklch(0.78 0.14 85 / 0%)" />
-          </linearGradient>
-        </defs>
-        <polygon points={area} fill="url(#trendFill)" />
-        <polyline points={line} fill="none" stroke="var(--gold)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        {points.map((p, i) => (
-          <circle key={p.label} cx={x(i)} cy={y(p.count)} r={2.4} fill="var(--gold)" vectorEffect="non-scaling-stroke" />
-        ))}
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-        {points.map((p) => (
-          <div key={p.label} style={{ flex: 1, textAlign: 'center', font: '500 9.5px var(--font-sans)', color: 'var(--text-55)' }}>
-            {p.label}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Donut of the professions the viewer has logged recently (the honest,
-// data-backed stand-in for the mockup's "Favorite Roles" ring — arcdps logs
-// carry the class you played, not a curated role label).
-function ClassDonut({ segments, total }: { segments: { label: string; value: number; color: string }[]; total: number }) {
-  const r = 42;
-  const c = 2 * Math.PI * r;
-  let offset = 0;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-      <svg width={108} height={108} viewBox="0 0 108 108" style={{ flex: 'none' }}>
-        <circle cx={54} cy={54} r={r} fill="none" stroke="oklch(1 0 0 / 6%)" strokeWidth={14} />
-        {segments.map((s) => {
-          const len = (s.value / total) * c;
-          const el = (
-            <circle
-              key={s.label}
-              cx={54}
-              cy={54}
-              r={r}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={14}
-              strokeDasharray={`${len} ${c - len}`}
-              strokeDashoffset={-offset}
-              transform="rotate(-90 54 54)"
-            />
-          );
-          offset += len;
-          return el;
-        })}
-        <text x={54} y={50} textAnchor="middle" style={{ font: '800 20px var(--font-mono)', fill: 'var(--text)' }}>
-          {total}
-        </text>
-        <text x={54} y={66} textAnchor="middle" style={{ font: '600 8px var(--font-sans)', fill: 'var(--text-55)', letterSpacing: '.08em' }}>
-          LOGS
-        </text>
-      </svg>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0 }}>
-        {segments.map((s) => (
-          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ProfDot color={s.color} size={9} />
-            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-80)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {s.label}
-            </div>
-            <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-62)' }}>{Math.round((s.value / total) * 100)}%</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -366,34 +269,12 @@ function LoggedOutDashboard() {
   const { data: stats } = useApiQuery(() => api.stats(), []);
   const { data: home, loading, error } = useApiQuery(() => api.home(), []);
   const { data: overview } = useApiQuery(() => api.encountersOverview(), []);
-
   const encounterCount = overview ? flattenEncounters(overview).filter((e) => e.logCount > 0).length : null;
 
   return (
     <div>
       <Hero
-        eyebrow="Guild Wars 2"
-        title={
-          <>
-            Combat <span style={{ color: 'var(--gold)' }}>Analytics</span>
-          </>
-        }
-        tagline={
-          <>
-            Analyze. Improve. <span style={{ color: 'var(--gold)' }}>Be legendary.</span>
-          </>
-        }
-        blurb="Upload arcdps combat logs, get an instant breakdown, and see how you stack up against the whole community — patch over patch."
         bg={bossBgPath('Harvest Temple')}
-        actions={
-          <>
-            <GoldButton to="/upload" style={{ padding: '11px 22px', font: '700 13px var(--font-sans)' }}>
-              Upload a log
-            </GoldButton>
-            <GhostLink to="/leaderboards">View rankings</GhostLink>
-            <GhostLink to="/login">Sign in</GhostLink>
-          </>
-        }
         stats={
           <>
             <HeroStat value={stats ? stats.totalLogs.toLocaleString() : '—'} label="Logs uploaded" />
@@ -403,39 +284,27 @@ function LoggedOutDashboard() {
         }
       />
 
-      <div style={{ marginTop: 28 }}>
-        {loading && <LoadingState label="Loading highlights…" />}
-        {error && <ErrorState message={error} />}
-        {home && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
+      {loading && <LoadingState label="Loading highlights…" />}
+      {error && <ErrorState message={error} />}
+      {home && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 20, alignItems: 'start', marginBottom: 28 }}>
             <FeedCard title="Top DPS by profession" action={{ label: 'Rankings', to: '/benchmarks' }}>
               {home.topByProfession.length === 0 ? (
-                <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>
-                  No logs uploaded yet — this fills in as parses come in.
-                </div>
+                <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs uploaded yet — this fills in as parses come in.</div>
               ) : (
                 home.topByProfession.map((row, i) => (
                   <Link
                     key={row.profession}
                     to={`/logs/${row.logId}`}
                     className="u-row"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 18px',
-                      borderBottom: i === home.topByProfession.length - 1 ? 'none' : '1px solid var(--border-faint)',
-                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: i === home.topByProfession.length - 1 ? 'none' : '1px solid var(--border-faint)' }}
                   >
                     <div style={{ font: '800 12px var(--font-mono)', color: 'var(--text-45)', width: 18, textAlign: 'right', flex: 'none' }}>{i + 1}</div>
                     <ProfDot color={professionColor(row.profession)} size={9} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {row.account ?? row.name}
-                      </div>
-                      <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
-                        {row.spec} · {row.boss}
-                      </div>
+                      <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.account ?? row.name}</div>
+                      <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{row.spec} · {row.boss}</div>
                     </div>
                     <div style={{ font: '700 14px var(--font-mono)', color: 'var(--gold)', flex: 'none' }}>{row.dps.toLocaleString()}</div>
                   </Link>
@@ -443,7 +312,7 @@ function LoggedOutDashboard() {
               )}
             </FeedCard>
 
-            <FeedCard title="Recent uploads" action={{ label: 'All logs', to: '/logs' }}>
+            <FeedCard title="Recent Uploads" action={{ label: 'All logs', to: '/logs' }}>
               {home.recentLogs.length === 0 ? (
                 <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
               ) : (
@@ -454,25 +323,14 @@ function LoggedOutDashboard() {
                       key={log.id}
                       to={`/logs/${log.id}`}
                       className="u-row"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '11px 18px',
-                        borderBottom: i === home.recentLogs.length - 1 ? 'none' : '1px solid var(--border-faint)',
-                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === home.recentLogs.length - 1 ? 'none' : '1px solid var(--border-faint)' }}
                     >
                       <div style={{ position: 'relative', width: 38, height: 38, borderRadius: 9, overflow: 'hidden', flex: 'none', background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.16 0.01 250))' }}>
                         {bg && <ArtImg src={bg} style={{ opacity: 0.75 }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ font: '600 12.5px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {log.boss}
-                          {log.isCm ? ' CM' : ''}
-                        </div>
-                        <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>
-                          {log.playerCount} players · {timeAgo(log.uploadedAt)}
-                        </div>
+                        <div style={{ font: '600 12.5px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.boss}{log.isCm ? ' CM' : ''}</div>
+                        <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>{log.playerCount} players · {timeAgo(log.uploadedAt)}</div>
                       </div>
                       <ResultPill success={log.success} />
                     </Link>
@@ -481,16 +339,15 @@ function LoggedOutDashboard() {
               )}
             </FeedCard>
           </div>
-        )}
-      </div>
-
-      <PopularEncounters />
+          <PopularEncounters />
+        </>
+      )}
     </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Signed-in personal dashboard                                               */
+/* Signed-in dashboard (the GW2 Stats Platform design)                        */
 /* -------------------------------------------------------------------------- */
 
 function SignedInDashboard() {
@@ -500,225 +357,359 @@ function SignedInDashboard() {
   if (error) return <ErrorState message={error} />;
   if (!dash) return null;
 
-  // Profession mix from the viewer's recent logs — the honest data we have for
-  // the "Favorite Roles" ring (arcdps carries class, not a role label).
-  const classCounts = new Map<string, number>();
-  for (const log of dash.recentLogs) classCounts.set(log.profession, (classCounts.get(log.profession) ?? 0) + 1);
-  const classSegments = [...classCounts.entries()]
-    .map(([profession, value]) => ({ label: profession, value, color: professionColor(profession) }))
-    .sort((a, b) => b.value - a.value);
-  const classTotal = classSegments.reduce((sum, s) => sum + s.value, 0);
+  const firstLogId = dash.recentLogs[0]?.logId ?? null;
 
   return (
     <div>
       <Hero
-        eyebrow={`${dash.stats.logsThisWeek} log${dash.stats.logsThisWeek === 1 ? '' : 's'} this week`}
-        title={
-          <>
-            Welcome back, <span style={{ color: 'var(--gold)' }}>{dash.displayName}</span>
-          </>
-        }
-        tagline={<span style={{ color: 'var(--text-80)' }}>Your week at a glance.</span>}
-        blurb="Everything you've logged, ranked, and cleared — plus what's coming up on your raid nights."
         bg={bossBgPath('Harvest Temple')}
-        actions={
+        stats={
           <>
-            <GoldButton to="/upload" style={{ padding: '11px 22px', font: '700 13px var(--font-sans)' }}>
-              Upload new log
-            </GoldButton>
-            <GhostLink to="/leaderboards">View rankings</GhostLink>
+            <HeroStat value={dash.stats.logsThisWeek.toLocaleString()} label="Logs This Week" />
+            <HeroStat value={dash.stats.avgSquadDps.toLocaleString()} label="Avg Squad DPS" />
+            <HeroStat value={`${dash.stats.clearsThisWeek}/${dash.stats.totalThisWeek}`} label="Clears" />
           </>
         }
       />
 
-      {!dash.gw2AccountName && (
-        <Card style={{ padding: '16px 20px', marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-80)' }}>Link your Guild Wars 2 account to see personalized stats.</div>
-          <Link to="/account" style={{ font: '700 12px var(--font-sans)', color: 'var(--gold)', flex: 'none' }}>
-            Link account →
-          </Link>
-        </Card>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
+        <div>
+          <div style={{ ...SECTION_LABEL, marginBottom: 12 }}>My Dashboard</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 24 }}>
+            <MyDashboardCards dash={dash} />
+          </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 24 }}>
-        <StatCard label="Logs This Week" value={dash.stats.logsThisWeek} delta={dash.stats.logsThisWeekDelta !== 0 ? signed(dash.stats.logsThisWeekDelta) : undefined} />
-        <StatCard
-          label="Avg Squad DPS"
-          value={dash.stats.avgSquadDps.toLocaleString()}
-          delta={dash.stats.avgSquadDpsDelta !== 0 ? signed(dash.stats.avgSquadDpsDelta) : undefined}
-        />
-        <StatCard label="Clears" value={`${dash.stats.clearsThisWeek}/${dash.stats.totalThisWeek}`} />
-      </div>
-
-      <div style={{ margin: '20px 0 4px' }}>
-        <ParseLegend />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 20, alignItems: 'start', marginTop: 16 }}>
-        <FeedCard title="Recent Logs" action={{ label: 'All logs', to: '/logs' }}>
-          {dash.recentLogs.length === 0 && (
-            <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet — upload one to see it here.</div>
-          )}
-          {dash.recentLogs.map((log, i) => (
-            <Link
-              key={log.logId}
-              to={`/logs/${log.logId}`}
-              className="u-row"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '13px 18px',
-                borderBottom: i === dash.recentLogs.length - 1 ? 'none' : '1px solid var(--border-faint)',
-              }}
-            >
-              <div
-                style={{
-                  position: 'relative',
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  flex: 'none',
-                  overflow: 'hidden',
-                  background: `linear-gradient(135deg, ${professionColor(log.profession)}, oklch(0.16 0.01 250))`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.6 }} />}
-                <img src={professionIconPath(log.profession)} alt={log.profession} style={{ position: 'relative', width: 28, height: 28, objectFit: 'contain' }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ font: '600 13.5px var(--font-sans)' }}>
-                    {log.boss}
-                    {log.isCm ? ' CM' : ''}
-                  </div>
-                  <ResultPill success={log.success} />
-                </div>
-                <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-58)', marginTop: 2 }}>
-                  {log.wing ?? 'Other'} · {formatDuration(log.durationMs)} · {timeAgo(log.uploadedAt)}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', flex: 'none' }}>
-                <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{log.dps.toLocaleString()}</div>
-                <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>your dps</div>
-              </div>
-            </Link>
-          ))}
-        </FeedCard>
+          <PopularEncounters />
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ font: '700 11.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-70)', marginBottom: 14 }}>
-              Performance Trend
-            </div>
-            <TrendChart points={dash.weeklyActivity} />
-          </Card>
-
-          {classTotal > 0 && (
-            <Card style={{ padding: '18px 20px' }}>
-              <div style={{ font: '700 11.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-70)', marginBottom: 16 }}>
-                Your Classes
-              </div>
-              <ClassDonut segments={classSegments} total={classTotal} />
-            </Card>
-          )}
-
-          <RaidStatusCard />
+          <RecentUploadsCard logs={dash.recentLogs} />
+          <ActivityAndLeaderboard ownAccount={dash.gw2AccountName} />
         </div>
       </div>
 
-      <PopularEncounters />
+      {firstLogId && <MySquad logId={firstLogId} />}
     </div>
   );
 }
 
-// Compact per-group raid outlook: the next raid night on each group's
-// calendar, whether the viewer has RSVP'd (with one-tap RSVP if not),
-// and the fights the leader has planned for that night.
-function RaidStatusCard() {
-  const [nonce, setNonce] = useState(0);
-  const { data: statuses } = useApiQuery(() => api.groupRaidStatus(), [nonce]);
-
-  if (!statuses || statuses.length === 0) return null;
-
-  async function rsvp(groupId: string, date: string, status: SignupStatus) {
-    try {
-      await api.setSignup(groupId, date, status);
-      toast.success('RSVP saved');
-      setNonce((n) => n + 1);
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save RSVP');
-    }
-  }
+// The four "My Dashboard" cards. My Character / Best Encounter / Logs by Role
+// need the viewer's public profile, so this fetches it once (only when a GW2
+// account is linked) and shares it across the three cards.
+function MyDashboardCards({ dash }: { dash: DashboardSummary }) {
+  const account = dash.gw2AccountName;
+  const { data: profileRaw } = useApiQuery<PlayerProfile | PlayerPrivateProfile | null>(
+    () => (account ? api.player(account) : Promise.resolve(null)),
+    [account],
+  );
+  const profile = isPublicProfile(profileRaw) ? profileRaw : null;
 
   return (
-    <Card style={{ overflow: 'hidden' }}>
-      <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-soft)', font: '700 11.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-70)' }}>
-        Raid Nights
-      </div>
-      {statuses.map((s) => {
-        const meta = s.myStatus ? SIGNUP_META[s.myStatus] : null;
-        return (
-          <div key={s.groupId} style={{ padding: '13px 18px', borderBottom: '1px solid var(--border-faint)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Link to={`/groups/${s.groupId}/week`} className="u-link" style={{ font: '700 12.5px var(--font-sans)', color: 'var(--text)' }}>
-                {s.name}
-              </Link>
-              {meta && (
-                <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: meta.color, background: meta.bg, padding: '2px 8px', borderRadius: 10 }}>
-                  {meta.label}
-                </span>
-              )}
-            </div>
-            <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-58)', marginTop: 3 }}>
-              {s.nextRaidDate
-                ? `${signupDateLabel(s.nextRaidDate, s.resolvedTimezone)}${s.raidStartTime ? ` · ${s.raidStartTime}${s.raidTimezone ? ` ${s.raidTimezone}` : ''}` : ''}`
-                : 'No raid schedule set'}
-            </div>
-            {s.nextRaidDate && !s.myStatus && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                <span style={{ font: '500 11px var(--font-sans)', color: 'var(--gold)' }}>You haven't RSVP'd —</span>
-                {(['in', 'late', 'out'] as SignupStatus[]).map((status) => (
-                  <button
-                    key={status}
-                    className="u-chip"
-                    onClick={() => rsvp(s.groupId, s.nextRaidDate!, status)}
-                    style={{
-                      padding: '3px 10px',
-                      borderRadius: 10,
-                      font: '600 10.5px var(--font-sans)',
-                      background: 'oklch(1 0 0 / 4%)',
-                      color: SIGNUP_META[status].color,
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {SIGNUP_META[status].label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {s.fights.length > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                {s.fights.slice(0, 5).map((f, i) => (
-                  <span key={`${f}-${i}`} style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-70)', background: 'oklch(1 0 0 / 4%)', border: '1px solid var(--border-faint)', padding: '3px 9px', borderRadius: 10 }}>
-                    {f}
-                  </span>
-                ))}
-                {s.fights.length > 5 && <span style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-50)' }}>+{s.fights.length - 5} more</span>}
-              </div>
+    <>
+      <MyCharacterCard profile={profile} displayName={dash.displayName} linked={!!account} />
+      <BestEncounterCard profile={profile} />
+      <PerformanceTrendCard weeklyActivity={dash.weeklyActivity} logsThisWeek={dash.stats.logsThisWeek} avgDps={dash.stats.avgSquadDps} />
+      <LogsByRoleCard profile={profile} recentLogs={dash.recentLogs} />
+    </>
+  );
+}
+
+function MyCharacterCard({ profile, displayName, linked }: { profile: PlayerProfile | null; displayName: string; linked: boolean }) {
+  const main = profile?.professionBreakdown?.slice().sort((a, b) => b.pct - a.pct)[0]?.profession ?? profile?.profileIcon ?? null;
+  const color = main ? professionColor(main) : 'var(--gold)';
+  const bestParse = profile?.overallScore ?? (profile?.bestParses?.length ? Math.max(...profile.bestParses.map((b) => b.pct)) : null);
+
+  return (
+    <Panel style={{ padding: 18 }}>
+      <div style={{ ...CARD_LABEL, marginBottom: 12 }}>My Character</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, padding: 2, background: `linear-gradient(135deg, ${color}, oklch(0.14 0.01 250 / 60%))`, flex: 'none' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: 10, background: 'oklch(0.13 0.01 250 / 90%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {main ? (
+              <img src={professionIconPath(main)} alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
             ) : (
-              s.totalPlannedThisWeek > 0 && (
-                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 6 }}>
-                  {s.totalPlannedThisWeek} fight{s.totalPlannedThisWeek === 1 ? '' : 's'} planned later this week
-                </div>
-              )
+              <span style={{ font: '800 16px var(--font-sans)', color: 'var(--gold)' }}>{displayName.charAt(0)}</span>
             )}
           </div>
-        );
-      })}
-    </Card>
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ font: '700 14px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+          <div style={{ font: '600 11.5px var(--font-sans)', color }}>{main ?? (linked ? 'No logs yet' : 'Account not linked')}</div>
+        </div>
+      </div>
+      {bestParse != null ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <div style={{ font: '800 24px var(--font-sans)', color: 'var(--gold)' }}>{bestParse.toFixed(1)}</div>
+            <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-60)' }}>best parse</div>
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: 12, font: '400 11px var(--font-sans)', color: 'var(--text-58)' }}>
+            <div>Logs <span style={{ color: 'var(--text-85)', fontWeight: 700 }}>{profile?.totalLogs ?? 0}</span></div>
+            {profile?.record && <div>Kills <span style={{ color: 'var(--text-85)', fontWeight: 700 }}>{profile.record.kills}</span></div>}
+          </div>
+        </>
+      ) : (
+        <Link to="/account" style={{ font: '700 12px var(--font-sans)', color: 'var(--gold)' }}>
+          {linked ? 'Upload a log →' : 'Link your GW2 account →'}
+        </Link>
+      )}
+    </Panel>
+  );
+}
+
+function BestEncounterCard({ profile }: { profile: PlayerProfile | null }) {
+  const best = profile?.bestParses?.slice().sort((a, b) => b.pct - a.pct)[0] ?? null;
+  const bg = best ? bossBgPath(best.boss) : null;
+  return (
+    <Panel style={{ overflow: 'hidden' }}>
+      <div style={{ ...CARD_LABEL, padding: '18px 18px 0' }}>Best Encounter</div>
+      <div style={{ position: 'relative', height: 64, margin: '10px 0', background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.15 0.01 250))' }}>
+        {bg && <ArtImg src={bg} />}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, oklch(0.13 0.014 250 / 95%), oklch(0.13 0.014 250 / 20%))' }} />
+      </div>
+      <div style={{ padding: '0 18px 18px' }}>
+        {best ? (
+          <Link to={`/logs/${best.logId}`}>
+            <div style={{ font: '700 14px var(--font-sans)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {best.boss}{best.isCm ? ' CM' : ''}
+            </div>
+            <div style={{ font: '800 22px var(--font-sans)', color: 'var(--gold)' }}>{best.pct.toFixed(1)}</div>
+            <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-58)', marginTop: 4 }}>{best.spec} · {best.dps.toLocaleString()} dps</div>
+          </Link>
+        ) : (
+          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>No ranked parses yet.</div>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+function PerformanceTrendCard({ weeklyActivity, logsThisWeek, avgDps }: { weeklyActivity: { label: string; count: number }[]; logsThisWeek: number; avgDps: number }) {
+  const w = 260;
+  const h = 70;
+  const pad = 4;
+  const counts = weeklyActivity.map((p) => p.count);
+  const max = Math.max(...counts, 1);
+  const n = counts.length;
+  const step = w / Math.max(n - 1, 1);
+  const pts = counts.map((c, i) => [i * step, h - pad - (c / max) * (h - 2 * pad)] as const);
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const area = `${line} L${w} ${h} L0 ${h} Z`;
+
+  return (
+    <Panel style={{ padding: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={CARD_LABEL}>Performance Trend</div>
+        <div style={{ font: '500 10.5px var(--font-sans)', color: 'var(--text-55)' }}>7 days</div>
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} style={{ overflow: 'visible' }} role="img" aria-label="Uploads over the last week">
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="oklch(0.78 0.14 85)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="oklch(0.78 0.14 85)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#trendFill)" />
+        <path d={line} fill="none" stroke="oklch(0.78 0.14 85)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, font: '400 11px var(--font-sans)', color: 'var(--text-58)' }}>
+        <div>This week <span style={{ color: 'var(--text-85)', fontWeight: 700 }}>{logsThisWeek}</span></div>
+        <div>Avg DPS <span style={{ color: 'var(--text-85)', fontWeight: 700 }}>{avgDps.toLocaleString()}</span></div>
+      </div>
+    </Panel>
+  );
+}
+
+function LogsByRoleCard({ profile, recentLogs }: { profile: PlayerProfile | null; recentLogs: { profession: string }[] }) {
+  // Prefer the real per-role breakdown; fall back to a profession mix from the
+  // viewer's recent logs when the profile/roles aren't available.
+  let segments: { label: string; value: number; color: string }[];
+  let heading: string;
+  if (profile?.roleBreakdown?.length) {
+    heading = 'Logs by Role';
+    segments = profile.roleBreakdown.map((r, i) => ({ label: roleLabel(r.role), value: r.count, color: ROLE_PALETTE[i % ROLE_PALETTE.length] }));
+  } else {
+    heading = 'Your Classes';
+    const counts = new Map<string, number>();
+    for (const l of recentLogs) counts.set(l.profession, (counts.get(l.profession) ?? 0) + 1);
+    segments = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([p, v]) => ({ label: p, value: v, color: professionColor(p) }));
+  }
+
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  return (
+    <Panel style={{ padding: 18 }}>
+      <div style={{ ...CARD_LABEL, marginBottom: 12 }}>{heading}</div>
+      {total === 0 ? (
+        <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet.</div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', flex: 'none', background: conicGradient(segments, total), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'oklch(0.16 0.014 250)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px var(--font-mono)' }}>{total}</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+            {segments.slice(0, 4).map((s) => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11px var(--font-sans)', color: 'var(--text-70)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: s.color, flex: 'none' }} />
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
+                <span style={{ color: 'var(--text-50)' }}>{Math.round((s.value / total) * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function conicGradient(segments: { color: string; value: number }[], total: number): string {
+  let acc = 0;
+  const stops = segments.map((s) => {
+    const from = (acc / total) * 100;
+    acc += s.value;
+    const to = (acc / total) * 100;
+    return `${s.color} ${from.toFixed(2)}% ${to.toFixed(2)}%`;
+  });
+  return `conic-gradient(${stops.join(', ')})`;
+}
+
+function RecentUploadsCard({ logs }: { logs: DashboardSummary['recentLogs'] }) {
+  return (
+    <FeedCard title="Recent Uploads" action={{ label: 'View all', to: '/logs' }}>
+      {logs.length === 0 ? (
+        <div style={{ padding: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet — upload one to see it here.</div>
+      ) : (
+        logs.map((log, i) => (
+          <Link
+            key={log.logId}
+            to={`/logs/${log.logId}`}
+            className="u-row"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i === logs.length - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)' }}
+          >
+            <img src={professionIconPath(log.profession)} alt="" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 7, background: 'oklch(0.14 0.01 250 / 60%)', padding: 2, flex: 'none' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ font: '600 12px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.boss}{log.isCm ? ' CM' : ''}</div>
+              <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>{log.wing ?? 'Other'} · {timeAgo(log.uploadedAt)}</div>
+            </div>
+            <ResultPill success={log.success} />
+          </Link>
+        ))
+      )}
+    </FeedCard>
+  );
+}
+
+// Live Activity + Weekly Leaderboard both come from the public /home feed
+// (community-wide recent logs and top DPS), fetched once here.
+function ActivityAndLeaderboard({ ownAccount }: { ownAccount: string | null }) {
+  const { data: home } = useApiQuery(() => api.home(), []);
+  if (!home) return null;
+
+  return (
+    <>
+      <FeedCard title="Live Activity">
+        {home.recentLogs.length === 0 ? (
+          <div style={{ padding: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>Nothing happening yet.</div>
+        ) : (
+          home.recentLogs.slice(0, 5).map((log, i) => {
+            const color = log.success ? 'var(--good)' : 'var(--bad)';
+            return (
+              <div key={log.id} style={{ display: 'flex', gap: 10, padding: '11px 18px', alignItems: 'flex-start', borderBottom: i === Math.min(home.recentLogs.length, 5) - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flex: 'none', background: color }} />
+                <div style={{ font: '400 11.5px var(--font-sans)', lineHeight: 1.45, color: 'var(--text-80)' }}>
+                  <Link to={`/logs/${log.id}`} style={{ color, fontWeight: 700 }}>{log.boss}{log.isCm ? ' CM' : ''}</Link>{' '}
+                  {log.success ? 'cleared' : 'attempted'} by {log.playerCount} players{' '}
+                  <span style={{ color: 'var(--text-50)' }}>· {timeAgo(log.uploadedAt)}</span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </FeedCard>
+
+      <FeedCard title="Top DPS" action={{ label: 'View all', to: '/benchmarks' }}>
+        {home.topByProfession.length === 0 ? (
+          <div style={{ padding: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>No rankings yet.</div>
+        ) : (
+          home.topByProfession.slice(0, 5).map((row, i) => {
+            const mine = ownAccount && row.account === ownAccount;
+            const rankColor = i === 0 ? 'var(--gold)' : i < 3 ? 'var(--text-80)' : 'var(--text-50)';
+            return (
+              <Link
+                key={row.profession}
+                to={`/logs/${row.logId}`}
+                className="u-row"
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderBottom: i === Math.min(home.topByProfession.length, 5) - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)', background: mine ? 'oklch(0.78 0.14 85 / 8%)' : undefined }}
+              >
+                <div style={{ width: 16, font: '800 12px var(--font-mono)', color: rankColor, flex: 'none' }}>{i + 1}</div>
+                <ProfDot color={professionColor(row.profession)} size={8} />
+                <div style={{ flex: 1, minWidth: 0, font: '600 12.5px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.account ?? row.name}</div>
+                <div style={{ font: '700 12.5px var(--font-mono)', color: 'var(--gold)', flex: 'none' }}>{row.dps.toLocaleString()}</div>
+              </Link>
+            );
+          })
+        )}
+      </FeedCard>
+    </>
+  );
+}
+
+// "My Squad" — the subgroup roster from the viewer's most recent log, one
+// panel per subgroup, with spec art behind each player row (design's Subgroup
+// panels). Renders nothing if the log can't be loaded.
+function MySquad({ logId }: { logId: string }) {
+  const { data: log } = useApiQuery(() => api.log(logId), [logId]);
+  if (!log || log.players.length === 0) return null;
+
+  const bySubgroup = new Map<number, LogDetailPlayer[]>();
+  for (const p of log.players) {
+    const arr = bySubgroup.get(p.subgroup) ?? [];
+    arr.push(p);
+    bySubgroup.set(p.subgroup, arr);
+  }
+  const subgroups = [...bySubgroup.entries()].sort((a, b) => a[0] - b[0]);
+  const maxDps = Math.max(...log.players.map((p) => p.total), 1);
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={SECTION_LABEL}>My Squad</div>
+        <Link to={`/logs/${log.id}`} style={{ font: '600 11.5px var(--font-sans)', color: 'var(--gold)' }}>
+          {log.boss}{log.isCm ? ' CM' : ''} →
+        </Link>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+        {subgroups.map(([sg, players]) => (
+          <Panel key={sg} style={{ borderRadius: 18, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
+              Subgroup {sg}
+            </div>
+            {players.map((p, i) => {
+              const color = professionColor(p.profession);
+              const specBg = specBgPath(p.profession, p.spec);
+              const barWidth = `${(p.total / maxDps) * 100}%`;
+              return (
+                <div key={`${p.name}-${i}`} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === players.length - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)', overflow: 'hidden' }}>
+                  <ArtImg src={specBg} style={{ opacity: 0.32 }} />
+                  <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 88%) 0%, oklch(0.13 0.014 250 / 55%) 55%, oklch(0.13 0.014 250 / 88%) 100%)' }} />
+                  <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, transparent ${barWidth})`, opacity: 0.16 }} />
+                  <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }} />
+                  <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                    <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color }}>{p.role} · {p.spec || p.profession}</div>
+                    <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.account ?? p.name}</div>
+                  </div>
+                  <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div>
+                      <div style={{ font: '700 12.5px var(--font-mono)' }}>{p.total.toLocaleString()}</div>
+                      <div style={{ font: '400 9.5px var(--font-sans)', color: 'var(--text-55)' }}>dps</div>
+                    </div>
+                    {p.parsePct != null && <ParseBadge pct={p.parsePct} />}
+                  </div>
+                </div>
+              );
+            })}
+          </Panel>
+        ))}
+      </div>
+    </div>
   );
 }
