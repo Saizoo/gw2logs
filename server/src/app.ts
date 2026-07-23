@@ -3,7 +3,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import { attachUser, requireAdmin, requireAuth } from './middleware/auth.js';
-import { apiLimiter, authLimiter, uploadLimiter } from './middleware/rateLimit.js';
 import { asyncHandler } from './lib/asyncHandler.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { encountersRouter } from './routes/encounters.js';
@@ -78,8 +77,7 @@ export function createApp() {
   const app = express();
 
   // Behind nginx, so req.ip must come from the first X-Forwarded-For hop —
-  // otherwise every request looks like 127.0.0.1 and the rate limiters below
-  // share a single global bucket.
+  // otherwise every request looks like 127.0.0.1 in logs and any per-IP logic.
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
@@ -101,9 +99,6 @@ export function createApp() {
   app.use(express.json());
   app.use(attachUser);
 
-  // Broad per-IP flood protection across the whole API.
-  app.use('/api', apiLimiter);
-
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
   app.get('/api/stats', asyncHandler(async (_req, res) => {
@@ -114,13 +109,13 @@ export function createApp() {
     res.json({ totalLogs, totalPlayers });
   }));
 
-  app.use('/api/uploads', uploadLimiter, uploadsRouter);
+  app.use('/api/uploads', uploadsRouter);
   app.use('/api/encounters', encountersRouter);
   app.use('/api/players', playersRouter);
   app.use('/api/logs', logsRouter);
   app.use('/api/search', searchRouter);
   app.use('/api/compare', compareRouter);
-  app.use('/api/auth', authLimiter, authRouter);
+  app.use('/api/auth', authRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/home', homeRouter);
   app.use('/api/compositions', compositionsRouter);
