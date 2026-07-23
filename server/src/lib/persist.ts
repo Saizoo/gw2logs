@@ -7,6 +7,7 @@ export async function persistLog(params: {
   sourceFileName?: string;
   uploadedBy?: string;
   groupId?: string;
+  private?: boolean;
   normalized: NormalizedLog;
 }) {
   const { contentHash, sourceFileName, uploadedBy, groupId, normalized } = params;
@@ -26,6 +27,9 @@ export async function persistLog(params: {
           encounterTime: normalized.encounterTime,
           uploadedBy,
           groupId,
+          // Only ever private when a signed-in uploader asked for it — an
+          // owner-less private log would be unmanageable (see routes/uploads.ts).
+          private: params.private ?? false,
           sourceFileName,
         },
       });

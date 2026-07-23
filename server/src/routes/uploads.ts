@@ -145,11 +145,16 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
     const { json: rawJson } = await parseWithEliteInsights(file.buffer, file.originalname);
     const normalized = normalizeEiJson(rawJson);
 
+    // Private is honored only for signed-in uploads — an anonymous private log
+    // would have no owner to ever unhide or manage it. Multipart fields arrive
+    // as strings.
+    const isPrivate = Boolean(req.user) && req.body?.private === 'true';
     const log = await persistLog({
       contentHash,
       sourceFileName: file.originalname,
       uploadedBy: req.user?.id,
       groupId,
+      private: isPrivate,
       normalized,
     });
 

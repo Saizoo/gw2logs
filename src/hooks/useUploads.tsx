@@ -19,6 +19,7 @@ export interface UploadItem {
 interface SubmitOptions {
   groupId?: string;
   groupName?: string;
+  private?: boolean;
 }
 
 interface UploadContextValue {
@@ -48,7 +49,7 @@ function isFinished(s: UploadStatus): boolean {
 
 export function UploadProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<UploadItem[]>([]);
-  const pending = useRef<{ id: string; file: File; groupId?: string }[]>([]);
+  const pending = useRef<{ id: string; file: File; groupId?: string; private?: boolean }[]>([]);
   const active = useRef(0);
   // Ids belonging to the current run — the ring's denominator. Reset whenever
   // a batch arrives while nothing is in flight, so the ring measures "this
@@ -61,7 +62,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       active.current += 1;
       setItems((q) => q.map((qi) => (qi.id === next.id ? { ...qi, status: 'uploading' } : qi)));
       api
-        .upload(next.file, next.groupId || undefined)
+        .upload(next.file, { groupId: next.groupId || undefined, private: next.private })
         .then((result) => {
           setItems((q) => q.map((qi) => (qi.id === next.id ? { ...qi, status: 'success', logId: result.logId } : qi)));
         })
@@ -96,7 +97,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       }));
       for (const it of newItems) runIds.current.add(it.id);
       setItems((q) => [...newItems, ...q]);
-      pending.current.push(...newItems.map((it, i) => ({ id: it.id, file: arr[i], groupId: opts?.groupId })));
+      pending.current.push(...newItems.map((it, i) => ({ id: it.id, file: arr[i], groupId: opts?.groupId, private: opts?.private })));
       pump();
     },
     [pump],

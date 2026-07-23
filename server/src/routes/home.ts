@@ -30,10 +30,11 @@ homeRouter.get('/', asyncHandler(async (req, res) => {
       JOIN "Log" l ON lp."logId" = l.id
       JOIN "Player" p ON lp."playerId" = p.id
       LEFT JOIN "User" u ON u.id = p."userId"
-      WHERE l.success = true
+      WHERE l.success = true AND l.private = false
       ORDER BY lp.profession, lp."totalDps" DESC
     `,
     prisma.log.findMany({
+      where: { private: false },
       orderBy: { uploadedAt: 'desc' },
       take: 5,
       // Explicit select, not a blanket include — see the encounters/

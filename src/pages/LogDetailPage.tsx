@@ -1,12 +1,14 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
 import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot, ResultPill } from '../components/atoms';
-import { api, ApiError, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
+import { api, ApiError, type DpsChartPoint, type GroupSummary, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useComparePicker } from '../hooks/useComparePicker';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
+import { Select } from '../components/Select';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { toast } from '../lib/toast';
 
@@ -44,10 +46,13 @@ function formatDuration(ms: number): string {
 
 export default function LogDetailPage() {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
+  const { user } = useCurrentUser();
   const [tab, setTab] = useState<Tab>('Squad');
   const [reloadNonce, setReloadNonce] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const { data: log, loading, error } = useApiQuery(() => api.log(id), [id, reloadNonce]);
+  const { data: myGroups } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([] as GroupSummary[])), [user]);
 
   if (loading) return <LoadingState label="Loading log…" />;
   if (error) return <ErrorState message={error} />;
@@ -107,6 +112,11 @@ export default function LogDetailPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <ResultPill success={log.success} />
               <Pill>{formatDuration(log.durationMs)}</Pill>
+              {log.private && (
+                <span style={{ font: '700 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 82%, transparent)', color: 'var(--color-surface)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
+                  Private
+                </span>
+              )}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -155,6 +165,15 @@ export default function LogDetailPage() {
         </div>
       </Card>
 
+      {log.canManage && (
+        <LogOwnerControls
+          log={log}
+          myGroups={myGroups ?? []}
+          onChanged={() => setReloadNonce((n) => n + 1)}
+          onDeleted={() => navigate('/reports')}
+        />
+      )}
+
       {log.dpsChart && <DpsOverTimeChart points={log.dpsChart} durationLabel={formatDuration(log.durationMs)} />}
 
       <div style={{ marginBottom: 14 }}>
@@ -194,6 +213,141 @@ function Pill({ children }: { children: ReactNode }) {
     <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
       {children}
     </span>
+  );
+}
+
+// Uploader/admin controls: flip privacy, attach/move the log to one of your
+// groups, or delete it outright. Only mounted when the API says canManage, but
+// every action is re-checked server-side.
+function LogOwnerControls({
+  log,
+  myGroups,
+  onChanged,
+  onDeleted,
+}: {
+  log: LogDetail;
+  myGroups: GroupSummary[];
+  onChanged: () => void;
+  onDeleted: () => void;
+}) {
+  const [privacyBusy, setPrivacyBusy] = useState(false);
+  const [groupBusy, setGroupBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function togglePrivacy() {
+    setPrivacyBusy(true);
+    try {
+      await api.setLogPrivacy(log.id, !log.private);
+      toast.success(log.private ? 'Log is now public' : 'Log is now private');
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update privacy');
+    } finally {
+      setPrivacyBusy(false);
+    }
+  }
+
+  async function changeGroup(groupId: string) {
+    setGroupBusy(true);
+    try {
+      await api.assignLogGroup(log.id, groupId || null);
+      toast.success(groupId ? 'Log attached to group' : 'Log removed from group');
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to reassign group');
+    } finally {
+      setGroupBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm('Delete this log permanently? This removes it and all its parse data for everyone. This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await api.deleteLog(log.id);
+      toast.success('Log deleted');
+      onDeleted();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete this log');
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Card style={{ padding: '18px 20px', marginBottom: 20 }}>
+      <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 14 }}>
+        Manage this log
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, paddingBottom: 16, borderBottom: '1px solid var(--border-faint)' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ font: '700 13px var(--font-sans)' }}>Private log</div>
+          <div style={{ font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
+            Keeps this log off the public site — only you, admins, and any group it&apos;s attached to can open it. Its parses still count toward rankings.
+          </div>
+        </div>
+        <button
+          role="switch"
+          aria-checked={log.private}
+          aria-label="Private log"
+          onClick={togglePrivacy}
+          disabled={privacyBusy}
+          style={{
+            position: 'relative',
+            width: 46,
+            height: 25,
+            borderRadius: 0,
+            flexShrink: 0,
+            marginTop: 2,
+            background: log.private ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
+            border: '1px solid ' + (log.private ? 'transparent' : 'var(--border)'),
+            cursor: privacyBusy ? 'default' : 'pointer',
+            opacity: privacyBusy ? 0.6 : 1,
+            transition: 'background .15s ease',
+          }}
+        >
+          <span aria-hidden style={{ position: 'absolute', top: 2, left: log.private ? 23 : 2, width: 19, height: 19, borderRadius: '50%', background: log.private ? 'var(--gold-fg)' : 'var(--text-85)', transition: 'left .15s ease' }} />
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', paddingTop: 16 }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 260 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Group
+          </span>
+          {myGroups.length > 0 ? (
+            <Select
+              ariaLabel="Assign to group"
+              value={log.group?.id ?? ''}
+              onChange={changeGroup}
+              disabled={groupBusy}
+              options={[{ value: '', label: 'No group' }, ...myGroups.map((g) => ({ value: g.id, label: g.name }))]}
+              style={{ width: '100%' }}
+            />
+          ) : (
+            <span style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)' }}>You&apos;re not in any groups yet.</span>
+          )}
+        </label>
+
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className={deleting ? undefined : 'u-chip'}
+          style={{
+            font: '700 12px var(--font-sans)',
+            padding: '9px 16px',
+            borderRadius: 0,
+            background: 'var(--bad-dim)',
+            color: 'var(--bad)',
+            border: '1px solid color-mix(in srgb, var(--bad) 40%, transparent)',
+            cursor: deleting ? 'default' : 'pointer',
+            opacity: deleting ? 0.6 : 1,
+          }}
+        >
+          {deleting ? 'Deleting…' : 'Delete log'}
+        </button>
+      </div>
+    </Card>
   );
 }
 

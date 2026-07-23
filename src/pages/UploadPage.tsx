@@ -13,6 +13,7 @@ export default function UploadPage() {
   const { user } = useCurrentUser();
   const { data: myGroups } = useApiQuery(() => (user ? api.myGroups() : Promise.resolve([])), [user]);
   const [groupId, setGroupId] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,9 +27,9 @@ export default function UploadPage() {
   const submitFiles = useCallback(
     (files: FileList | File[]) => {
       const groupName = groupId ? myGroups?.find((g) => g.id === groupId)?.name : undefined;
-      submit(files, { groupId: groupId || undefined, groupName });
+      submit(files, { groupId: groupId || undefined, groupName, private: isPrivate });
     },
-    [submit, groupId, myGroups],
+    [submit, groupId, myGroups, isPrivate],
   );
   const hasFinished = queue.some((i) => i.status === 'success' || i.status === 'failed');
 
@@ -56,6 +57,23 @@ export default function UploadPage() {
               style={{ width: '100%' }}
             />
           </label>
+        </div>
+      )}
+
+      {user && (
+        <div style={{ maxWidth: 960, marginBottom: 16 }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--color-accent)' }}
+            />
+            <span style={{ font: '600 13px var(--font-sans)' }}>Make these logs private</span>
+          </label>
+          <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 4, maxWidth: 560, lineHeight: 1.5 }}>
+            Private logs stay off the public site — only you, admins, and any group you attach them to can open them. You can flip this on the log page later, and the parses inside still count toward rankings.
+          </div>
         </div>
       )}
 

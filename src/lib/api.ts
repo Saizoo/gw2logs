@@ -213,6 +213,11 @@ export interface LogDetail {
   dpsChart: DpsChartPoint[] | null;
   uploadedBy: { username: string } | null;
   canClaim: boolean;
+  // Hidden from the public browse surfaces; only the uploader, admins, and the
+  // log's group can open it.
+  private: boolean;
+  // Whether the viewer may toggle privacy / delete / reassign this log.
+  canManage: boolean;
   group: { id: string; name: string } | null;
   players: LogDetailPlayer[];
   // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
@@ -746,15 +751,30 @@ export const api = {
     if (p.fightName) { q.set('fightName', p.fightName); q.set('cm', String(p.isCm ?? false)); }
     return apiFetch<CompareResult>(`/compare?${q}`);
   },
-  upload: async (file: File, groupId?: string): Promise<UploadResult> => {
+  upload: async (file: File, opts: { groupId?: string; private?: boolean } = {}): Promise<UploadResult> => {
     const form = new FormData();
     form.append('file', file);
-    if (groupId) form.append('groupId', groupId);
+    if (opts.groupId) form.append('groupId', opts.groupId);
+    if (opts.private) form.append('private', 'true');
     const res = await fetch('/api/uploads', { method: 'POST', body: form });
     const body = await res.json();
     if (!res.ok) throw new ApiError(body.error ?? `Upload failed (${res.status})`, res.status);
     return body;
   },
+  // --- Log management (uploader/admin) ---
+  setLogPrivacy: (id: string, isPrivate: boolean) =>
+    apiFetch<{ ok: true; private: boolean }>(`/logs/${encodeURIComponent(id)}/privacy`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ private: isPrivate }),
+    }),
+  deleteLog: (id: string) => apiFetch<{ ok: true }>(`/logs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  assignLogGroup: (id: string, groupId: string | null) =>
+    apiFetch<{ ok: true; groupId: string | null }>(`/logs/${encodeURIComponent(id)}/group`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupId }),
+    }),
   me: () => apiFetch<CurrentUser>('/auth/me'),
   logout: () => apiFetch<{ ok: true }>('/auth/logout', { method: 'POST' }),
   linkGw2: (apiKey: string) =>

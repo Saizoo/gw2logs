@@ -68,7 +68,7 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
       spec: true,
       totalDps: true,
       squadRole: true,
-      log: { select: { fightName: true, isCm: true, uploadedAt: true, success: true } },
+      log: { select: { fightName: true, isCm: true, uploadedAt: true, success: true, private: true } },
     },
     orderBy: { log: { uploadedAt: 'desc' } },
   });
@@ -140,9 +140,13 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
   // ceiling aren't the same number, so "highest DPS" quietly favored
   // whichever spec has the higher raw scale. Restricted to actual kills
   // (wipes aren't parses), matching the leaderboard's own success filter.
+  // Aggregates below (scores, breakdowns, coverage, record) count every parse
+  // including private ones — privating a log doesn't drop it from the stats.
+  // The browsable lists that link to a specific log (bestParses, recent, and
+  // each spec's best) show public logs only, so a record link never 404s.
   const bestByBoss = new Map<string, { lp: (typeof logPlayers)[number]; pct: number }>();
   for (const lp of logPlayers) {
-    if (!lp.log.success) continue;
+    if (!lp.log.success || lp.log.private) continue;
     const pct = pctByLogPlayerId.get(lp.id) ?? 0;
     const key = `${lp.log.fightName}::${lp.log.isCm}`;
     const current = bestByBoss.get(key);
@@ -192,7 +196,8 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     const entry = specPerfAgg.get(lp.spec) ?? { profession: lp.profession, plays: 0, pctSum: 0, bestPct: -1, bestLogId: lp.logId };
     entry.plays += 1;
     entry.pctSum += pct;
-    if (pct > entry.bestPct) {
+    // Count private parses toward plays/avg, but only link to a public log.
+    if (!lp.log.private && pct > entry.bestPct) {
       entry.bestPct = pct;
       entry.bestLogId = lp.logId;
     }
@@ -287,14 +292,17 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
         pct: Math.round(pct),
         logId: lp.logId,
       })),
-    recent: logPlayers.slice(0, 10).map((lp) => ({
-      boss: lp.log.fightName,
-      isCm: lp.log.isCm,
-      spec: lp.spec,
-      dps: lp.totalDps,
-      success: lp.log.success,
-      logId: lp.logId,
-      uploadedAt: lp.log.uploadedAt,
-    })),
+    recent: logPlayers
+      .filter((lp) => !lp.log.private)
+      .slice(0, 10)
+      .map((lp) => ({
+        boss: lp.log.fightName,
+        isCm: lp.log.isCm,
+        spec: lp.spec,
+        dps: lp.totalDps,
+        success: lp.log.success,
+        logId: lp.logId,
+        uploadedAt: lp.log.uploadedAt,
+      })),
   });
 }));

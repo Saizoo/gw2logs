@@ -73,6 +73,7 @@ encountersRouter.get('/overview', asyncHandler(async (req, res) => {
       squadDps: true,
       encounterTime: true,
       wing: true,
+      private: true,
       _count: { select: { players: true } },
     },
     orderBy: { encounterTime: 'desc' },
@@ -113,7 +114,10 @@ encountersRouter.get('/overview', asyncHandler(async (req, res) => {
       if (enc.fastestKillMs === null || log.durationMs < enc.fastestKillMs) enc.fastestKillMs = log.durationMs;
     }
     if (log.squadDps > enc.bestSquadDps) enc.bestSquadDps = log.squadDps;
-    if (enc.recent.length < RECENT_PER_BOSS) {
+    // Counts/records above include private logs (their parses still count),
+    // but the browsable "recent" list — each row links to the log — only
+    // shows public ones.
+    if (!log.private && enc.recent.length < RECENT_PER_BOSS) {
       enc.recent.push({
         id: log.id,
         isCm: log.isCm,
@@ -155,7 +159,7 @@ encountersRouter.get('/overview', asyncHandler(async (req, res) => {
         JOIN "Log" l ON lp."logId" = l.id
         JOIN "Player" p ON lp."playerId" = p.id
         LEFT JOIN "User" u ON u.id = p."userId"
-        WHERE l.success = true AND l."fightName" = ANY(${fightNames})
+        WHERE l.success = true AND l.private = false AND l."fightName" = ANY(${fightNames})
         ORDER BY l."fightName", lp."totalDps" DESC
       `,
     ]);
@@ -332,7 +336,9 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) =
     JOIN "Log" l ON lp."logId" = l.id
     JOIN "Player" p ON lp."playerId" = p.id
     LEFT JOIN "User" u ON u.id = p."userId"
-    WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
+    -- The distribution population above includes private parses (they still
+    -- count); the record row links to a log, so it must be a public one.
+    WHERE l.success = true AND l.private = false AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
     ${fightCondition} ${cmCondition}
     ORDER BY lp.spec, lp."totalDps" DESC
   `;

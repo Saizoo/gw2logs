@@ -4,8 +4,15 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { RAID_BOSSES, FRACTAL_CM_BOSSES, BOSS_WING, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
 import { maskIdentity } from '../lib/privacy.js';
+import { getGroupRole } from '../lib/groupAccess.js';
 
 export const logsRouter = Router();
+
+// A private log is manageable by its uploader (incl. anyone who claimed it)
+// and by admins. Used to gate the privacy toggle, delete, and group reassign.
+function canManageLog(log: { uploadedBy: string | null }, user: { id: string; isAdmin: boolean } | null | undefined): boolean {
+  return !!user && (log.uploadedBy === user.id || user.isAdmin);
+}
 
 logsRouter.get('/', asyncHandler(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
@@ -53,6 +60,10 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
     ...(mine ? { uploadedBy: req.user?.id ?? '__none__' } : {}),
     ...(groupId ? { groupId } : {}),
     ...(bossNames ? { fightName: { in: bossNames } } : {}),
+    // Private logs stay off the public browse list. The owner still sees their
+    // own via ?mine, admins see everything, and a group's private logs surface
+    // on that group's own (membership-gated) clears/attendance pages.
+    ...(mine || req.user?.isAdmin ? {} : { private: false }),
   };
 
   let logs = await prisma.log.findMany({
@@ -149,6 +160,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       durationMs: true,
       squadDps: true,
       encounterTime: true,
+      private: true,
       uploadedBy: true,
       uploader: { select: { discordUsername: true } },
       groupId: true,
@@ -184,6 +196,17 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
   });
 
   if (!log) {
+    res.status(404).json({ error: 'Log not found' });
+    return;
+  }
+
+  // Private logs are viewable only by the uploader, admins, and — when the log
+  // is attached to a group — that group's members. Everyone else gets a 404
+  // (indistinguishable from "doesn't exist", so a private log's existence
+  // isn't leaked).
+  const manages = canManageLog(log, req.user);
+  const inGroup = log.private && !manages && log.groupId && req.user ? (await getGroupRole(log.groupId, req.user.id)) !== null : false;
+  if (log.private && !manages && !inGroup) {
     res.status(404).json({ error: 'Log not found' });
     return;
   }
@@ -239,6 +262,9 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     date: log.encounterTime,
     uploadedBy: log.uploader ? { username: log.uploader.discordUsername } : null,
     canClaim,
+    private: log.private,
+    // Whether the viewer may toggle privacy / delete / reassign this log.
+    canManage: manages,
     group: log.groupId && log.group ? { id: log.groupId, name: log.group.name } : null,
     // The raw Elite Insights JSON this was ever derived from is no longer
     // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
@@ -314,4 +340,63 @@ logsRouter.post('/:id/claim', requireAuth, asyncHandler(async (req, res) => {
 
   await prisma.log.update({ where: { id: req.params.id }, data: { uploadedBy: req.user!.id } });
   res.json({ ok: true });
+}));
+
+// Toggle a log's privacy — uploader or admin only.
+logsRouter.patch('/:id/privacy', requireAuth, asyncHandler(async (req, res) => {
+  const isPrivate = req.body?.private;
+  if (typeof isPrivate !== 'boolean') {
+    res.status(400).json({ error: 'private (boolean) is required' });
+    return;
+  }
+  const log = await prisma.log.findUnique({ where: { id: req.params.id }, select: { uploadedBy: true } });
+  if (!log) {
+    res.status(404).json({ error: 'Log not found' });
+    return;
+  }
+  if (!canManageLog(log, req.user)) {
+    res.status(403).json({ error: "You can't change this log's privacy" });
+    return;
+  }
+  await prisma.log.update({ where: { id: req.params.id }, data: { private: isPrivate } });
+  res.json({ ok: true, private: isPrivate });
+}));
+
+// Delete a log — uploader or admin only. LogPlayer/MechanicEvent/DeathEvent
+// cascade on delete (schema). Same effect as the admin delete route.
+logsRouter.delete('/:id', requireAuth, asyncHandler(async (req, res) => {
+  const log = await prisma.log.findUnique({ where: { id: req.params.id }, select: { uploadedBy: true } });
+  if (!log) {
+    res.status(404).json({ error: 'Log not found' });
+    return;
+  }
+  if (!canManageLog(log, req.user)) {
+    res.status(403).json({ error: "You can't delete this log" });
+    return;
+  }
+  await prisma.log.delete({ where: { id: req.params.id } });
+  res.json({ ok: true });
+}));
+
+// Assign / reassign / detach a log's group — uploader or admin only. When
+// attaching to a group the caller must be a member of it, same rule as
+// upload-time (see routes/uploads.ts). Pass groupId: null to detach.
+logsRouter.put('/:id/group', requireAuth, asyncHandler(async (req, res) => {
+  const raw = req.body?.groupId;
+  const groupId = typeof raw === 'string' && raw ? raw : null;
+  const log = await prisma.log.findUnique({ where: { id: req.params.id }, select: { uploadedBy: true } });
+  if (!log) {
+    res.status(404).json({ error: 'Log not found' });
+    return;
+  }
+  if (!canManageLog(log, req.user)) {
+    res.status(403).json({ error: "You can't change this log's group" });
+    return;
+  }
+  if (groupId && !(await getGroupRole(groupId, req.user!.id))) {
+    res.status(403).json({ error: 'You are not a member of that group' });
+    return;
+  }
+  await prisma.log.update({ where: { id: req.params.id }, data: { groupId } });
+  res.json({ ok: true, groupId });
 }));

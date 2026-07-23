@@ -122,6 +122,12 @@ model Log {
   uploadedBy     String?
   uploader       User?           @relation("LogUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
   sourceFileName String?
+  // Uploader-controlled privacy. A private log is kept off the public browse
+  // surfaces (All Reports list, search, recent feeds) and its detail page is
+  // access-controlled — only the uploader, admins, and (if assigned) the
+  // group's members can open it. Its parses still count in rankings/benchmarks
+  // (see routes/logs.ts, encounters.ts). Only settable by a signed-in uploader.
+  private        Boolean         @default(false)
   // Set by the uploader at upload time if they're a member of the group —
   // see routes/uploads.ts. Null means "not attached to any group", not
   // "unknown"; a log can only ever belong to one group.
@@ -140,6 +146,7 @@ model Log {
   @@index([uploadedAt])
   @@index([uploadedBy])
   @@index([groupId])
+  @@index([private])
 }
 
 model LogPlayer {

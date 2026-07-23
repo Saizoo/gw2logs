@@ -27,7 +27,8 @@ searchRouter.get('/', asyncHandler(async (req, res) => {
 
   const bosses = await prisma.log.groupBy({
     by: ['fightName', 'isCm', 'wing'],
-    where: { fightName: { contains: q, mode: 'insensitive' } },
+    // Private logs stay out of discovery/search.
+    where: { fightName: { contains: q, mode: 'insensitive' }, private: false },
     _count: { _all: true },
   });
 
