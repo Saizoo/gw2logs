@@ -5,5 +5,3 @@ out/
 *.exp
 *.lib
 *.ilk
-# vendored third-party single-header (fetch per README)
-include/nlohmann/json.hpp

@@ -120,15 +120,15 @@ cd gw2logs\nexus-addon
 > git submodule update --init --recursive
 > ```
 
-### 4.2 Add the JSON library (one file)
+### 4.2 The JSON library (already included)
 
-1. Go to <https://github.com/nlohmann/json/releases/latest> and download
-   **`json.hpp`** (under "Assets").
-2. Put it here so the path becomes exactly:
-   ```
-   nexus-addon\include\nlohmann\json.hpp
-   ```
-   (The `include\nlohmann\` folder already exists.)
+The JSON single-header this addon uses is now committed in the repo at
+`nexus-addon\include\nlohmann\json.hpp`, so a normal clone already has it —
+nothing to do here.
+
+> If that file is ever missing, download **`json.hpp`** from
+> <https://github.com/nlohmann/json/releases/latest> (under "Assets") and drop
+> it at exactly `nexus-addon\include\nlohmann\json.hpp`.
 
 > **Checkpoint:** inside `nexus-addon` you should now have `src\nexus\Nexus.h`,
 > `src\imgui\imgui.h`, and `include\nlohmann\json.hpp`. If all three exist,
