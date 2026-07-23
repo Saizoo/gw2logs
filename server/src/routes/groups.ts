@@ -135,6 +135,20 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
     },
   });
   const activity = await groupActivity(groups.map((g) => g.id));
+
+  // For a signed-in viewer, mark which of these groups they already belong to
+  // or have a pending request for — so the browse list can hide/relabel the
+  // "Request to join" button instead of offering it against their own groups.
+  const groupIds = groups.map((g) => g.id);
+  const [myMemberships, myRequests] = req.user
+    ? await Promise.all([
+        prisma.groupMember.findMany({ where: { userId: req.user.id, groupId: { in: groupIds } }, select: { groupId: true } }),
+        prisma.groupRequest.findMany({ where: { userId: req.user.id, groupId: { in: groupIds } }, select: { groupId: true } }),
+      ])
+    : [[], []];
+  const memberOf = new Set(myMemberships.map((m) => m.groupId));
+  const requestedOf = new Set(myRequests.map((r) => r.groupId));
+
   res.json(
     groups.map((g) => {
       const a = activity.get(g.id);
@@ -150,6 +164,8 @@ groupsRouter.get('/', asyncHandler(async (req, res) => {
         raidTimezone: g.raidTimezone,
         activity: a?.activity ?? [0, 0, 0, 0, 0, 0, 0],
         logsThisWeek: a?.logsThisWeek ?? 0,
+        isMember: memberOf.has(g.id),
+        requestPending: requestedOf.has(g.id),
       };
     }),
   );
@@ -257,6 +273,10 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
       members: { select: MEMBER_SELECT, orderBy: { joinedAt: 'asc' } },
       guild: { select: { id: true, name: true, tag: true, lastRankSyncAt: true } },
       ...SCHEDULE_SELECT,
+      fractalDays: true,
+      fractalStartTime: true,
+      fractalDurationMins: true,
+      fractalTimezone: true,
     },
   });
   if (!group) {
@@ -265,6 +285,15 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
   }
 
   const myRole = req.user ? await getRole(group.id, req.user.id) : null;
+  // Whether the viewer has an outstanding join request — drives the "Pending"
+  // state on the join button (only meaningful for a signed-in non-member).
+  const myRequestPending =
+    req.user && !myRole
+      ? (await prisma.groupRequest.findUnique({
+          where: { groupId_userId: { groupId: group.id, userId: req.user.id } },
+          select: { id: true },
+        })) !== null
+      : false;
 
   res.json({
     id: group.id,
@@ -289,11 +318,16 @@ groupsRouter.get('/:id', asyncHandler(async (req, res) => {
     raidStartTime: group.raidStartTime,
     raidDurationMins: group.raidDurationMins,
     raidTimezone: group.raidTimezone,
+    fractalDays: group.fractalDays,
+    fractalStartTime: group.fractalStartTime,
+    fractalDurationMins: group.fractalDurationMins,
+    fractalTimezone: group.fractalTimezone,
     // Resolved IANA zone for the free-text raidTimezone ("EST" →
     // "America/New_York"), so the client can compute raid-night dates on
     // the group's calendar instead of the viewer's browser clock.
     resolvedTimezone: resolveTimezone(group.raidTimezone),
     myRole,
+    myRequestPending,
     canManage: canManage(myRole),
   });
 }));
@@ -350,6 +384,48 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
     raidTimezone = req.body.raidTimezone.trim().slice(0, 40) || null;
   }
 
+  // The fractal schedule mirrors the raid schedule's shape and validation —
+  // an independent set of days/time/duration/timezone for a group's fractal
+  // night. Any invalid field 400s before we touch the row.
+  let fractalDays: (typeof WEEKDAYS)[number][] | undefined;
+  if (Array.isArray(req.body?.fractalDays)) {
+    const invalid = req.body.fractalDays.filter((d: unknown) => !(WEEKDAYS as readonly string[]).includes(d as string));
+    if (invalid.length) {
+      res.status(400).json({ error: `Invalid fractal day(s): ${invalid.join(', ')}. Expected one of ${WEEKDAYS.join(', ')}.` });
+      return;
+    }
+    fractalDays = [...new Set(req.body.fractalDays as (typeof WEEKDAYS)[number][])];
+  }
+
+  let fractalStartTime: string | null | undefined;
+  if (req.body?.fractalStartTime === null) {
+    fractalStartTime = null;
+  } else if (typeof req.body?.fractalStartTime === 'string') {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(req.body.fractalStartTime)) {
+      res.status(400).json({ error: 'fractalStartTime must be 24-hour HH:MM' });
+      return;
+    }
+    fractalStartTime = req.body.fractalStartTime;
+  }
+
+  let fractalDurationMins: number | null | undefined;
+  if (req.body?.fractalDurationMins === null) {
+    fractalDurationMins = null;
+  } else if (typeof req.body?.fractalDurationMins === 'number') {
+    if (!Number.isInteger(req.body.fractalDurationMins) || req.body.fractalDurationMins <= 0 || req.body.fractalDurationMins > 1440) {
+      res.status(400).json({ error: 'fractalDurationMins must be a positive integer (minutes, max 1440)' });
+      return;
+    }
+    fractalDurationMins = req.body.fractalDurationMins;
+  }
+
+  let fractalTimezone: string | null | undefined;
+  if (req.body?.fractalTimezone === null) {
+    fractalTimezone = null;
+  } else if (typeof req.body?.fractalTimezone === 'string') {
+    fractalTimezone = req.body.fractalTimezone.trim().slice(0, 40) || null;
+  }
+
   // Snapshot the schedule before the write so we only notify the group when
   // the recurring raid times actually changed (not on an icon/name edit).
   const before = await prisma.group.findUnique({
@@ -367,6 +443,10 @@ groupsRouter.put('/:id', requireAuth, asyncHandler(async (req, res) => {
       ...(raidStartTime !== undefined ? { raidStartTime } : {}),
       ...(raidDurationMins !== undefined ? { raidDurationMins } : {}),
       ...(raidTimezone !== undefined ? { raidTimezone } : {}),
+      ...(fractalDays !== undefined ? { fractalDays } : {}),
+      ...(fractalStartTime !== undefined ? { fractalStartTime } : {}),
+      ...(fractalDurationMins !== undefined ? { fractalDurationMins } : {}),
+      ...(fractalTimezone !== undefined ? { fractalTimezone } : {}),
     },
     select: { name: true, raidDays: true, raidStartTime: true, raidDurationMins: true, raidTimezone: true },
   });

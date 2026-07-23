@@ -376,6 +376,11 @@ export interface GroupSummary {
   // (oldest day first) and its total, powering the browse-row activity spark.
   activity?: number[];
   logsThisWeek?: number;
+  // Present on the browse/search list only (for a signed-in viewer): whether
+  // they already belong to this group or have an outstanding join request —
+  // drives the join button's three states.
+  isMember?: boolean;
+  requestPending?: boolean;
 }
 
 export interface GroupMemberData {
@@ -403,10 +408,18 @@ export interface GroupDetail {
   raidStartTime: string | null;
   raidDurationMins: number | null;
   raidTimezone: string | null;
+  // A second recurring schedule for fractal nights, same shape as the raid
+  // one; empty by default.
+  fractalDays: string[];
+  fractalStartTime: string | null;
+  fractalDurationMins: number | null;
+  fractalTimezone: string | null;
   // IANA zone resolved server-side from the free-text raidTimezone; used
   // to compute raid-night dates on the group's calendar.
   resolvedTimezone: string;
   myRole: 'leader' | 'subleader' | 'member' | null;
+  // For a signed-in non-member: whether they have an outstanding join request.
+  myRequestPending: boolean;
   canManage: boolean;
 }
 
@@ -911,6 +924,10 @@ export const api = {
       raidStartTime?: string | null;
       raidDurationMins?: number | null;
       raidTimezone?: string | null;
+      fractalDays?: string[];
+      fractalStartTime?: string | null;
+      fractalDurationMins?: number | null;
+      fractalTimezone?: string | null;
     },
   ) =>
     apiFetch<{ ok: true }>(`/groups/${encodeURIComponent(id)}`, {

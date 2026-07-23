@@ -7,6 +7,8 @@ import { Card, CountBadge, GoldButton } from '../components/atoms';
 import { Select } from '../components/Select';
 import { LoadingState, EmptyState } from '../components/QueryStates';
 import { WEEKDAYS, formatSchedule, nextRaid } from '../data/schedule';
+import { groupBgPath } from '../data/gw2-data';
+import { toast } from '../lib/toast';
 
 type SortOption = 'members' | 'newest' | 'name';
 
@@ -87,7 +89,15 @@ export default function MyGroupsPage() {
   }
 
   async function handleRequestJoin(groupId: string) {
-    await api.requestToJoinGroup(groupId);
+    try {
+      await api.requestToJoinGroup(groupId);
+      // Flip this row to its "Pending" state right away rather than waiting on
+      // a refetch — the button shouldn't keep offering a request you just sent.
+      setSearchResults((prev) => prev?.map((g) => (g.id === groupId ? { ...g, requestPending: true } : g)) ?? prev);
+      toast.success('Join request sent');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to send join request');
+    }
   }
 
   return (
@@ -141,26 +151,17 @@ export default function MyGroupsPage() {
           {myLoading && <LoadingState label="Loading groups…" />}
           {!myLoading && myGroups?.length === 0 && <EmptyState>You're not in any groups yet — create one or search below.</EmptyState>}
 
-          {/* Guild groups first (auto-created from displayed guilds), then
-              hand-made statics — same card, different section + badge. */}
-          {(myGroups?.some((g) => g.guild) ?? false) && (
-            <>
-              <div style={{ font: '600 12px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-                My guild
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 22 }}>
-                {myGroups?.filter((g) => g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
-              </div>
-            </>
-          )}
-
-          {(myGroups?.some((g) => !g.guild) ?? false) && (
+          {/* One unified grid — guilds and hand-made statics together, guild
+              groups leading, each self-labelled by its guild badge. */}
+          {(myGroups?.length ?? 0) > 0 && (
             <>
               <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-                My statics
+                My groups
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-                {myGroups?.filter((g) => !g.guild).map((g) => <GroupCard key={g.id} group={g} />)}
+                {[...(myGroups ?? [])]
+                  .sort((a, b) => Number(!!b.guild) - Number(!!a.guild))
+                  .map((g) => <GroupCard key={g.id} group={g} />)}
               </div>
             </>
           )}
@@ -278,10 +279,13 @@ export function GuildBadge({ tag }: { tag: string }) {
 // in here later and the layout doesn't change.
 function GroupCard({ group: g }: { group: GroupSummary }) {
   const next = nextRaid(g);
+  const bg = groupBgPath(g.background);
   return (
     <Link to={`/groups/${g.id}`} style={{ display: 'block' }}>
       <Card className="u-card-link" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ position: 'relative', height: 116, background: groupPoster(g.id || g.name) }}>
+        <div style={{ position: 'relative', height: 116, overflow: 'hidden', background: bg ? 'var(--color-neutral-900)' : groupPoster(g.id || g.name) }}>
+          {/* a chosen image (grayscale, Modernist) when set, else the procedural poster */}
+          {bg && <img src={bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1)' }} />}
           {/* legibility scrim + a faint diagonal light streak */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(114deg, transparent 42%, rgba(255,255,255,.07) 50%, transparent 58%)' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,7,7,.9) 0%, rgba(8,7,7,.35) 42%, transparent 72%)' }} />
@@ -351,13 +355,44 @@ function GroupBrowseRow({ group: g, canJoin, onJoin }: { group: GroupSummary; ca
         ) : next ? (
           <span style={{ font: '600 12px var(--font-sans)', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>Next · {next.label}</span>
         ) : null}
-        {canJoin && (
-          <button className="u-btn-ghost" onClick={onJoin} style={ghostBtnStyle}>
-            Request to join
-          </button>
-        )}
+        <JoinAction group={g} canJoin={canJoin} onJoin={onJoin} />
       </div>
     </div>
+  );
+}
+
+// The join control's three states: already a member → a quiet marker, no
+// button; request already sent → a "Pending" marker; otherwise the actual
+// "Request to join" button (only when signed in).
+function JoinAction({ group: g, canJoin, onJoin }: { group: GroupSummary; canJoin: boolean; onJoin: () => void }) {
+  if (g.isMember) {
+    return (
+      <span style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', whiteSpace: 'nowrap' }}>✓ Member</span>
+    );
+  }
+  if (g.requestPending) {
+    return (
+      <span
+        style={{
+          font: '700 11px var(--font-sans)',
+          letterSpacing: '.03em',
+          textTransform: 'uppercase',
+          color: 'var(--text-55)',
+          background: 'var(--bg-chip)',
+          border: '1px solid var(--border)',
+          padding: '7px 13px',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Pending
+      </span>
+    );
+  }
+  if (!canJoin) return null;
+  return (
+    <button className="u-btn-ghost" onClick={onJoin} style={ghostBtnStyle}>
+      Request to join
+    </button>
   );
 }
 

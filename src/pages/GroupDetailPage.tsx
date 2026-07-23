@@ -61,7 +61,24 @@ export default function GroupDetailPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {isMember && <GoldButton to={`/planner?group=${id}`}>Open Encounter Planner</GoldButton>}
-          {!isMember && user && (
+          {!isMember && user && group.myRequestPending && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                font: '700 12px var(--font-sans)',
+                letterSpacing: '.03em',
+                textTransform: 'uppercase',
+                color: 'var(--text-55)',
+                background: 'var(--bg-chip)',
+                border: '1px solid var(--border)',
+                padding: '9px 16px',
+              }}
+            >
+              Request pending
+            </span>
+          )}
+          {!isMember && user && !group.myRequestPending && (
             <GoldButton onClick={() => run(() => api.requestToJoinGroup(id), 'Join request sent')}>Request to join</GoldButton>
           )}
           {group.myRole === 'leader' && (

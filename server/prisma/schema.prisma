@@ -269,6 +269,13 @@ model Group {
   raidStartTime    String?
   raidDurationMins Int?
   raidTimezone     String?
+  // A second recurring schedule for fractals, shown alongside the raid
+  // schedule on the group page. Same shape as the raid fields; all
+  // optional — a group without a fractal night simply leaves them empty.
+  fractalDays         String[]    @default([])
+  fractalStartTime    String?
+  fractalDurationMins Int?
+  fractalTimezone     String?
   logs             Log[]
   signups          RaidSignup[]
   // Discord webhook for raid-night reminders. Encrypted at rest like GW2

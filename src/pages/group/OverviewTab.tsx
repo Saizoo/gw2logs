@@ -7,6 +7,7 @@ import { toast } from '../../lib/toast';
 import { Card, GoldButton } from '../../components/atoms';
 import { Select } from '../../components/Select';
 import { DURATION_OPTIONS_MINS, WEEKDAYS, formatDurationMins, formatSchedule } from '../../data/schedule';
+import { GROUP_BACKGROUNDS } from '../../data/gw2-data';
 import { SIGNUP_META, inputStyle, signupDateLabel, smallBtnStyle, upcomingRaidDates } from './shared';
 
 // Overview tab: the "raid night" surface — schedule, RSVP signups, weekly
@@ -48,7 +49,94 @@ export default function OverviewTab({ group, groupId, onGroupChanged }: { group:
 
       {isMember && clears && <WeeklyClearsCard clears={clears} />}
 
+      {group.canManage && <GroupImageCard group={group} groupId={groupId} onSaved={onGroupChanged} />}
+
       {group.canManage && <DiscordRemindersCard groupId={groupId} />}
+    </div>
+  );
+}
+
+// One editable schedule column (day toggles + time / duration / timezone),
+// used for both the raid and fractal schedules side by side.
+function ScheduleFields({
+  title,
+  days,
+  onToggleDay,
+  startTime,
+  setStartTime,
+  durationMins,
+  setDurationMins,
+  timezone,
+  setTimezone,
+}: {
+  title: string;
+  days: string[];
+  onToggleDay: (d: string) => void;
+  startTime: string;
+  setStartTime: (v: string) => void;
+  durationMins: number | '';
+  setDurationMins: (v: number | '') => void;
+  timezone: string;
+  setTimezone: (v: string) => void;
+}) {
+  return (
+    <div>
+      <div style={{ font: '700 12.5px var(--font-sans)', marginBottom: 10 }}>{title}</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+        {WEEKDAYS.map((d) => {
+          const active = days.includes(d);
+          return (
+            <button
+              key={d}
+              onClick={() => onToggleDay(d)}
+              style={{
+                padding: '6px 11px',
+                borderRadius: 0,
+                font: '600 12px var(--font-sans)',
+                background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
+                color: active ? 'var(--gold-fg)' : 'var(--text-65)',
+                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+              }}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Start time
+          </span>
+          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Duration
+          </span>
+          <Select
+            ariaLabel={`${title} duration`}
+            value={durationMins === '' ? '' : String(durationMins)}
+            onChange={(v) => setDurationMins(v ? Number(v) : '')}
+            options={[
+              { value: '', label: '—' },
+              ...DURATION_OPTIONS_MINS.map((m) => ({ value: String(m), label: formatDurationMins(m) })),
+            ]}
+            style={{ minWidth: 120 }}
+          />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            Timezone
+          </span>
+          <input
+            placeholder="e.g. EST, UTC"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            style={{ ...inputStyle, width: 100 }}
+          />
+        </label>
+      </div>
     </div>
   );
 }
@@ -68,23 +156,44 @@ function RaidScheduleCard({
   const [startTime, setStartTime] = useState(group.raidStartTime ?? '');
   const [durationMins, setDurationMins] = useState<number | ''>(group.raidDurationMins ?? '');
   const [timezone, setTimezone] = useState(group.raidTimezone ?? '');
+  const [fDays, setFDays] = useState<string[]>(group.fractalDays);
+  const [fStartTime, setFStartTime] = useState(group.fractalStartTime ?? '');
+  const [fDurationMins, setFDurationMins] = useState<number | ''>(group.fractalDurationMins ?? '');
+  const [fTimezone, setFTimezone] = useState(group.fractalTimezone ?? '');
   const [saving, setSaving] = useState(false);
 
+  // Fractal fields reuse formatSchedule by mapping onto its raid* keys.
+  const fractalSummary = formatSchedule({
+    raidDays: group.fractalDays,
+    raidStartTime: group.fractalStartTime,
+    raidDurationMins: group.fractalDurationMins,
+    raidTimezone: group.fractalTimezone,
+  });
+
   if (!canManage) {
-    const summary = formatSchedule(group);
+    const raidSummary = formatSchedule(group);
     return (
       <Card style={{ padding: '16px 20px' }}>
-        <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>Raid Schedule</div>
-        <div style={{ font: '400 13px var(--font-sans)', color: summary ? 'var(--text-80)' : 'var(--text-55)' }}>
-          {summary ?? 'No schedule set yet.'}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+          <div>
+            <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>Raid Schedule</div>
+            <div style={{ font: '400 13px var(--font-sans)', color: raidSummary ? 'var(--text-80)' : 'var(--text-55)' }}>
+              {raidSummary ?? 'No schedule set yet.'}
+            </div>
+          </div>
+          <div>
+            <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>Fractal Schedule</div>
+            <div style={{ font: '400 13px var(--font-sans)', color: fractalSummary ? 'var(--text-80)' : 'var(--text-55)' }}>
+              {fractalSummary ?? 'No fractal night set.'}
+            </div>
+          </div>
         </div>
       </Card>
     );
   }
 
-  function toggleDay(d: string) {
-    setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
-  }
+  const toggleDay = (d: string) => setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  const toggleFDay = (d: string) => setFDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
 
   async function handleSave() {
     setSaving(true);
@@ -94,8 +203,12 @@ function RaidScheduleCard({
         raidStartTime: startTime || null,
         raidDurationMins: durationMins === '' ? null : durationMins,
         raidTimezone: timezone.trim() || null,
+        fractalDays: fDays,
+        fractalStartTime: fStartTime || null,
+        fractalDurationMins: fDurationMins === '' ? null : fDurationMins,
+        fractalTimezone: fTimezone.trim() || null,
       });
-      toast.success('Raid schedule updated');
+      toast.success('Schedule updated');
       onSaved();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Failed to update schedule');
@@ -106,65 +219,124 @@ function RaidScheduleCard({
 
   return (
     <Card style={{ padding: '16px 20px' }}>
-      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 12 }}>Raid Schedule</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-        {WEEKDAYS.map((d) => {
-          const active = days.includes(d);
-          return (
-            <button
-              key={d}
-              onClick={() => toggleDay(d)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 0,
-                font: '600 12px var(--font-sans)',
-                background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
-                color: active ? 'var(--gold-fg)' : 'var(--text-65)',
-                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-              }}
-            >
-              {d}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Start time
-          </span>
-          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Duration
-          </span>
-          <Select
-            ariaLabel="Duration"
-            value={durationMins === '' ? '' : String(durationMins)}
-            onChange={(v) => setDurationMins(v ? Number(v) : '')}
-            options={[
-              { value: '', label: '—' },
-              ...DURATION_OPTIONS_MINS.map((m) => ({ value: String(m), label: formatDurationMins(m) })),
-            ]}
-            style={{ minWidth: 130 }}
-          />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Timezone
-          </span>
-          <input
-            placeholder="e.g. EST, UTC"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            style={{ ...inputStyle, width: 110 }}
-          />
-        </label>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 16 }}>
+        <ScheduleFields
+          title="Raid Schedule"
+          days={days}
+          onToggleDay={toggleDay}
+          startTime={startTime}
+          setStartTime={setStartTime}
+          durationMins={durationMins}
+          setDurationMins={setDurationMins}
+          timezone={timezone}
+          setTimezone={setTimezone}
+        />
+        <ScheduleFields
+          title="Fractal Schedule"
+          days={fDays}
+          onToggleDay={toggleFDay}
+          startTime={fStartTime}
+          setStartTime={setFStartTime}
+          durationMins={fDurationMins}
+          setDurationMins={setFDurationMins}
+          timezone={fTimezone}
+          setTimezone={setFTimezone}
+        />
       </div>
       <GoldButton onClick={handleSave} disabled={saving}>
         {saving ? 'Saving…' : 'Save schedule'}
       </GoldButton>
+    </Card>
+  );
+}
+
+// Group poster picker (managers only): choose one of the ready-made
+// backgrounds for the group's card, or clear it back to the generated poster.
+function GroupImageCard({ group, groupId, onSaved }: { group: GroupDetail; groupId: string; onSaved: () => void }) {
+  const [saving, setSaving] = useState<string | null>(null);
+  const current = group.background;
+
+  async function choose(token: string | null) {
+    setSaving(token ?? '__clear__');
+    try {
+      await api.updateGroup(groupId, { background: token });
+      toast.success(token ? 'Group image updated' : 'Group image cleared');
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update image');
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <Card style={{ padding: '16px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Group Image</div>
+        {current && (
+          <button
+            onClick={() => choose(null)}
+            disabled={saving !== null}
+            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div style={{ font: '400 11.5px/1.5 var(--font-sans)', color: 'var(--text-55)', marginBottom: 12 }}>
+        Pick the backdrop for this group's card. Shown in grayscale to match the site.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(116px, 1fr))', gap: 8 }}>
+        {GROUP_BACKGROUNDS.map((b) => {
+          const active = current === b.token;
+          return (
+            <button
+              key={b.token}
+              onClick={() => choose(b.token)}
+              disabled={saving !== null}
+              title={b.label}
+              style={{
+                position: 'relative',
+                height: 62,
+                padding: 0,
+                borderRadius: 0,
+                overflow: 'hidden',
+                cursor: saving !== null ? 'default' : 'pointer',
+                border: `2px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                background: 'var(--color-neutral-900)',
+                opacity: saving !== null && !active ? 0.6 : 1,
+              }}
+            >
+              <img
+                src={`/assets/raid_backgrounds/${b.file}`}
+                alt={b.label}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: active ? 'grayscale(1)' : 'grayscale(1) brightness(0.85)' }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '5px 6px',
+                  font: '700 8.5px var(--font-sans)',
+                  color: 'var(--on-art)',
+                  textShadow: '0 1px 4px rgba(0,0,0,.8)',
+                  background: 'linear-gradient(to top, rgba(8,7,7,.75), transparent 60%)',
+                  lineHeight: 1.1,
+                }}
+              >
+                {b.label}
+              </span>
+              {active && (
+                <span style={{ position: 'absolute', top: 3, right: 3, width: 14, height: 14, background: 'var(--gold-grad)', color: 'var(--gold-fg)', font: '800 9px var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </Card>
   );
 }

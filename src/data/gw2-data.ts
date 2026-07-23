@@ -171,6 +171,47 @@ export const RAID_BACKGROUNDS: string[] = [...new Set(Object.values(BOSS_BG))].m
   (file) => `/assets/raid_backgrounds/${file}`,
 );
 
+// Selectable group poster art. A group manager picks one of these for the
+// group's card; the choice is stored in Group.background as the bare filename
+// stem (the token) so it survives the server's [a-z0-9] sanitisation, and is
+// resolved back to a path by groupBgPath. Reuses the raid/strike/fractal art
+// we already ship — no new assets, no uploads.
+export const GROUP_BACKGROUNDS: { token: string; file: string; label: string }[] = [
+  { token: 'spiritvale', file: 'spiritvale.jpg', label: 'Spirit Vale' },
+  { token: 'salvationpass', file: 'salvationpass.jpg', label: 'Salvation Pass' },
+  { token: 'strongholdofthefaithful', file: 'strongholdofthefaithful.jpg', label: 'Stronghold of the Faithful' },
+  { token: 'bastionofthepenitent', file: 'bastionofthepenitent.jpg', label: 'Bastion of the Penitent' },
+  { token: 'hallofchains', file: 'hallofchains.jpg', label: 'Hall of Chains' },
+  { token: 'mythwrightgambit', file: 'mythwrightgambit.jpg', label: 'Mythwright Gambit' },
+  { token: 'thekeyofahdashim', file: 'thekeyofahdashim.jpg', label: 'The Key of Ahdashim' },
+  { token: 'mountbalrior', file: 'mountbalrior.jpg', label: 'Mount Balrior' },
+  { token: 'guardiansglade', file: 'guardiansglade.jpg', label: "Guardian's Glade" },
+  { token: 'shiverpeakspass', file: 'shiverpeakspass.jpg', label: 'Shiverpeak Pass' },
+  { token: 'voiceofthefallenandclawofthefallen', file: 'voiceofthefallenandclawofthefallen.jpg', label: 'Voice & Claw' },
+  { token: 'fraenirofjormag', file: 'fraenirofjormag.jpg', label: 'Fraenir of Jormag' },
+  { token: 'boneskinner', file: 'boneskinner.jpg', label: 'Boneskinner' },
+  { token: 'whisperofjormag', file: 'whisperofjormag.jpg', label: 'Whisper of Jormag' },
+  { token: 'forgingsteel', file: 'forgingsteel.jpg', label: 'Forging Steel' },
+  { token: 'coldwar', file: 'coldwar.jpg', label: 'Cold War' },
+  { token: 'aetherbladehideout', file: 'aetherbladehideout.jpg', label: 'Aetherblade Hideout' },
+  { token: 'xunlaijadejunkyard', file: 'xunlaijadejunkyard.jpg', label: 'Xunlai Jade Junkyard' },
+  { token: 'kainengoverlook', file: 'kainengoverlook.jpg', label: 'Kaineng Overlook' },
+  { token: 'oldlionscourt', file: 'oldlionscourt.jpg', label: "Old Lion's Court" },
+  { token: 'harvesttemple', file: 'harvesttemple.jpg', label: 'Harvest Temple' },
+  { token: 'cosmicobservatory', file: 'cosmicobservatory.jpg', label: 'Cosmic Observatory' },
+  { token: 'templeoffebe', file: 'templeoffebe.jpg', label: 'Temple of Febe' },
+  { token: 'fractals', file: 'fractals.png', label: 'Fractals' },
+];
+
+const GROUP_BG_BY_TOKEN = new Map(GROUP_BACKGROUNDS.map((b) => [b.token, b.file]));
+
+// Resolve a stored Group.background token to an asset path, or null when unset
+// or unrecognised (caller falls back to its procedural poster).
+export function groupBgPath(token: string | null | undefined): string | null {
+  const file = token ? GROUP_BG_BY_TOKEN.get(token) : undefined;
+  return file ? `/assets/raid_backgrounds/${file}` : null;
+}
+
 // Loose variant for raid-planner catalog names, which shorten or
 // re-punctuate some fightNames ("Gorseval" vs "Gorseval the Multifarious",
 // "Greer, the Blightbringer" vs "Greer the Blightbringer"): exact match
