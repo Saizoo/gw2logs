@@ -286,11 +286,42 @@ encountersRouter.get('/benchmarks', asyncHandler(async (req, res) => {
 // single best. Quantiles are computed here rather than in SQL so the exact
 // method (linear interpolation) is one obvious piece of code.
 encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) => {
+  // Optional scope: a single boss, or a whole wing (all its bosses combined),
+  // and/or a challenge-mode filter. No params = the global distribution.
+  const boss = typeof req.query.boss === 'string' && req.query.boss ? req.query.boss : undefined;
+  const wing = typeof req.query.wing === 'string' && req.query.wing ? req.query.wing : undefined;
+  const cm = req.query.cm === 'true' ? true : req.query.cm === 'false' ? false : undefined;
+
+  let fightCondition = Prisma.empty;
+  if (boss || wing) {
+    // Match stored fightNames (which include CM/short/map-name variants) by
+    // canonicalizing them and comparing against the requested boss, or the
+    // set of bosses in the requested wing — same approach as the logs route.
+    const distinct = await prisma.log.findMany({ select: { fightName: true }, distinct: ['fightName'] });
+    const wingBosses = wing ? new Set(Object.entries(BOSS_WING).filter(([, w]) => w === wing).map(([b]) => b)) : null;
+    const targetBoss = boss ? canonicalFightName(boss) : null;
+    const names = distinct
+      .map((d) => d.fightName)
+      .filter((n) => {
+        const canon = canonicalFightName(n);
+        return targetBoss ? canon === targetBoss : wingBosses!.has(canon);
+      });
+    // Scope requested but nothing matches — return an empty distribution
+    // rather than an invalid `IN ()`.
+    if (names.length === 0) {
+      res.json([]);
+      return;
+    }
+    fightCondition = Prisma.sql`AND l."fightName" IN (${Prisma.join(names)})`;
+  }
+  const cmCondition = cm === undefined ? Prisma.empty : Prisma.sql`AND l."isCm" = ${cm}`;
+
   const rows = await prisma.$queryRaw<{ spec: string; profession: string; totalDps: number }[]>`
     SELECT lp.spec, lp.profession, lp."totalDps"
     FROM "LogPlayer" lp
     JOIN "Log" l ON lp."logId" = l.id
     WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
+    ${fightCondition} ${cmCondition}
   `;
   const bestRows = await prisma.$queryRaw<
     { spec: string; logId: string; totalDps: number; characterName: string; account: string; userId: string | null; hideName: boolean | null; fightName: string; isCm: boolean; encounterTime: Date }[]
@@ -302,6 +333,7 @@ encountersRouter.get('/benchmarks/distribution', asyncHandler(async (req, res) =
     JOIN "Player" p ON lp."playerId" = p.id
     LEFT JOIN "User" u ON u.id = p."userId"
     WHERE l.success = true AND lp.spec <> lp.profession AND lp."squadRole" <> 'boon_heal'
+    ${fightCondition} ${cmCondition}
     ORDER BY lp.spec, lp."totalDps" DESC
   `;
 

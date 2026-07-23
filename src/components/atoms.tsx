@@ -32,6 +32,44 @@ export function SubNav({ tabs }: { tabs: { label: string; to: string }[] }) {
   );
 }
 
+// Scoped tab strip for the Rankings / Statistics / All Reports views. Given a
+// boss or a wing, it carries that scope across the three views via the query
+// string. Wings have no Rankings (rankings are boss-only), so that tab is
+// omitted at wing scope. Active state keys off the pathname, not the full
+// href (which includes the scope query).
+export function ScopeSubNav({ boss, wing }: { boss?: string; wing?: string }) {
+  const location = useLocation();
+  const scopeQ = boss ? `boss=${encodeURIComponent(boss)}` : `wing=${encodeURIComponent(wing ?? '')}`;
+  const tabs = [
+    ...(boss ? [{ label: 'Rankings', path: '/rankings' }] : []),
+    { label: 'Statistics', path: '/statistics' },
+    { label: 'All Reports', path: '/reports' },
+  ];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      {tabs.map((t) => {
+        const active = location.pathname === t.path;
+        return (
+          <Link
+            key={t.path}
+            to={`${t.path}?${scopeQ}`}
+            style={{
+              padding: '12px 2px',
+              marginBottom: -2,
+              font: '700 13.5px var(--font-sans)',
+              borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
+              color: active ? 'var(--text)' : 'var(--text-55)',
+              transition: 'color .15s ease, border-color .15s ease',
+            }}
+          >
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Logo() {
   return (
     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

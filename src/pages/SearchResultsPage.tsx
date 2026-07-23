@@ -61,7 +61,7 @@ export default function SearchResultsPage() {
               <Link
                 className="u-row"
                 key={`${b.fightName}-${b.isCm}`}
-                to={`/leaderboards?encounter=${encodeURIComponent(b.fightName)}&cm=${b.isCm}`}
+                to={`/rankings?boss=${encodeURIComponent(b.fightName)}&cm=${b.isCm}`}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

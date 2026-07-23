@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
-import { RAID_BOSSES, FRACTAL_CM_BOSSES, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
+import { RAID_BOSSES, FRACTAL_CM_BOSSES, BOSS_WING, canonicalFightName, categorizeFight } from '../lib/bossMeta.js';
 import { maskIdentity } from '../lib/privacy.js';
 
 export const logsRouter = Router();
@@ -19,11 +19,23 @@ logsRouter.get('/', asyncHandler(async (req, res) => {
   // spelling that canonicalizes to the requested boss instead, so a click
   // works whether or not the fightname backfill has run.
   const boss = typeof req.query.boss === 'string' && req.query.boss ? canonicalFightName(req.query.boss) : undefined;
+  // Wing filter — the Raids overview / catalog menu link a whole wing here.
+  // Resolve the wing to its boss set (BOSS_WING) and match every stored
+  // spelling that canonicalizes into it, same as the boss filter. `boss`
+  // wins when both are present (it's the more specific scope).
+  const wing = typeof req.query.wing === 'string' && req.query.wing ? req.query.wing : undefined;
   let bossNames: string[] | undefined;
-  if (boss) {
+  if (boss || (wing && !boss)) {
     const distinct = await prisma.log.findMany({ distinct: ['fightName'], select: { fightName: true } });
-    bossNames = distinct.map((d) => d.fightName).filter((n) => canonicalFightName(n) === boss);
-    if (bossNames.length === 0) bossNames = [boss];
+    if (boss) {
+      bossNames = distinct.map((d) => d.fightName).filter((n) => canonicalFightName(n) === boss);
+      if (bossNames.length === 0) bossNames = [boss];
+    } else {
+      const wingBosses = new Set(Object.entries(BOSS_WING).filter(([, w]) => w === wing).map(([b]) => b));
+      bossNames = distinct.map((d) => d.fightName).filter((n) => wingBosses.has(canonicalFightName(n)));
+      // Requested a wing with no logs yet — match nothing rather than everything.
+      if (bossNames.length === 0) bossNames = ['__none__'];
+    }
   }
   const limit = Math.min(Number(req.query.limit ?? 50), 200);
   const offset = Math.max(Number(req.query.offset ?? 0), 0);

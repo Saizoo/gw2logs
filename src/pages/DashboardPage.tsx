@@ -153,7 +153,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
             Upload Log
           </GoldButton>
           <Link
-            to="/leaderboards"
+            to="/raids"
             className="u-btn-ghost"
             style={{
               display: 'flex',
@@ -167,7 +167,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
               border: '1px solid color-mix(in srgb, var(--color-bg) 40%, transparent)',
             }}
           >
-            View Leaderboards
+            Browse Raids
           </Link>
         </div>
         <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 36px)', flexWrap: 'wrap' }}>{stats}</div>
@@ -181,7 +181,7 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossBgPath(enc.fightName);
   return (
     <Link
-      to="/encounters"
+      to="/raids"
       className="u-card-link"
       style={{
         position: 'relative',
@@ -231,7 +231,7 @@ function PopularEncounters() {
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={SECTION_LABEL}>Popular Encounters</div>
-        <Link to="/encounters" style={{ font: '600 11.5px var(--font-sans)', color: 'var(--gold)' }}>
+        <Link to="/raids" style={{ font: '600 11.5px var(--font-sans)', color: 'var(--gold)' }}>
           View all →
         </Link>
       </div>
@@ -289,7 +289,7 @@ function LoggedOutDashboard() {
       {home && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 20, alignItems: 'start', marginBottom: 28 }}>
-            <FeedCard title="Top DPS by profession" action={{ label: 'Rankings', to: '/benchmarks' }}>
+            <FeedCard title="Top DPS by profession" action={{ label: 'Rankings', to: '/statistics' }}>
               {home.topByProfession.length === 0 ? (
                 <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs uploaded yet — this fills in as parses come in.</div>
               ) : (
@@ -312,7 +312,7 @@ function LoggedOutDashboard() {
               )}
             </FeedCard>
 
-            <FeedCard title="Recent Uploads" action={{ label: 'All logs', to: '/logs' }}>
+            <FeedCard title="Recent Uploads" action={{ label: 'All logs', to: '/reports' }}>
               {home.recentLogs.length === 0 ? (
                 <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
               ) : (
@@ -574,7 +574,7 @@ function conicGradient(segments: { color: string; value: number }[], total: numb
 
 function RecentUploadsCard({ logs }: { logs: DashboardSummary['recentLogs'] }) {
   return (
-    <FeedCard title="Recent Uploads" action={{ label: 'View all', to: '/logs' }}>
+    <FeedCard title="Recent Uploads" action={{ label: 'View all', to: '/reports' }}>
       {logs.length === 0 ? (
         <div style={{ padding: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet — upload one to see it here.</div>
       ) : (
@@ -626,7 +626,7 @@ function ActivityAndLeaderboard({ ownAccount }: { ownAccount: string | null }) {
         )}
       </FeedCard>
 
-      <FeedCard title="Top DPS" action={{ label: 'View all', to: '/benchmarks' }}>
+      <FeedCard title="Top DPS" action={{ label: 'View all', to: '/statistics' }}>
         {home.topByProfession.length === 0 ? (
           <div style={{ padding: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>No rankings yet.</div>
         ) : (

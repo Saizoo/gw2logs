@@ -3,9 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, type LogListItem } from '../lib/api';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Card, LoadMoreButton, PageHeader, ParseBadge, ParseLegend, ResultPill, SubNav } from '../components/atoms';
+import { Card, LoadMoreButton, PageHeader, ParseBadge, ParseLegend, ResultPill, ScopeSubNav } from '../components/atoms';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
-import { LOGS_SUBNAV } from './EncountersPage';
 
 type Filter = 'all' | 'raid' | 'fractal' | 'kills' | 'mine';
 
@@ -37,7 +36,11 @@ export default function LogsPage() {
   // Boss deep-link from the Encounters page cards (?boss=Vale%20Guardian):
   // narrows the list to one fight, cleared with the × on its chip.
   const [searchParams, setSearchParams] = useSearchParams();
+  // Scope deep-link from the Raids / Fractals catalog: one boss (?boss=) or a
+  // whole wing (?wing=). Cleared with the × on its chip.
   const boss = searchParams.get('boss') ?? undefined;
+  const wing = boss ? undefined : searchParams.get('wing') ?? undefined;
+  const scopeLabel = boss ?? wing;
   const filters = user ? [...FILTERS, { key: 'mine' as const, label: 'Uploaded by me' }] : FILTERS;
 
   const { items: logs, loading, loadingMore, error, hasMore, loadMore } = usePaginatedList<LogListItem>(
@@ -48,28 +51,29 @@ export default function LogsPage() {
           killsOnly: filter === 'kills',
           mine: filter === 'mine',
           boss,
+          wing,
           limit: PAGE_SIZE,
           offset,
         })
         // No total count comes back from this endpoint — a full page is the
         // only signal there might be more behind it.
         .then((items) => ({ items, hasMore: items.length === PAGE_SIZE })),
-    [filter, boss],
+    [filter, boss, wing],
   );
 
   return (
     <div>
       <PageHeader
-        title={boss ? `${boss} — Logs` : 'All Logs'}
-        subtitle={boss ? `Every uploaded ${boss} report, kills and wipes` : 'Every uploaded report across raids and fractal challenge modes'}
+        title={scopeLabel ? `${scopeLabel} — All Reports` : 'All Reports'}
+        subtitle={scopeLabel ? `Every uploaded ${scopeLabel} report, kills and wipes` : 'Every uploaded report across raids and fractal challenge modes'}
       />
-      <SubNav tabs={LOGS_SUBNAV} />
+      {scopeLabel && <ScopeSubNav boss={boss} wing={wing} />}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-        {boss && (
+        {scopeLabel && (
           <button
             onClick={() => setSearchParams({}, { replace: true })}
-            title="Clear boss filter"
+            title="Clear scope filter"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -82,7 +86,7 @@ export default function LogsPage() {
               border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
             }}
           >
-            {boss} <span aria-hidden style={{ opacity: 0.75 }}>✕</span>
+            {scopeLabel} <span aria-hidden style={{ opacity: 0.75 }}>✕</span>
           </button>
         )}
         {filters.map((f) => {

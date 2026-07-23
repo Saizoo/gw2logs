@@ -1,16 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, type SpecDistribution } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath } from '../data/gw2-data';
-import { Card, PageHeader, SubNav } from '../components/atoms';
+import { Card, PageHeader, ScopeSubNav } from '../components/atoms';
 import { TooltipPortal } from '../components/TooltipPortal';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
-
-export const BENCH_SUBNAV = [
-  { label: 'Benchmarks', to: '/benchmarks' },
-  { label: 'Leaderboard', to: '/leaderboards' },
-];
 
 // Box-and-whisker per elite spec: the thin line is the DPS spread (min to
 // 95th percentile), the thick box the middle half (Q1–Q3) with a tick at
@@ -35,21 +30,67 @@ function niceStep(range: number, targetTicks: number): number {
   return 10 * mag;
 }
 
+// Statistics: the elite-spec DPS distribution, scoped to a single boss
+// (?boss=) or a whole wing (?wing=, all its bosses combined) via the Raids /
+// Fractals catalog menu, split into Normal / Challenge Mode.
 export default function BenchmarksPage() {
-  const { data: rows, loading, error } = useApiQuery(() => api.specBenchmarkDistribution(), []);
+  const [params, setParams] = useSearchParams();
+  const boss = params.get('boss') ?? '';
+  const wing = params.get('wing') ?? '';
+  const cm = params.get('cm') === 'true';
+
+  const { data: rows, loading, error } = useApiQuery(
+    () => api.specBenchmarkDistribution({ boss: boss || undefined, wing: wing || undefined, cm }),
+    [boss, wing, cm],
+  );
+
+  function setCm(value: boolean) {
+    const next = new URLSearchParams(params);
+    next.set('cm', String(value));
+    setParams(next);
+  }
+
+  const scopeLabel = boss || wing || 'All encounters';
+  const scoped = Boolean(boss || wing);
 
   return (
     <div>
       <PageHeader
-        title="Benchmarks"
+        title={`${scopeLabel} — Statistics`}
         subtitle="DPS distribution per elite specialization, kills only — box is the middle half, line the full spread, dot the best parse on record"
       />
-      <SubNav tabs={BENCH_SUBNAV} />
+      {scoped && <ScopeSubNav boss={boss || undefined} wing={boss ? undefined : wing || undefined} />}
 
-      {loading && <LoadingState label="Loading benchmarks…" />}
+      {/* Normal / Challenge-mode split */}
+      <div style={{ display: 'flex', border: '1px solid var(--border)', width: 'fit-content', marginBottom: 18 }}>
+        {[
+          { v: false, l: 'Normal' },
+          { v: true, l: 'Challenge Mode' },
+        ].map((o) => (
+          <button
+            key={String(o.v)}
+            onClick={() => setCm(o.v)}
+            style={{
+              padding: '8px 18px',
+              font: '700 12px var(--font-sans)',
+              letterSpacing: '.03em',
+              textTransform: 'uppercase',
+              background: cm === o.v ? 'var(--gold)' : 'transparent',
+              color: cm === o.v ? 'var(--gold-fg)' : 'var(--text-70)',
+              borderRight: o.v === false ? '1px solid var(--border)' : 'none',
+            }}
+          >
+            {o.l}
+          </button>
+        ))}
+      </div>
+
+      {loading && <LoadingState label="Loading statistics…" />}
       {error && <ErrorState message={error} />}
       {rows && rows.length === 0 && (
-        <EmptyState>No kills logged yet — elite-spec benchmarks appear once the first kill comes in.</EmptyState>
+        <EmptyState>
+          No {cm ? 'challenge-mode ' : ''}kills logged for {scopeLabel.toLowerCase() === 'all encounters' ? 'any encounter' : scopeLabel} yet — the distribution fills in as kills come in.
+        </EmptyState>
       )}
 
       {rows && rows.length > 0 && (

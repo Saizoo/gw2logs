@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import LogsPage from './pages/LogsPage';
@@ -13,10 +13,18 @@ import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import CharactersPage from './pages/CharactersPage';
 import EncountersPage from './pages/EncountersPage';
+import FractalsPage from './pages/FractalsPage';
 import BenchmarksPage from './pages/BenchmarksPage';
 import MyGroupsPage from './pages/MyGroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
 import AdminPage from './pages/AdminPage';
+
+// Redirect that carries the query string across — the old paths are linked
+// from elsewhere on the web with ?boss=/?encounter= etc.
+function RedirectPreserve({ to }: { to: string }) {
+  const location = useLocation();
+  return <Navigate to={{ pathname: to, search: location.search }} replace />;
+}
 
 export default function App() {
   return (
@@ -25,10 +33,20 @@ export default function App() {
 
       <Route element={<Layout />}>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/encounters" element={<EncountersPage />} />
-        <Route path="/logs" element={<LogsPage />} />
-        <Route path="/benchmarks" element={<BenchmarksPage />} />
-        <Route path="/leaderboards" element={<LeaderboardPage />} />
+
+        {/* Area catalogs + scoped views */}
+        <Route path="/raids" element={<EncountersPage />} />
+        <Route path="/fractals" element={<FractalsPage />} />
+        <Route path="/rankings" element={<LeaderboardPage />} />
+        <Route path="/statistics" element={<BenchmarksPage />} />
+        <Route path="/reports" element={<LogsPage />} />
+
+        {/* Old paths → new IA (query preserved) */}
+        <Route path="/encounters" element={<RedirectPreserve to="/raids" />} />
+        <Route path="/benchmarks" element={<RedirectPreserve to="/statistics" />} />
+        <Route path="/leaderboards" element={<RedirectPreserve to="/rankings" />} />
+        <Route path="/logs" element={<RedirectPreserve to="/reports" />} />
+
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/players/:name" element={<PlayerProfilePage />} />
         <Route path="/groups" element={<MyGroupsPage />} />

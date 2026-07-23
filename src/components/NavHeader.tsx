@@ -4,28 +4,24 @@ import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { NotificationBell } from './NotificationBell';
 import { UploadIndicator } from './UploadIndicator';
+import { NavCatalogMenu } from './NavCatalogMenu';
+import { RAID_CATALOG, FRACTAL_CATALOG } from '../data/catalog';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
-// Raid Planner is deliberately not here — it's only meaningful in the
-// context of a specific group's roster/compositions, so it's reached via
-// the "Open Raid Planner" button on that group's page instead of a global
-// tab. The /planner route itself still works standalone (falls back to a
-// group picker) for anyone with an old bookmark.
-// `match` lists extra path prefixes that keep a tab highlighted — the
-// Encounters and Benchmarks sections each own a sub-page that lives on a
-// different top-level route (/logs, /leaderboards).
-const TABS: { label: string; to: string; match?: string[] }[] = [
-  { label: 'Dashboard', to: '/' },
-  { label: 'Encounters', to: '/encounters', match: ['/encounters', '/logs'] },
-  { label: 'Benchmarks', to: '/benchmarks', match: ['/benchmarks', '/leaderboards'] },
+// Raids and Fractals are catalog mega-menus (see NavCatalogMenu); the rest are
+// plain tabs. Raid Planner is deliberately not here — it's reached from a
+// group's page. Dashboard leads; Groups/Characters/Compare (and Admin) follow
+// the two menus.
+const DASH_TAB = { label: 'Dashboard', to: '/' };
+const AFTER_TABS: { label: string; to: string }[] = [
   { label: 'Groups', to: '/groups' },
   { label: 'Characters', to: '/characters' },
   { label: 'Compare', to: '/compare' },
 ];
 
-function isTabActive(tab: { to: string; match?: string[] }, pathname: string): boolean {
-  if (tab.to === '/') return pathname === '/';
-  return (tab.match ?? [tab.to]).some((prefix) => pathname.startsWith(prefix));
+function isTabActive(to: string, pathname: string): boolean {
+  if (to === '/') return pathname === '/';
+  return pathname.startsWith(to);
 }
 
 export function NavHeader() {
@@ -33,14 +29,28 @@ export function NavHeader() {
   const { user } = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // A tab click inside the mobile panel navigates but doesn't unmount
-  // NavHeader (it lives above the route's <main>), so the panel has to be
-  // closed explicitly on every route change rather than just on click.
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const tabs = [...TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
+  const afterTabs = [...AFTER_TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
+  // Flat list used only for the mobile panel (menus collapse to plain links there).
+  const mobileTabs = [DASH_TAB, { label: 'Raids', to: '/raids' }, { label: 'Fractals', to: '/fractals' }, ...afterTabs];
+
+  const tabStyle = (active: boolean) =>
+    ({
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 0,
+      font: '700 12.5px var(--font-sans)',
+      letterSpacing: '.04em',
+      textTransform: 'uppercase',
+      whiteSpace: 'nowrap',
+      background: 'transparent',
+      color: active ? 'var(--gold)' : 'var(--text-65)',
+    }) as const;
 
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 50 }}>
@@ -89,38 +99,17 @@ export function NavHeader() {
         </button>
 
         <div className="nav-collapsible" style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: 0,
-              overflowX: 'auto',
-            }}
-          >
-            {tabs.map((tab) => {
-              const active = isTabActive(tab, location.pathname);
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'visible' }}>
+            <Link to={DASH_TAB.to} data-tour="dashboard" className={`nav-tab${isTabActive('/', location.pathname) ? ' is-active' : ''}`} style={tabStyle(isTabActive('/', location.pathname))}>
+              {DASH_TAB.label}
+            </Link>
+            <NavCatalogMenu label="Raids" to="/raids" catalog={RAID_CATALOG} />
+            <NavCatalogMenu label="Fractals" to="/fractals" catalog={FRACTAL_CATALOG} />
+            {afterTabs.map((tab) => {
+              const active = isTabActive(tab.to, location.pathname);
               const badgeCount = tab.to === '/groups' ? user?.pendingGroupRequests ?? 0 : 0;
               return (
-                <Link
-                  key={tab.to}
-                  to={tab.to}
-                  data-tour={tab.label.toLowerCase()}
-                  className={`nav-tab${active ? ' is-active' : ''}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '7px 12px',
-                    borderRadius: 0,
-                    font: '700 12.5px var(--font-sans)',
-                    letterSpacing: '.04em',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    background: 'transparent',
-                    color: active ? 'var(--gold)' : 'var(--text-65)',
-                  }}
-                >
+                <Link key={tab.to} to={tab.to} data-tour={tab.label.toLowerCase()} className={`nav-tab${active ? ' is-active' : ''}`} style={tabStyle(active)}>
                   {tab.label}
                   {badgeCount > 0 && <CountBadge count={badgeCount} />}
                 </Link>
@@ -139,9 +128,7 @@ export function NavHeader() {
           {user && (
             <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>
               <div style={{ font: '600 12.5px var(--font-sans)' }}>{user.discordUsername}</div>
-              <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--gold)' }}>
-                {user.gw2AccountName ?? 'Not linked'}
-              </div>
+              <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--gold)' }}>{user.gw2AccountName ?? 'Not linked'}</div>
             </div>
           )}
           <Avatar to={user ? '/account' : '/login'} name={user?.discordUsername} imgSrc={user?.discordAvatar} />
@@ -168,8 +155,8 @@ export function NavHeader() {
             <SearchBar width="100%" defaultValue="" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {tabs.map((tab) => {
-              const active = isTabActive(tab, location.pathname);
+            {mobileTabs.map((tab) => {
+              const active = isTabActive(tab.to, location.pathname);
               const badgeCount = tab.to === '/groups' ? user?.pendingGroupRequests ?? 0 : 0;
               return (
                 <Link

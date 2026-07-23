@@ -715,7 +715,16 @@ export const api = {
   encounters: () => apiFetch<EncounterSummary[]>('/encounters'),
   encountersOverview: () => apiFetch<OverviewWing[]>('/encounters/overview'),
   specBenchmarks: () => apiFetch<SpecBenchmark[]>('/encounters/benchmarks'),
-  specBenchmarkDistribution: () => apiFetch<SpecDistribution[]>('/encounters/benchmarks/distribution'),
+  // Optional scope: a single boss, or a whole wing (bosses combined), and/or
+  // a challenge-mode filter. No opts = the global distribution.
+  specBenchmarkDistribution: (opts: { boss?: string; wing?: string; cm?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.boss) qs.set('boss', opts.boss);
+    if (opts.wing) qs.set('wing', opts.wing);
+    if (opts.cm !== undefined) qs.set('cm', String(opts.cm));
+    const query = qs.toString();
+    return apiFetch<SpecDistribution[]>(`/encounters/benchmarks/distribution${query ? `?${query}` : ''}`);
+  },
   activeAnnouncements: () => apiFetch<Announcement[]>('/announcements/active'),
   leaderboard: (fightName: string, isCm: boolean, opts: { profession?: string; role?: 'power' | 'condi' } = {}) => {
     const params = new URLSearchParams({ cm: String(isCm) });
@@ -801,6 +810,7 @@ export const api = {
       mine?: boolean;
       groupId?: string;
       boss?: string;
+      wing?: string;
       limit?: number;
       offset?: number;
     } = {},
@@ -811,6 +821,7 @@ export const api = {
     if (params.mine) qs.set('mine', 'true');
     if (params.groupId) qs.set('groupId', params.groupId);
     if (params.boss) qs.set('boss', params.boss);
+    if (params.wing) qs.set('wing', params.wing);
     if (params.limit) qs.set('limit', String(params.limit));
     if (params.offset) qs.set('offset', String(params.offset));
     const query = qs.toString();

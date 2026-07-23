@@ -1,55 +1,32 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
 import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
-import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, SquadRoleBadge, SubNav } from '../components/atoms';
-import { BENCH_SUBNAV } from './BenchmarksPage';
+import { ArtImg, Card, PageHeader, ParseBadge, ParseLegend, ProfDot, ScopeSubNav, SquadRoleBadge } from '../components/atoms';
 import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBar';
 import { Select } from '../components/Select';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
 const RANK_COLORS = ['var(--gold)', 'var(--text-70)', 'var(--text-70)'];
 
+// Rankings: FFLogs-style per-boss ranked DPS. The boss comes from the Raids /
+// Fractals catalog menu (?boss=), scoped by challenge mode and damage role.
 export default function LeaderboardPage() {
   const [params, setParams] = useSearchParams();
-  const { data: encounters, loading: encountersLoading } = useApiQuery(() => api.encounters(), []);
-
-  const encounterKey = params.get('encounter');
-  const isCm = params.get('cm') !== 'false';
+  const boss = params.get('boss') ?? '';
+  const isCm = params.get('cm') === 'true';
   const role = params.get('role') === 'condi' ? 'condi' : 'power';
 
-  useEffect(() => {
-    if (!encounterKey && encounters && encounters.length > 0) {
-      const next = new URLSearchParams(params);
-      next.set('encounter', encounters[0].fightName);
-      next.set('cm', String(encounters[0].isCm));
-      setParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [encounters, encounterKey]);
-
-  const selected = useMemo(
-    () => (encounterKey ? { fightName: encounterKey, isCm } : null),
-    [encounterKey, isCm],
+  const { data: leaderboard, loading, error } = useApiQuery(
+    () => (boss ? api.leaderboard(boss, isCm, { role }) : Promise.resolve([])),
+    [boss, isCm, role],
   );
 
-  const { data: leaderboard, loading: leaderboardLoading, error } = useApiQuery(
-    () => (selected ? api.leaderboard(selected.fightName, selected.isCm, { role }) : Promise.resolve([])),
-    [selected, role],
-  );
-
-  function selectEncounter(fightName: string, cm: boolean) {
+  function setParam(key: string, value: string) {
     const next = new URLSearchParams(params);
-    next.set('encounter', fightName);
-    next.set('cm', String(cm));
-    setParams(next);
-  }
-
-  function selectRole(r: 'power' | 'condi') {
-    const next = new URLSearchParams(params);
-    next.set('role', r);
+    next.set(key, value);
     setParams(next);
   }
 
@@ -57,53 +34,54 @@ export default function LeaderboardPage() {
   useEffect(() => {
     picker.clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [encounterKey, isCm]);
+  }, [boss, isCm]);
+
+  if (!boss) {
+    return (
+      <div>
+        <PageHeader title="Rankings" subtitle="Top squad-verified DPS, ranked per boss" />
+        <EmptyState>Pick a boss from the Raids or Fractals menu to see its rankings.</EmptyState>
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader
-        title="Leaderboard"
-        subtitle="Top squad-verified DPS across the guild, ranked by encounter and role"
+        title={`${boss}${isCm ? ' CM' : ''}`}
+        subtitle="Top squad-verified DPS, ranked by role"
         actions={
           <>
-          <Select
-            ariaLabel="Encounter"
-            value={selected ? `${selected.fightName}|${selected.isCm}` : ''}
-            onChange={(v) => {
-              const [fightName, cm] = v.split('|');
-              selectEncounter(fightName, cm === 'true');
-            }}
-            options={(encounters ?? []).map((e) => ({
-              value: `${e.fightName}|${e.isCm}`,
-              label: `${e.fightName}${e.isCm ? ' CM' : ''}`,
-            }))}
-            style={{ minWidth: 220 }}
-          />
-          <Select
-            ariaLabel="Role"
-            value={role}
-            onChange={(v) => selectRole(v === 'condi' ? 'condi' : 'power')}
-            options={[
-              { value: 'power', label: 'Power DPS' },
-              { value: 'condi', label: 'Condition DPS' },
-            ]}
-            style={{ minWidth: 160 }}
-          />
+            <Select
+              ariaLabel="Mode"
+              value={String(isCm)}
+              onChange={(v) => setParam('cm', v)}
+              options={[
+                { value: 'false', label: 'Normal' },
+                { value: 'true', label: 'Challenge Mode' },
+              ]}
+              style={{ minWidth: 160 }}
+            />
+            <Select
+              ariaLabel="Role"
+              value={role}
+              onChange={(v) => setParam('role', v === 'condi' ? 'condi' : 'power')}
+              options={[
+                { value: 'power', label: 'Power DPS' },
+                { value: 'condi', label: 'Condition DPS' },
+              ]}
+              style={{ minWidth: 160 }}
+            />
           </>
         }
       />
-      <SubNav tabs={BENCH_SUBNAV} />
-
-      {encountersLoading && <LoadingState label="Loading encounters…" />}
-      {!encountersLoading && encounters?.length === 0 && (
-        <EmptyState>No logs have been uploaded yet — leaderboards will appear once the first log comes in.</EmptyState>
-      )}
+      <ScopeSubNav boss={boss} />
 
       <div style={{ marginBottom: 14 }}>
         <ParseLegend />
       </div>
 
-      {leaderboardLoading && <LoadingState />}
+      {loading && <LoadingState />}
       {error && <ErrorState message={error} />}
 
       {leaderboard && leaderboard.length > 0 && (
@@ -143,9 +121,6 @@ export default function LeaderboardPage() {
                 className="u-row"
                 style={{
                   position: 'relative',
-                  // New stacking context so the art layers can sit at
-                  // z-index -1: behind every grid cell (positioned or not)
-                  // but still in front of the card behind the row.
                   isolation: 'isolate',
                   display: 'grid',
                   gridTemplateColumns: '24px 32px 2fr 1fr 1fr 0.7fr 1fr',
@@ -199,8 +174,11 @@ export default function LeaderboardPage() {
       )}
       <ComparePickerBar selected={picker.selected} onClear={picker.clear} />
 
-      {leaderboard && leaderboard.length === 0 && !leaderboardLoading && selected && (
-        <EmptyState>No {role === 'power' ? 'power' : 'condition'} DPS parses logged for this encounter yet.</EmptyState>
+      {leaderboard && leaderboard.length === 0 && !loading && (
+        <EmptyState>
+          No {role === 'power' ? 'power' : 'condition'} DPS parses logged for {boss}
+          {isCm ? ' CM' : ''} yet.
+        </EmptyState>
       )}
     </div>
   );
