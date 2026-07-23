@@ -11,7 +11,7 @@ import {
 } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { bossBgPath, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
 import { ArtImg, GoldButton, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
@@ -694,7 +694,7 @@ function MySquad({ logId }: { logId: string }) {
                   <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, transparent ${barWidth})`, opacity: 0.16 }} />
                   <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }} />
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                    <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color }}>{p.role} · {p.spec || p.profession}</div>
+                    <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color }}>{playerRoleLabel(p.squadRole, p.role)} · {p.spec || p.profession}</div>
                     <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.account ?? p.name}</div>
                   </div>
                   <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>

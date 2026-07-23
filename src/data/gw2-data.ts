@@ -243,3 +243,13 @@ export const PARSE_LEGEND: { label: string; pct: number }[] = [
   { label: '99', pct: 99 },
   { label: '100', pct: 100 },
 ];
+
+// Human-facing role label for a player row. The boon-support classification
+// (SquadRole from the server ingest) wins when present — a healer is a healer
+// even though their damage type is still 'power' — otherwise fall back to the
+// power/condi DPS label. This is why a healer must not read "Power DPS".
+export function playerRoleLabel(squadRole: string, damageRole: string): string {
+  if (squadRole === 'boon_heal') return 'Healer';
+  if (squadRole === 'boon_dps') return 'Boon DPS';
+  return damageRole === 'power' ? 'Power DPS' : 'Condition DPS';
+}

@@ -1,8 +1,8 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
-import { bossBgPath, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
-import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot, ResultPill, SquadRoleBadge } from '../components/atoms';
+import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot, ResultPill } from '../components/atoms';
 import { api, ApiError, type DpsChartPoint, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';
@@ -297,7 +297,7 @@ function SquadTab({ log }: { log: LogDetail }) {
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(p.profession) }}>
                       <ProfDot color={professionColor(p.profession)} size={6} />
-                      {p.role === 'power' ? 'Power DPS' : 'Condition DPS'} · {p.spec}
+                      {playerRoleLabel(p.squadRole, p.role)} · {p.spec}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <PlayerLink
@@ -306,7 +306,6 @@ function SquadTab({ log }: { log: LogDetail }) {
                         style={{ position: 'relative', font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
                         onClick={(e) => e.stopPropagation()}
                       />
-                      <SquadRoleBadge squadRole={p.squadRole} />
                     </div>
                   </div>
                   <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
