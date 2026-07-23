@@ -17,14 +17,16 @@ namespace gw2logs {
 class LogWatcher {
 public:
     using Callback = std::function<void(const std::string& fullPath)>;
+    using LogFn = std::function<void(const std::string& message)>;
 
     LogWatcher() = default;
     ~LogWatcher() { Stop(); }
 
-    void Start(const std::string& folder, Callback onNewLog) {
+    void Start(const std::string& folder, Callback onNewLog, LogFn onLog = nullptr) {
         Stop();
         folder_ = folder;
         cb_ = std::move(onNewLog);
+        log_ = std::move(onLog);
         stop_ = false;
         stopEvent_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
         worker_ = std::thread([this] { Run(); });
@@ -40,12 +42,14 @@ public:
     }
 
 private:
-    static bool EndsWithZevtc(const std::wstring& name) {
-        static const std::wstring ext = L".zevtc";
-        if (name.size() < ext.size()) return false;
-        std::wstring tail = name.substr(name.size() - ext.size());
-        for (auto& c : tail) c = (wchar_t)towlower(c);
-        return tail == ext;
+    static bool HasLogExt(const std::wstring& name) {
+        auto endsWith = [&](const std::wstring& ext) {
+            if (name.size() < ext.size()) return false;
+            std::wstring tail = name.substr(name.size() - ext.size());
+            for (auto& c : tail) c = (wchar_t)towlower(c);
+            return tail == ext;
+        };
+        return endsWith(L".zevtc") || endsWith(L".evtc"); // compressed or raw
     }
 
     static std::string Narrow(const std::wstring& w) {
@@ -62,7 +66,12 @@ private:
                                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                  nullptr, OPEN_EXISTING,
                                  FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
-        if (dir == INVALID_HANDLE_VALUE) return;
+        if (dir == INVALID_HANDLE_VALUE) {
+            if (log_) log_("ERROR: can't open log folder (code " + std::to_string(GetLastError()) +
+                           "): " + folder_ + " — check the folder path in Options (OneDrive can move Documents).");
+            return;
+        }
+        if (log_) log_("watching for logs in: " + folder_);
 
         OVERLAPPED ov{};
         ov.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
@@ -97,7 +106,7 @@ private:
                             info->Action == FILE_ACTION_MODIFIED ||
                             info->Action == FILE_ACTION_RENAMED_NEW_NAME) {
                             std::wstring name(info->FileName, info->FileNameLength / sizeof(WCHAR));
-                            if (EndsWithZevtc(name)) {
+                            if (HasLogExt(name)) {
                                 std::wstring full = wfolder + L"\\" + name;
                                 pending.try_emplace(full, 0ull, 0);
                             }
@@ -137,6 +146,7 @@ private:
 
     std::string folder_;
     Callback cb_;
+    LogFn log_;
     std::atomic<bool> stop_{false};
     HANDLE stopEvent_ = nullptr;
     std::thread worker_;

@@ -2,12 +2,26 @@
 // free functions; no threading concerns here — the caller owns synchronisation.
 #pragma once
 
+#include <Windows.h>
+#include <shlobj.h>       // SHGetKnownFolderPath, FOLDERID_Documents
 #include <string>
 #include <fstream>
 #include <cstdlib>
 #include <nlohmann/json.hpp>
 
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "ole32.lib")
+
 namespace gw2logs {
+
+inline std::string NarrowUtf8(const wchar_t* w) {
+    if (!w) return "";
+    int n = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+    if (n <= 1) return "";
+    std::string s(n - 1, 0);
+    WideCharToMultiByte(CP_UTF8, 0, w, -1, s.data(), n, nullptr, nullptr);
+    return s;
+}
 
 struct Settings {
     std::string serverUrl = "https://gw2logs.example.com/api"; // trailing /api, no slash
@@ -19,17 +33,26 @@ struct Settings {
     bool        remindersEnabled = true;
     int         leadMinutes = 15;                               // alert this long before start
 
-    // Default arcdps log location: %USERPROFILE%\Documents\Guild Wars 2\addons\arcdps\arcdps.cbtlogs
+    // Default arcdps log location: <Documents>\Guild Wars 2\addons\arcdps\arcdps.cbtlogs.
+    // Uses the real Documents known-folder (so OneDrive redirection is handled),
+    // falling back to %USERPROFILE%\Documents only if that lookup fails.
     static std::string DefaultLogFolder() {
-        char* profile = nullptr;
-        size_t len = 0;
         std::string base;
-        if (_dupenv_s(&profile, &len, "USERPROFILE") == 0 && profile) {
-            base = profile;
-            free(profile);
+        PWSTR docs = nullptr;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, nullptr, &docs))) {
+            base = NarrowUtf8(docs);
+        }
+        if (docs) CoTaskMemFree(docs);
+        if (base.empty()) {
+            char* profile = nullptr;
+            size_t len = 0;
+            if (_dupenv_s(&profile, &len, "USERPROFILE") == 0 && profile) {
+                base = std::string(profile) + "\\Documents";
+                free(profile);
+            }
         }
         if (base.empty()) return "";
-        return base + "\\Documents\\Guild Wars 2\\addons\\arcdps\\arcdps.cbtlogs";
+        return base + "\\Guild Wars 2\\addons\\arcdps\\arcdps.cbtlogs";
     }
 
     std::string EffectiveLogFolder() const { return logFolder.empty() ? DefaultLogFolder() : logFolder; }

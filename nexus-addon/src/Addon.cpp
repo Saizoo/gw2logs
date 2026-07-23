@@ -60,13 +60,18 @@ static std::string BaseName(const std::string& path) {
 // --- log upload (runs on the watcher thread) --------------------------------
 static void OnNewLog(const std::string& fullPath) {
     Settings s = SnapshotSettings();
-    if (!s.uploadEnabled || s.token.empty() || s.serverUrl.empty()) return;
+    if (!s.uploadEnabled) return;
+    const std::string name = BaseName(fullPath);
+    if (s.token.empty() || s.serverUrl.empty()) {
+        NxLog(LOGL_WARNING, "saw " + name + " but Server URL / token isn't set — not uploading");
+        SetStatus("Saw " + name + " — set Server URL + token to upload");
+        return;
+    }
 
     std::vector<MultipartField> fields;
     if (s.uploadPrivate) fields.push_back({ "private", "true" });
     if (!s.defaultGroupId.empty()) fields.push_back({ "groupId", s.defaultGroupId });
 
-    const std::string name = BaseName(fullPath);
     NxLog(LOGL_INFO, "uploading " + name);
     HttpResponse res = PostMultipartFile(s.serverUrl + "/uploads", s.token, fullPath, "file", name, fields);
     if (res.ok) {
@@ -82,8 +87,9 @@ static void OnNewLog(const std::string& fullPath) {
 static void RestartWatcher() {
     Settings s = SnapshotSettings();
     g_watcher.Stop();
-    if (s.uploadEnabled && !s.EffectiveLogFolder().empty())
-        g_watcher.Start(s.EffectiveLogFolder(), OnNewLog);
+    if (!s.uploadEnabled) { NxLog(LOGL_INFO, "auto-upload is off"); return; }
+    if (s.EffectiveLogFolder().empty()) { NxLog(LOGL_WARNING, "no log folder set"); return; }
+    g_watcher.Start(s.EffectiveLogFolder(), OnNewLog, [](const std::string& m) { NxLog(LOGL_INFO, m); });
 }
 
 // --- options panel (ImGui, main render thread) ------------------------------
