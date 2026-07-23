@@ -25,16 +25,17 @@ export const PROFESSION_CHIPS = Object.keys(PROFESSIONS).map((k) => ({
   color: professionColor(k),
 }));
 
-// Lightness dropped to 0.55 so the profession hues keep enough contrast
-// against the Modernist light ground (they were tuned for a dark theme).
+// Lightness 0.6 is a compromise that keeps the profession hues legible on
+// both the light and dark Modernist grounds (these are computed in JS, so a
+// single value has to serve both themes rather than swapping via CSS tokens).
 export function professionColor(profession: string): string {
   const hue = PROFESSIONS[profession]?.hue;
-  return hue === undefined ? 'oklch(0.5 0.02 90)' : `oklch(0.55 0.16 ${hue})`;
+  return hue === undefined ? 'oklch(0.6 0.02 90)' : `oklch(0.6 0.16 ${hue})`;
 }
 
 export function professionColorAlpha(profession: string, alphaPct: number): string {
   const hue = PROFESSIONS[profession]?.hue;
-  return hue === undefined ? `oklch(0.5 0.02 90 / ${alphaPct}%)` : `oklch(0.55 0.16 ${hue} / ${alphaPct}%)`;
+  return hue === undefined ? `oklch(0.6 0.02 90 / ${alphaPct}%)` : `oklch(0.6 0.16 ${hue} / ${alphaPct}%)`;
 }
 
 const SPEC_TO_PROFESSION: Record<string, string> = Object.fromEntries(

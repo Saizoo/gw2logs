@@ -103,8 +103,8 @@ function Panel({ children, style }: { children: ReactNode; style?: CSSProperties
 function HeroStat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div>
-      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--color-bg)' }}>{value}</div>
-      <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
+      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)' }}>{value}</div>
+      <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
         {label}
       </div>
     </div>
@@ -139,14 +139,14 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
           background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-900) 92%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 55%, transparent) 55%, color-mix(in srgb, var(--color-neutral-900) 22%, transparent) 100%)',
         }}
       />
-      <div style={{ position: 'relative', color: 'var(--color-bg)' }}>
+      <div style={{ position: 'relative', color: 'var(--on-art)' }}>
         <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '2px', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
           Guild Wars 2
         </div>
         <div style={{ font: '800 clamp(30px, 5vw, 42px) var(--font-sans)', letterSpacing: '-1px', lineHeight: 1.05, marginBottom: 10 }}>
           Combat Analytics
         </div>
-        <div style={{ font: '500 14px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 78%, transparent)', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
+        <div style={{ font: '500 14px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 78%, transparent)', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
           Analyze your logs, track your parses, and climb the leaderboards with your guild.
         </div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 26, flexWrap: 'wrap' }}>
@@ -162,10 +162,10 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
               font: '600 13px var(--font-sans)',
               padding: '11px 20px',
               borderRadius: 0,
-              background: 'color-mix(in srgb, var(--color-bg) 14%, transparent)',
+              background: 'color-mix(in srgb, var(--on-art) 14%, transparent)',
               backdropFilter: 'blur(6px)',
-              color: 'var(--color-bg)',
-              border: '1px solid color-mix(in srgb, var(--color-bg) 40%, transparent)',
+              color: 'var(--on-art)',
+              border: '1px solid color-mix(in srgb, var(--on-art) 40%, transparent)',
             }}
           >
             Browse Raids
@@ -207,15 +207,15 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
           CM
         </span>
       )}
-      <div style={{ position: 'relative', font: '800 14.5px var(--font-sans)', letterSpacing: '-.1px', color: 'var(--color-bg)', textShadow: '0 1px 3px rgba(0,0,0,.55)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ position: 'relative', font: '800 14.5px var(--font-sans)', letterSpacing: '-.1px', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.55)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {enc.fightName}
       </div>
-      <div style={{ position: 'relative', font: '600 10.5px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 72%, transparent)', marginTop: 2 }}>
+      <div style={{ position: 'relative', font: '600 10.5px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 72%, transparent)', marginTop: 2 }}>
         {enc.logCount.toLocaleString()} log{enc.logCount === 1 ? '' : 's'}
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 4, font: '700 11px var(--font-sans)' }}>
         {enc.bestSquadDps > 0 && <span style={{ color: 'var(--gold)' }}>{enc.bestSquadDps.toLocaleString()} dps</span>}
-        {enc.fastestKillMs != null && <span style={{ color: 'color-mix(in srgb, var(--color-bg) 78%, transparent)', fontWeight: 600 }}>{formatDuration(enc.fastestKillMs)}</span>}
+        {enc.fastestKillMs != null && <span style={{ color: 'color-mix(in srgb, var(--on-art) 78%, transparent)', fontWeight: 600 }}>{formatDuration(enc.fastestKillMs)}</span>}
       </div>
     </Link>
   );

@@ -56,6 +56,11 @@
   --gold-grad: var(--color-accent);
   --gold-fg: var(--color-bg);
 
+  /* Always-light text for copy set over a dark image scrim (hero posters,
+     encounter tiles, the login art panel). Unlike --color-bg it must NOT
+     flip with the theme — those scrims stay dark in both themes. */
+  --on-art: #f3f2f2;
+
   --text: var(--color-text);
   --text-92: color-mix(in srgb, var(--color-text) 92%, transparent);
   --text-88: color-mix(in srgb, var(--color-text) 88%, transparent);
@@ -105,6 +110,47 @@
   --font-mono: 'Archivo', system-ui, sans-serif;
 
   color-scheme: light;
+}
+
+/* ── Dark theme ───────────────────────────────────────────────────────────
+   Only the base --color-* tokens (plus shadows and the fixed status/parse
+   colours) are re-pointed here; every app alias above resolves through them
+   via var()/color-mix at use time, so the whole app flips. Applied by
+   data-theme="dark" on <html> (set from localStorage / system preference —
+   see src/lib/theme.ts and the no-flash script in index.html). */
+:root[data-theme='dark'] {
+  --color-bg: #171514;
+  --color-surface: #211f1e;
+  --color-text: #f3f2f2;
+  --color-accent: #ff5a3c; /* brighter accent step for a dark ground */
+  --color-divider: color-mix(in srgb, #f3f2f2 24%, transparent);
+
+  /* Elevation reads as ambient darkness on a dark ground. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+
+  /* Status + parse tiers brighten so they read on the dark ground. */
+  --good: oklch(0.72 0.13 145);
+  --good-dim: color-mix(in srgb, oklch(0.72 0.13 145) 18%, transparent);
+  --bad: oklch(0.68 0.17 25);
+  --bad-dim: color-mix(in srgb, oklch(0.68 0.17 25) 18%, transparent);
+  --blue: oklch(0.66 0.16 255);
+
+  --parse-99: oklch(0.84 0.17 85);
+  --parse-99-bg: color-mix(in srgb, oklch(0.84 0.17 85) 18%, transparent);
+  --parse-95: oklch(0.7 0.2 25);
+  --parse-95-bg: color-mix(in srgb, oklch(0.7 0.2 25) 18%, transparent);
+  --parse-75: oklch(0.64 0.2 320);
+  --parse-75-bg: color-mix(in srgb, oklch(0.64 0.2 320) 18%, transparent);
+  --parse-50: oklch(0.66 0.16 255);
+  --parse-50-bg: color-mix(in srgb, oklch(0.66 0.16 255) 18%, transparent);
+  --parse-25: oklch(0.74 0.15 145);
+  --parse-25-bg: color-mix(in srgb, oklch(0.74 0.15 145) 18%, transparent);
+  --parse-0: color-mix(in srgb, var(--color-text) 45%, transparent);
+  --parse-0-bg: color-mix(in srgb, var(--color-text) 10%, transparent);
+
+  color-scheme: dark;
 }
 
 * {

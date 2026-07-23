@@ -10,6 +10,19 @@
       rel="stylesheet"
     />
     <title>HeroPanel GW2 — Guild Wars 2 combat log platform</title>
+    <script>
+      // Apply the saved (or system-preferred) theme before first paint so
+      // there's no light→dark flash on load. Mirrors src/lib/theme.ts.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          var dark = t === 'dark' || (t == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

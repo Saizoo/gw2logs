@@ -6,6 +6,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge, Card, GoldButton } from '../components/atoms';
 import { toast } from '../lib/toast';
+import { useTheme } from '../lib/theme';
 
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -271,6 +272,8 @@ export default function AccountPage() {
 
       {user.gw2AccountName && <GuildCard />}
 
+      <AppearanceCard />
+
       <PrivacyCard user={user} onSaved={refresh} />
 
       <div style={{ textAlign: 'center', marginTop: 22 }}>
@@ -286,6 +289,52 @@ export default function AccountPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// Light / dark theme. Applies instantly and is saved to this browser (not
+// the account), so it works signed out too.
+function AppearanceCard() {
+  const { theme, setTheme } = useTheme();
+  const dark = theme === 'dark';
+  return (
+    <Card style={{ padding: 22, marginTop: 16 }}>
+      <div style={{ font: '800 15px var(--font-sans)', marginBottom: 4 }}>Appearance</div>
+      <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-58)', marginBottom: 16 }}>
+        Switch between the light and dark theme. Saved to this browser; defaults to your system preference.
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ font: '700 13px var(--font-sans)' }}>Dark theme</div>
+            {dark && <Badge tone="gold">On</Badge>}
+          </div>
+          <div style={{ font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
+            Use a dark background across the whole app.
+          </div>
+        </div>
+        <button
+          role="switch"
+          aria-checked={dark}
+          aria-label="Dark theme"
+          onClick={() => setTheme(dark ? 'light' : 'dark')}
+          style={{
+            position: 'relative',
+            width: 46,
+            height: 25,
+            borderRadius: 0,
+            flexShrink: 0,
+            marginTop: 2,
+            background: dark ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
+            border: '1px solid ' + (dark ? 'transparent' : 'var(--border)'),
+            cursor: 'pointer',
+            transition: 'background .15s ease',
+          }}
+        >
+          <span aria-hidden style={{ position: 'absolute', top: 2, left: dark ? 23 : 2, width: 19, height: 19, borderRadius: '50%', background: dark ? 'var(--gold-fg)' : 'var(--text-85)', transition: 'left .15s ease' }} />
+        </button>
+      </div>
+    </Card>
   );
 }
 

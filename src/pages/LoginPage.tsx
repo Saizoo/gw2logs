@@ -79,24 +79,24 @@ export default function LoginPage() {
         <div style={{ position: 'relative' }}>
           <Logo />
         </div>
-        <div style={{ position: 'relative', color: 'var(--color-bg)' }}>
-          <div style={{ font: '800 32px var(--font-sans)', color: 'var(--color-bg)', lineHeight: 1.2 }}>
+        <div style={{ position: 'relative', color: 'var(--on-art)' }}>
+          <div style={{ font: '800 32px var(--font-sans)', color: 'var(--on-art)', lineHeight: 1.2 }}>
             Every log makes
             <br />
             the rankings sharper.
           </div>
-          <div style={{ font: '500 13px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)', marginTop: 14, maxWidth: 360 }}>
+          <div style={{ font: '500 13px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)', marginTop: 14, maxWidth: 360 }}>
             Upload arcdps logs, rank your parses against the whole community, and track your progress patch over
             patch.
           </div>
           <div style={{ display: 'flex', gap: 20, marginTop: 26 }}>
             <div>
               <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalLogs ?? '—'}</div>
-              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)' }}>logs parsed</div>
+              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)' }}>logs parsed</div>
             </div>
             <div>
               <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalPlayers ?? '—'}</div>
-              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)' }}>players ranked</div>
+              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)' }}>players ranked</div>
             </div>
           </div>
         </div>
