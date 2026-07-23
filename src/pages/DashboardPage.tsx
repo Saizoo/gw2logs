@@ -183,9 +183,10 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
   const bg = bossImage(enc.fightName);
   return (
     <Link
-      // Open this encounter's own page — the boss rankings ladder — defaulting
-      // to CM when the encounter has a challenge-mode clear on record.
-      to={`/rankings?boss=${encodeURIComponent(enc.fightName)}&cm=${enc.hasCmClear}`}
+      // Open this encounter's rankings ladder. These tiles aggregate every log
+      // for the boss (normal + challenge mode), so we don't force a mode here —
+      // the ladder opens on Normal and the viewer can toggle CM there.
+      to={`/rankings?boss=${encodeURIComponent(enc.fightName)}`}
       className="u-card-link"
       style={{
         position: 'relative',
@@ -204,11 +205,6 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
       {bg && <ArtImg src={bg} />}
       {/* Dark bottom scrim → light text stays legible over any grayscale art */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-900) 92%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 55%, transparent) 42%, transparent 80%)' }} />
-      {enc.hasCmClear && (
-        <span style={{ position: 'absolute', top: 10, right: 10, font: '800 9px var(--font-sans)', letterSpacing: '.06em', padding: '3px 7px', borderRadius: 0, color: 'var(--gold-fg)', background: 'var(--gold-grad)' }}>
-          CM
-        </span>
-      )}
       <div style={{ position: 'relative', font: '800 14.5px var(--font-sans)', letterSpacing: '-.1px', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.55)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {enc.fightName}
       </div>
