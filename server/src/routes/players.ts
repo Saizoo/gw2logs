@@ -83,24 +83,25 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     .sort((a, b) => b.pct - a.pct);
 
   // Overall score: how this player's DPS ranks, on average, against every
-  // other parse of the same boss+CM combination (0-100, same percentile
-  // convention as the leaderboard's rank pill). Consistency score: how
-  // tightly clustered those percentiles are — always near the same
-  // percentile scores higher than swinging between top and bottom. Both
-  // `mine` (this player's own logs) and the reference population it's
-  // ranked against are restricted to kills — a wipe's "final" DPS reflects
-  // when the fight got cut off, not performance, and would otherwise drag
-  // both scores around for reasons that have nothing to do with how well
-  // anyone actually played. Matches the leaderboard's own success filter.
-  // Per-row `id` is carried through so the same percentiles can pick each
-  // fight's best *parse* (highest percentile) below, rather than just its
-  // highest raw DPS number — DPS alone isn't comparable across
-  // specs/builds, which is exactly what the percentile already normalizes
-  // for everywhere else in the app (ParseBadge, leaderboard rank).
+  // other parse of the same boss+CM combination *in the same squad role*
+  // (0-100). Ranking is role-segmented — a DPS parse is compared to other
+  // DPS parses, a boon-DPS parse to other boon-DPS, a healer parse to other
+  // healers — so a support build isn't penalised for the low damage its role
+  // is supposed to trade away; it's measured against peers doing the same job.
+  // Consistency score: how tightly clustered those percentiles are — always
+  // near the same percentile scores higher than swinging between top and
+  // bottom. Both `mine` (this player's own logs) and the reference population
+  // are restricted to kills — a wipe's "final" DPS reflects when the fight got
+  // cut off, not performance, and would otherwise drag both scores around for
+  // reasons unrelated to how anyone played. Per-row `id` is carried through so
+  // the same percentiles can pick each fight's best *parse* (highest
+  // percentile) below, rather than just its highest raw DPS number — DPS alone
+  // isn't comparable across specs/builds/roles, which is exactly what the
+  // role-scoped percentile normalizes for.
   const percentiles = logPlayers.length
     ? await prisma.$queryRaw<{ id: string; pct: number }[]>`
         WITH mine AS (
-          SELECT lp.id, lp."totalDps", l."fightName", l."isCm"
+          SELECT lp.id, lp."totalDps", lp."squadRole", l."fightName", l."isCm"
           FROM "LogPlayer" lp
           JOIN "Log" l ON lp."logId" = l.id
           WHERE lp."playerId" = ${player.id} AND l.success = true
@@ -114,9 +115,11 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
           SELECT
             mine.id,
             (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
-               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm" AND l2.success = true) AS total,
+               WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm" AND l2.success = true
+                 AND lp2."squadRole" = mine."squadRole") AS total,
             (SELECT COUNT(*) FROM "LogPlayer" lp2 JOIN "Log" l2 ON lp2."logId" = l2.id
                WHERE l2."fightName" = mine."fightName" AND l2."isCm" = mine."isCm" AND l2.success = true
+                 AND lp2."squadRole" = mine."squadRole"
                  AND lp2."totalDps" <= mine."totalDps") AS rank_from_bottom
           FROM mine
         ) sub
