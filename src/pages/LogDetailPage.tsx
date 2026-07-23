@@ -110,7 +110,7 @@ export default function LogDetailPage() {
               {log.isCm ? ' CM' : ''}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-              <ResultPill success={log.success} />
+              <ResultPill success={log.success} size="md" />
               <Pill>{formatDuration(log.durationMs)}</Pill>
               {log.private && (
                 <span style={{ font: '700 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 82%, transparent)', color: 'var(--color-surface)', letterSpacing: '.03em', textTransform: 'uppercase' }}>

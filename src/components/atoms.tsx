@@ -288,16 +288,19 @@ export function CountBadge({ count, style }: { count: number; style?: CSSPropert
   );
 }
 
-export function ResultPill({ success }: { success: boolean }) {
+export function ResultPill({ success, size = 'sm' }: { success: boolean; size?: 'sm' | 'md' }) {
+  // 'md' matches the sibling duration Pill on the log hero (11px / 5px·12px);
+  // 'sm' is the compact size used in log lists and tables.
+  const md = size === 'md';
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        font: '700 10px var(--font-sans)',
+        font: `700 ${md ? 11 : 10}px var(--font-sans)`,
         lineHeight: 1,
         letterSpacing: '.4px',
-        padding: '3px 7px',
+        padding: md ? '5px 12px' : '3px 7px',
         borderRadius: 0,
         background: success ? 'var(--good-dim)' : 'var(--bad-dim)',
         color: success ? 'var(--good)' : 'var(--bad)',
