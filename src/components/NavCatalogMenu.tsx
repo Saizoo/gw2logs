@@ -88,8 +88,28 @@ function GroupRow({ group, onNavigate }: { group: CatalogGroup; onNavigate: () =
 export function NavCatalogMenu({ label, to, catalog }: { label: string; to: string; catalog: CatalogGroup[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | null>(null);
   const location = useLocation();
   const active = location.pathname.startsWith(to);
+
+  // Hover open/close with a short close delay: moving the cursor from the
+  // trigger down into the panel briefly leaves the element's box, and without
+  // this grace period that flicker would close the menu before you reach an
+  // item.
+  function openNow() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpen(true);
+  }
+  function closeSoon() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpen(false), 200);
+  }
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }, []);
 
   // Close on outside click, Escape, and whenever the route changes.
   useEffect(() => setOpen(false), [location.pathname, location.search]);
@@ -112,15 +132,17 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
   return (
     <div
       ref={ref}
-      style={{ position: 'relative' }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      // Full nav-bar height so the dropdown (top: 100%) drops flush against
+      // the nav's bottom rule with no dead zone to cross.
+      style={{ position: 'relative', alignSelf: 'stretch', display: 'flex', alignItems: 'center' }}
+      onMouseEnter={openNow}
+      onMouseLeave={closeSoon}
     >
       <Link
         to={to}
         className="nav-tab"
         data-tour={label.toLowerCase()}
-        onFocus={() => setOpen(true)}
+        onFocus={openNow}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -139,16 +161,23 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
 
       {open && (
         <div
+          // No margin gap: the panel's box starts flush at the trigger's
+          // bottom and a transparent top border drops the visible surface
+          // clear of the nav rule, so the cursor never crosses a dead zone.
+          // The 200ms close delay is the backstop.
           style={{
             position: 'absolute',
             top: '100%',
             left: 0,
-            marginTop: 8,
             width: 360,
             maxHeight: '72vh',
             overflowY: 'auto',
             background: 'var(--color-surface)',
+            backgroundClip: 'padding-box',
             border: '1px solid var(--border)',
+            // Transparent top border bridges to the nav rule (must come after
+            // the `border` shorthand so it isn't overridden back to 1px).
+            borderTop: '12px solid transparent',
             boxShadow: 'var(--shadow-md)',
             zIndex: 70,
             animation: 'fadeIn 0.14s ease both',
