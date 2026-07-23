@@ -375,7 +375,7 @@ function SignedInDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
         <div>
           <div style={{ ...SECTION_LABEL, marginBottom: 12 }}>My Dashboard</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16, marginBottom: 24 }}>
             <MyDashboardCards dash={dash} />
           </div>
 
