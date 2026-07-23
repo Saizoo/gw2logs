@@ -12,6 +12,7 @@ import {
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { bossImage } from '../data/catalog';
 import { ArtImg, GoldButton, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
@@ -179,7 +180,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
 // A discovery tile: grayscale raid art as a dark poster, headline records in
 // light type over a bottom scrim so the boss name reads over any artwork.
 function EncounterTile({ enc }: { enc: OverviewEncounter }) {
-  const bg = bossBgPath(enc.fightName);
+  const bg = bossImage(enc.fightName);
   return (
     <Link
       to="/raids"

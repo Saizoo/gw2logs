@@ -89,6 +89,14 @@ export const FRACTAL_CATALOG: CatalogGroup[] = [
 export const FRACTAL_IMAGE = '/assets/raid_backgrounds/fractals.png';
 
 const FRACTAL_GROUP_NAMES = new Set(FRACTAL_CATALOG.map((g) => g.name));
+const FRACTAL_BOSS_NAMES = new Set(FRACTAL_CATALOG.flatMap((g) => g.bosses.map((b) => b.name)));
+
+// Per-boss thumbnail: every fractal encounter shares the one fractal image
+// (fractal CMs have no individual art); raid bosses use their own raid art.
+export function bossImage(bossName: string): string | null {
+  if (FRACTAL_BOSS_NAMES.has(bossName)) return FRACTAL_IMAGE;
+  return bossBgPath(bossName);
+}
 
 // Group thumbnail: the shared fractal image for any fractal instance,
 // otherwise the first boss in the group with shipped raid art.

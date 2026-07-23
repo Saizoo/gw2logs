@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { api, type OverviewEncounter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
-import { bossBgPath } from '../data/gw2-data';
-import { groupImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
+import { bossImage, groupImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
 import { ArtImg, PageHeader } from './atoms';
 
 // Shared Raids / Fractals landing: the curated catalog grouped by wing /
@@ -40,7 +39,7 @@ function ScopeLinks({ scope, value, includeRankings }: { scope: 'boss' | 'wing';
 }
 
 function BossCard({ boss, enc }: { boss: CatalogBoss; enc?: OverviewEncounter }) {
-  const bg = bossBgPath(boss.name);
+  const bg = bossImage(boss.name);
   return (
     <div
       style={{
