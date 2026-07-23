@@ -74,10 +74,10 @@ export default function LogDetailPage() {
           overflow: 'hidden',
           padding: '36px 32px',
           marginBottom: 22,
-          borderRadius: 20,
-          border: '1px solid oklch(1 0 0 / 10%)',
-          boxShadow: '0 24px 60px -24px rgba(0,0,0,.65)',
-          background: 'linear-gradient(135deg, oklch(0.22 0.024 260), oklch(0.13 0.015 250))',
+          borderRadius: 0,
+          border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)',
+          boxShadow: 'var(--shadow-md)',
+          background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))',
         }}
       >
         {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.55 }} />}
@@ -86,7 +86,7 @@ export default function LogDetailPage() {
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(100deg, oklch(0.13 0.015 250 / 92%) 0%, oklch(0.13 0.015 250 / 55%) 45%, oklch(0.13 0.015 250 / 35%) 100%), radial-gradient(700px 300px at 15% 0%, oklch(0.4 0.1 55 / 25%), transparent)',
+              'linear-gradient(100deg, color-mix(in srgb, var(--color-surface) 92%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 45%, color-mix(in srgb, var(--color-surface) 35%, transparent) 100%), radial-gradient(700px 300px at 15% 0%, oklch(0.4 0.1 55 / 25%), transparent)',
           }}
         />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
@@ -142,7 +142,7 @@ export default function LogDetailPage() {
               style={{
                 font: '600 11px var(--font-sans)',
                 padding: '4px 10px',
-                borderRadius: 6,
+                borderRadius: 0,
                 background: 'var(--gold-dim)',
                 color: 'var(--gold)',
                 border: '1px solid var(--gold-dim)',
@@ -169,7 +169,7 @@ export default function LogDetailPage() {
             className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
-              borderRadius: 9,
+              borderRadius: 0,
               font: '600 12px var(--font-sans)',
               background: tab === t ? 'var(--gold-grad)' : 'var(--bg-chip)',
               color: tab === t ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -191,7 +191,7 @@ export default function LogDetailPage() {
 
 function Pill({ children }: { children: ReactNode }) {
   return (
-    <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
+    <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
       {children}
     </span>
   );
@@ -280,7 +280,7 @@ function SquadTab({ log }: { log: LogDetail }) {
               return (
                 <div key={p.account ?? p.name} className="u-row" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
                   <ArtImg src={specBgPath(p.profession, p.spec)} style={{ opacity: 0.32 }} />
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 88%) 0%, oklch(0.13 0.014 250 / 55%) 55%, oklch(0.13 0.014 250 / 88%) 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 88%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 55%, color-mix(in srgb, var(--color-surface) 88%, transparent) 100%)' }} />
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(p.profession)} 0%, transparent ${barWidth}%)`, opacity: 0.16 }} />
                   <div style={{ position: 'relative', flex: 'none' }}>
                     {candidate ? (
@@ -292,7 +292,7 @@ function SquadTab({ log }: { log: LogDetail }) {
                   <img
                     src={professionIconPath(p.profession, p.spec)}
                     alt={p.spec}
-                    style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }}
+                    style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 3, flex: 'none' }}
                   />
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(p.profession) }}>
@@ -355,7 +355,7 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
                 const raw = p.boons[c.key] ?? 0;
                 const heatValue = c.weight ? Math.min(raw * c.weight, 100) : raw;
                 return (
-                  <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 4, background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
+                  <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 0, background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
                     {raw}
                   </div>
                 );
@@ -416,7 +416,7 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                   alignItems: 'center',
                   gap: 7,
                   padding: '6px 10px',
-                  borderRadius: 8,
+                  borderRadius: 0,
                   background: 'var(--bg-chip)',
                   border: `1px solid ${severityColor(m.severity)}`,
                 }}
@@ -532,9 +532,9 @@ function TimelineTab({ log }: { log: LogDetail }) {
             r.kind === 'death' ? (
               <div
                 key={i}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)', background: 'oklch(0.28 0.08 25 / 20%)', borderRadius: 6 }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)', background: 'var(--bad-dim)', borderRadius: 0 }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: 2, transform: 'rotate(45deg)', background: eventDotColor('bad'), marginTop: 6, flex: 'none' }} />
+                <div style={{ width: 8, height: 8, borderRadius: 0, transform: 'rotate(45deg)', background: eventDotColor('bad'), marginTop: 6, flex: 'none' }} />
                 <div>
                   <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
                   <div style={{ font: '700 13px var(--font-sans)', color: 'var(--bad)' }}>
@@ -586,7 +586,7 @@ function TimelineScrubber({ log }: { log: LogDetail }) {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: severityColor('Sev4'), display: 'inline-block' }} /> mechanic (severity)
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 2, transform: 'rotate(45deg)', background: eventDotColor('bad'), display: 'inline-block' }} /> death
+            <span style={{ width: 7, height: 7, borderRadius: 0, transform: 'rotate(45deg)', background: eventDotColor('bad'), display: 'inline-block' }} /> death
           </span>
         </div>
       </div>

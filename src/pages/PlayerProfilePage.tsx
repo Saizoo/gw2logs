@@ -20,7 +20,7 @@ function iconParts(iconName: string | null): { profession: string | null; spec: 
 // labels the two boon roles; the profile wants all three named with a
 // colour, so it keeps its own small map.
 const ROLE_META: Record<string, { label: string; color: string }> = {
-  dps: { label: 'DPS', color: 'oklch(0.65 0.19 25)' },
+  dps: { label: 'DPS', color: 'var(--bad)' },
   boon_dps: { label: 'Boon DPS', color: 'var(--gold)' },
   boon_heal: { label: 'Healer', color: 'var(--good)' },
 };
@@ -64,9 +64,9 @@ function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
         pointerEvents: 'none',
         zIndex: 20,
         width: 210,
-        background: 'oklch(0.17 0.014 250 / 98%)',
-        border: '1px solid oklch(1 0 0 / 14%)',
-        borderRadius: 12,
+        background: 'color-mix(in srgb, var(--color-surface) 98%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--color-text) 18%, transparent)',
+        borderRadius: 0,
         boxShadow: '0 18px 40px -14px rgba(0,0,0,.7)',
         padding: '11px 13px',
         animation: 'fadeIn .12s ease both',
@@ -80,7 +80,7 @@ function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
         </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-        <span style={{ font: '800 20px var(--font-sans)', color: 'oklch(0.72 0.11 155)', fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ font: '800 20px var(--font-sans)', color: 'var(--good)', fontVariantNumeric: 'tabular-nums' }}>
           {kill.dps.toLocaleString()}
         </span>
         <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-50)' }}>DPS</span>
@@ -212,7 +212,7 @@ export default function PlayerProfilePage() {
           gap: 22,
           flexWrap: 'wrap',
           background:
-            'radial-gradient(600px 260px at 85% 0%, oklch(0.32 0.06 155 / 25%), transparent), linear-gradient(135deg, oklch(0.2 0.018 250), oklch(0.13 0.014 250))',
+            'radial-gradient(600px 260px at 85% 0%, oklch(0.32 0.06 155 / 25%), transparent), linear-gradient(135deg, var(--color-surface), var(--color-surface))',
         }}
       >
         {/* Chosen-spec banner art, faded into the card and masked toward the
@@ -220,7 +220,7 @@ export default function PlayerProfilePage() {
         {headerBg && (
           <>
             <ArtImg src={headerBg} style={{ opacity: 0.22, maskImage: 'linear-gradient(90deg, transparent, #000 55%)', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 55%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.15 0.014 250 / 70%), transparent 40%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 70%, transparent), transparent 40%)', pointerEvents: 'none' }} />
           </>
         )}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 22, flex: '1 1 340px', minWidth: 0 }}>
@@ -231,10 +231,10 @@ export default function PlayerProfilePage() {
             style={{
               width: 84,
               height: 84,
-              borderRadius: 18,
+              borderRadius: 0,
               background: iconProfession
-                ? `linear-gradient(135deg, ${professionColorAlpha(iconProfession, 50)}, oklch(0.16 0.02 155 / 60%))`
-                : 'oklch(0.22 0.014 250)',
+                ? `linear-gradient(135deg, ${professionColorAlpha(iconProfession, 50)}, var(--color-neutral-200))`
+                : 'var(--color-surface)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -257,7 +257,7 @@ export default function PlayerProfilePage() {
                   height: 26,
                   borderRadius: '50%',
                   background: 'var(--gold)',
-                  color: 'oklch(0.2 0.02 260)',
+                  color: 'var(--color-neutral-200)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -303,7 +303,7 @@ export default function PlayerProfilePage() {
       )}
 
       {/* Sub-tab bar — keeps the page short by paging the deeper detail. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)', marginBottom: 20 }}>
         {PROFILE_TABS.map((t) => {
           const active = tab === t.id;
           return (
@@ -318,8 +318,8 @@ export default function PlayerProfilePage() {
                 border: 'none',
                 cursor: 'pointer',
                 font: '700 13.5px var(--font-sans)',
-                borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
-                color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+                borderBottom: `2px solid ${active ? 'var(--text)' : 'transparent'}`,
+                color: active ? 'var(--text)' : 'var(--text-55)',
                 transition: 'color .15s ease, border-color .15s ease',
               }}
             >
@@ -342,8 +342,8 @@ export default function PlayerProfilePage() {
                 <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible', display: 'block' }} preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="oklch(0.65 0.1 155)" stopOpacity="0" />
+                      <stop offset="0%" stopColor="var(--good)" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="var(--good)" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
@@ -353,7 +353,7 @@ export default function PlayerProfilePage() {
                     <line x1="0" y1="148" x2="720" y2="148" />
                   </g>
                   <path d={chart.area} fill="url(#dpsFill2)" />
-                  <path d={chart.line} fill="none" stroke="oklch(0.65 0.1 155)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                  <path d={chart.line} fill="none" stroke="var(--good)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
                   {/* Guide line dropped from the hovered point. */}
                   {hoverIdx !== null && chart.pts[hoverIdx] && (
                     <line
@@ -361,7 +361,7 @@ export default function PlayerProfilePage() {
                       y1={chart.pts[hoverIdx].y}
                       x2={chart.pts[hoverIdx].x}
                       y2={148}
-                      stroke="oklch(0.65 0.1 155 / 45%)"
+                      stroke="color-mix(in srgb, var(--good) 45%, transparent)"
                       strokeWidth={1}
                       strokeDasharray="3 3"
                       vectorEffect="non-scaling-stroke"
@@ -375,8 +375,8 @@ export default function PlayerProfilePage() {
                         cx={pt.x}
                         cy={pt.y}
                         r={on ? 5 : 3.5}
-                        fill={on ? 'oklch(0.65 0.1 155)' : 'var(--bg)'}
-                        stroke="oklch(0.65 0.1 155)"
+                        fill={on ? 'var(--good)' : 'var(--bg)'}
+                        stroke="var(--good)"
                         strokeWidth={2}
                         vectorEffect="non-scaling-stroke"
                         style={{ transition: 'r .1s ease' }}
@@ -506,11 +506,11 @@ function GroupChips({ groups }: { groups: NonNullable<PlayerProfile['affiliation
             alignItems: 'center',
             gap: 6,
             padding: '5px 11px',
-            borderRadius: 20,
+            borderRadius: 0,
             font: '600 11.5px var(--font-sans)',
-            background: g.isGuildGroup ? 'oklch(0.78 0.14 85 / 12%)' : 'oklch(1 0 0 / 5%)',
+            background: g.isGuildGroup ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'color-mix(in srgb, var(--color-text) 7%, transparent)',
             color: 'var(--text-80)',
-            border: `1px solid ${g.isGuildGroup ? 'oklch(0.78 0.14 85 / 30%)' : 'var(--border)'}`,
+            border: `1px solid ${g.isGuildGroup ? 'color-mix(in srgb, var(--color-accent) 30%, transparent)' : 'var(--border)'}`,
           }}
         >
           {g.isGuildGroup && <span aria-hidden style={{ color: 'var(--gold)' }}>⚜</span>}
@@ -562,8 +562,8 @@ function IdentityPanel({
                   <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{s.pct}%</span>
                 </div>
                 {/* Share-of-play bar, coloured by profession. */}
-                <div style={{ height: 6, borderRadius: 3, background: 'oklch(1 0 0 / 6%)', overflow: 'hidden' }}>
-                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 3, background: color }} />
+                <div style={{ height: 6, borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
+                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 0, background: color }} />
                 </div>
               </div>
             </div>
@@ -575,7 +575,7 @@ function IdentityPanel({
         Role split
       </div>
       {/* Single stacked bar of the three squad roles + a labelled legend. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', gap: 2, background: 'oklch(1 0 0 / 4%)' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 0, overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
         {roleBreakdown.map((r) => (
           <div key={r.role} title={`${ROLE_META[r.role]?.label ?? r.role} · ${r.pct}%`} style={{ width: `${r.pct}%`, background: ROLE_META[r.role]?.color ?? 'var(--text-40)' }} />
         ))}
@@ -583,7 +583,7 @@ function IdentityPanel({
       <div style={{ display: 'flex', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
         {roleBreakdown.map((r) => (
           <div key={r.role} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 9, height: 9, borderRadius: 3, background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
+            <span style={{ width: 9, height: 9, borderRadius: 0, background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
             <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-75)' }}>{ROLE_META[r.role]?.label ?? r.role}</span>
             <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-50)' }}>{r.pct}%</span>
           </div>
@@ -602,8 +602,8 @@ function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
       style={{
         minWidth: 220,
         padding: '16px 18px',
-        borderRadius: 14,
-        background: 'oklch(0.12 0.012 250 / 55%)',
+        borderRadius: 0,
+        background: 'color-mix(in srgb, var(--color-surface) 55%, transparent)',
         border: '1px solid var(--border)',
         backdropFilter: 'blur(4px)',
       }}
@@ -620,7 +620,7 @@ function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
       </div>
 
       {/* Kills-vs-wipes ratio bar. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--bad-dim)' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 0, overflow: 'hidden', background: 'var(--bad-dim)' }}>
         <div style={{ width: `${killPct}%`, background: 'var(--good)' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
@@ -658,7 +658,7 @@ function IconPickerModal({
         position: 'fixed',
         inset: 0,
         zIndex: 2500,
-        background: 'oklch(0.08 0.01 260 / 62%)',
+        background: 'color-mix(in srgb, var(--color-surface) 62%, transparent)',
         backdropFilter: 'blur(3px)',
         display: 'flex',
         alignItems: 'flex-start',
@@ -675,7 +675,7 @@ function IconPickerModal({
             type="button"
             onClick={() => onPick(null)}
             className="u-btn-ghost"
-            style={{ marginLeft: 'auto', font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 11px', cursor: 'pointer' }}
+            style={{ marginLeft: 'auto', font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', background: 'none', border: '1px solid var(--border)', borderRadius: 0, padding: '6px 11px', cursor: 'pointer' }}
           >
             Reset to default
           </button>
@@ -712,9 +712,9 @@ function IconPickerModal({
                         gap: 5,
                         width: 78,
                         padding: '9px 6px',
-                        borderRadius: 10,
+                        borderRadius: 0,
                         cursor: 'pointer',
-                        background: isSel ? professionColorAlpha(profession, 18) : 'oklch(1 0 0 / 3%)',
+                        background: isSel ? professionColorAlpha(profession, 18) : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
                         border: `1px solid ${isSel ? professionColor(profession) : 'var(--border-faint)'}`,
                       }}
                     >

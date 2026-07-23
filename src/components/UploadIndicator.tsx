@@ -52,12 +52,12 @@ export function UploadIndicator() {
           alignItems: 'center',
           gap: 7,
           padding: '9px 16px 9px 11px',
-          borderRadius: 20,
+          borderRadius: 0,
           font: '700 12.5px var(--font-sans)',
           whiteSpace: 'nowrap',
           background: 'var(--gold-grad)',
           color: 'var(--gold-fg)',
-          boxShadow: '0 4px 16px oklch(0.7 0.14 85 / 32%)',
+          boxShadow: '0 4px 16px color-mix(in srgb, var(--color-accent) 32%, transparent)',
         }}
       >
         {busy ? <ProgressRing progress={progress} count={activeCount} /> : <PlusIcon />}
@@ -75,9 +75,9 @@ export function UploadIndicator() {
             width: 320,
             maxWidth: '90vw',
             zIndex: 80,
-            background: 'oklch(0.16 0.014 250 / 99%)',
-            border: '1px solid oklch(1 0 0 / 12%)',
-            borderRadius: 14,
+            background: 'var(--color-surface)',
+            border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
+            borderRadius: 0,
             boxShadow: '0 22px 50px -16px rgba(0,0,0,.7)',
             overflow: 'hidden',
             animation: 'fadeIn .16s ease both',
@@ -139,7 +139,7 @@ export function UploadIndicator() {
                       {it.groupName && it.status !== 'failed' ? ` · ${it.groupName}` : ''}
                     </span>
                   </span>
-                  <span style={{ font: '700 9.5px var(--font-sans)', padding: '2px 8px', borderRadius: 20, color: '#14120f', background: meta.color, flex: 'none' }}>
+                  <span style={{ font: '700 9.5px var(--font-sans)', padding: '2px 8px', borderRadius: 0, color: '#14120f', background: meta.color, flex: 'none' }}>
                     {meta.label}
                   </span>
                 </div>
@@ -168,7 +168,7 @@ export function UploadIndicator() {
 function PlusIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M12 4v16M4 12h16" stroke="oklch(0.15 0.02 85)" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M12 4v16M4 12h16" stroke="var(--gold-fg)" strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -183,14 +183,14 @@ function ProgressRing({ progress, count }: { progress: number; count: number }) 
   return (
     <span style={{ position: 'relative', width: 16, height: 16, flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width="16" height="16" viewBox="0 0 20 20" style={{ transform: 'rotate(-90deg)', animation: 'spin 2.4s linear infinite' }} aria-hidden>
-        <circle cx="10" cy="10" r={R} fill="none" stroke="oklch(0.15 0.02 85 / 30%)" strokeWidth="2.4" />
+        <circle cx="10" cy="10" r={R} fill="none" stroke="color-mix(in srgb, var(--color-text) 15%, transparent)" strokeWidth="2.4" />
         <circle
-          cx="10" cy="10" r={R} fill="none" stroke="oklch(0.15 0.02 85)" strokeWidth="2.4" strokeLinecap="round"
+          cx="10" cy="10" r={R} fill="none" stroke="var(--gold-fg)" strokeWidth="2.4" strokeLinecap="round"
           strokeDasharray={`${dash} ${C - dash}`}
         />
       </svg>
       {count > 0 && (
-        <span style={{ position: 'absolute', font: '800 8px var(--font-sans)', color: 'oklch(0.15 0.02 85)' }}>{count}</span>
+        <span style={{ position: 'absolute', font: '800 8px var(--font-sans)', color: 'var(--gold-fg)' }}>{count}</span>
       )}
     </span>
   );

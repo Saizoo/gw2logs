@@ -121,7 +121,7 @@ export default function AccountPage() {
             color: 'var(--text-70)',
             padding: '8px 14px',
             border: '1px solid var(--border)',
-            borderRadius: 8,
+            borderRadius: 0,
           }}
         >
           Sign out
@@ -151,7 +151,7 @@ export default function AccountPage() {
                 color: 'var(--bad)',
                 padding: '9px 14px',
                 border: '1px solid var(--bad-dim)',
-                borderRadius: 8,
+                borderRadius: 0,
                 opacity: unlinking ? 0.6 : 1,
               }}
             >
@@ -179,7 +179,7 @@ export default function AccountPage() {
                 padding: '10px 12px',
                 background: 'var(--bg-input)',
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 0,
                 font: '400 12px var(--font-mono)',
                 color: 'var(--text)',
               }}
@@ -227,7 +227,7 @@ export default function AccountPage() {
               padding: '10px 12px',
               background: 'var(--bg-input)',
               border: '1px solid var(--border)',
-              borderRadius: 8,
+              borderRadius: 0,
               font: '400 12px var(--font-mono)',
               color: 'var(--text)',
             }}
@@ -241,11 +241,11 @@ export default function AccountPage() {
 
         {dpsStatus && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 3 }}>
+            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 0 }}>
               <div
                 style={{
                   height: 6,
-                  borderRadius: 3,
+                  borderRadius: 0,
                   background: 'var(--gold)',
                   width: `${dpsStatus.total ? Math.round((dpsStatus.processed / dpsStatus.total) * 100) : 100}%`,
                 }}
@@ -280,7 +280,7 @@ export default function AccountPage() {
             window.dispatchEvent(new CustomEvent(REPLAY_TOUR_EVENT));
           }}
           className="u-btn-ghost"
-          style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', padding: '8px 14px', borderRadius: 8 }}
+          style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', padding: '8px 14px', borderRadius: 0 }}
         >
           Replay the site tour
         </button>
@@ -352,17 +352,17 @@ function PrivacyToggle({ title, description, on, busy, onToggle }: { title: stri
           position: 'relative',
           width: 46,
           height: 25,
-          borderRadius: 14,
+          borderRadius: 0,
           flexShrink: 0,
           marginTop: 2,
-          background: on ? 'var(--gold-grad)' : 'oklch(1 0 0 / 10%)',
+          background: on ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
           border: '1px solid ' + (on ? 'transparent' : 'var(--border)'),
           cursor: busy ? 'default' : 'pointer',
           opacity: busy ? 0.6 : 1,
           transition: 'background .15s ease',
         }}
       >
-        <span aria-hidden style={{ position: 'absolute', top: 2, left: on ? 23 : 2, width: 19, height: 19, borderRadius: '50%', background: on ? 'oklch(0.15 0.02 85)' : 'oklch(0.85 0.01 250)', transition: 'left .15s ease' }} />
+        <span aria-hidden style={{ position: 'absolute', top: 2, left: on ? 23 : 2, width: 19, height: 19, borderRadius: '50%', background: on ? 'var(--gold-fg)' : 'var(--text-85)', transition: 'left .15s ease' }} />
       </button>
     </div>
   );
@@ -430,16 +430,16 @@ function GuildCard() {
                   gap: 10,
                   textAlign: 'left',
                   padding: '10px 14px',
-                  borderRadius: 10,
-                  background: active ? 'oklch(0.78 0.14 85 / 12%)' : 'oklch(1 0 0 / 3%)',
-                  border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 40%)' : 'var(--border)'}`,
+                  borderRadius: 0,
+                  background: active ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
+                  border: `1px solid ${active ? 'color-mix(in srgb, var(--color-accent) 40%, transparent)' : 'var(--border)'}`,
                   cursor: active ? 'default' : 'pointer',
                 }}
               >
                 <span style={{ font: '800 12px var(--font-mono)', color: 'var(--gold)', flex: 'none' }}>[{g.tag}]</span>
                 <span style={{ font: '600 13px var(--font-sans)', color: 'var(--text-88)' }}>{g.name}</span>
                 {g.isLeader && (
-                  <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: 'var(--gold-dim)', color: 'var(--gold)' }}>
+                  <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 0, background: 'var(--gold-dim)', color: 'var(--gold)' }}>
                     Leader
                   </span>
                 )}
@@ -455,7 +455,7 @@ function GuildCard() {
               disabled={busy}
               onClick={() => choose(null)}
               className="u-btn-ghost"
-              style={{ alignSelf: 'flex-start', font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)' }}
+              style={{ alignSelf: 'flex-start', font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', padding: '7px 12px', borderRadius: 0, border: '1px solid var(--border)' }}
             >
               Display no guild
             </button>

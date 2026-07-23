@@ -15,7 +15,7 @@ export function ComparePickerBar({ selected, onClear }: { selected: CompareCandi
           alignItems: 'center',
           gap: 14,
           padding: '10px 10px 10px 16px',
-          borderRadius: 12,
+          borderRadius: 0,
           background: 'var(--bg-card)',
           backdropFilter: 'blur(16px) saturate(140%)',
           border: '1px solid var(--gold-dim)',
@@ -39,7 +39,7 @@ export function ComparePickerBar({ selected, onClear }: { selected: CompareCandi
           }}
           style={{
             padding: '8px 18px',
-            borderRadius: 8,
+            borderRadius: 0,
             font: '700 12px var(--font-sans)',
             background: ready ? 'var(--gold-grad)' : 'var(--bg-chip)',
             color: ready ? 'var(--gold-fg)' : 'var(--text-50)',
@@ -65,7 +65,7 @@ export function CompareCheckbox({ checked, onToggle, label }: { checked: boolean
       style={{
         width: 18,
         height: 18,
-        borderRadius: 5,
+        borderRadius: 0,
         flex: 'none',
         border: `1.5px solid ${checked ? 'var(--gold)' : 'var(--border)'}`,
         background: checked ? 'var(--gold-grad)' : 'transparent',

@@ -1,66 +1,110 @@
 :root {
-  --bg: oklch(0.15 0.014 250);
-  --bg-page: radial-gradient(1200px 600px at 15% -10%, oklch(0.22 0.03 85 / 8%), transparent),
-    radial-gradient(1000px 500px at 100% 0%, oklch(0.24 0.05 30 / 6%), transparent), oklch(0.15 0.014 250);
-  --bg-nav: oklch(0.16 0.014 250 / 78%);
-  --bg-card: oklch(0.19 0.014 250 / 70%);
-  --bg-input: oklch(0.12 0.014 250);
-  --bg-chip: oklch(1 0 0 / 6%);
-  --bg-hover: oklch(1 0 0 / 3%);
+  /* ── Modernist design system — source tokens ──────────────────────────
+     Flat, architectural, near-mono red on a light ground; Archivo type,
+     zero corner radius, strong 2px rules. The app's own variable names
+     below are re-pointed onto these so every existing var(--…) reference
+     flips to the Modernist look. */
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-accent: #ec3013;
+  --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
 
-  --border: oklch(1 0 0 / 8%);
-  --border-soft: oklch(1 0 0 / 6%);
-  --border-softer: oklch(1 0 0 / 5%);
-  --border-faint: oklch(1 0 0 / 4%);
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
 
-  --gold: oklch(0.78 0.14 85);
-  --gold-dim: oklch(0.78 0.14 85 / 16%);
-  --gold-grad: linear-gradient(135deg, oklch(0.78 0.14 85), oklch(0.6 0.12 60));
-  --gold-fg: oklch(0.15 0.02 85);
+  --color-accent-100: #fff2ef;
+  --color-accent-200: #ffe0d9;
+  --color-accent-300: #ffc4b8;
+  --color-accent-400: #ff9783;
+  --color-accent-500: #ff563c;
+  --color-accent-600: #dd2b0f;
+  --color-accent-700: #ae1800;
+  --color-accent-800: #7c1405;
+  --color-accent-900: #4d170e;
 
-  --text: oklch(0.95 0.01 90);
-  --text-92: oklch(0.92 0.01 90);
-  --text-85: oklch(0.85 0.01 90);
-  --text-80: oklch(0.8 0.01 90);
-  --text-70: oklch(0.7 0.01 90);
-  --text-65: oklch(0.65 0.015 90);
-  --text-62: oklch(0.62 0.015 90);
-  --text-60: oklch(0.6 0.015 90);
-  --text-58: oklch(0.58 0.015 90);
-  --text-55: oklch(0.55 0.015 90);
-  --text-50: oklch(0.5 0.015 90);
-  --text-45: oklch(0.5 0.015 90);
-  --text-40: oklch(0.55 0.015 90);
-  --text-35: oklch(0.5 0.015 90);
-  --text-30: oklch(0.45 0.015 90);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+
+  --radius-md: 0px;
+
+  /* ── App aliases mapped onto Modernist ──────────────────────────────── */
+  --bg: var(--color-bg);
+  --bg-page: var(--color-bg); /* Modernist is flat — no radial glows */
+  --bg-nav: var(--color-bg);
+  --bg-card: var(--color-surface);
+  --bg-input: var(--color-surface);
+  --bg-chip: color-mix(in srgb, var(--color-text) 6%, transparent);
+  --bg-hover: color-mix(in srgb, var(--color-text) 4%, transparent);
+
+  --border: var(--color-divider);
+  --border-soft: color-mix(in srgb, var(--color-text) 24%, transparent);
+  --border-softer: color-mix(in srgb, var(--color-text) 16%, transparent);
+  --border-faint: color-mix(in srgb, var(--color-text) 11%, transparent);
+
+  /* The accent replaces the old gold role. Flat fill, light foreground. */
+  --gold: var(--color-accent);
+  --gold-dim: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --gold-grad: var(--color-accent);
+  --gold-fg: var(--color-bg);
+
+  --text: var(--color-text);
+  --text-92: color-mix(in srgb, var(--color-text) 92%, transparent);
+  --text-88: color-mix(in srgb, var(--color-text) 88%, transparent);
+  --text-85: color-mix(in srgb, var(--color-text) 85%, transparent);
+  --text-80: color-mix(in srgb, var(--color-text) 80%, transparent);
+  --text-75: color-mix(in srgb, var(--color-text) 74%, transparent);
+  --text-70: color-mix(in srgb, var(--color-text) 70%, transparent);
+  --text-65: color-mix(in srgb, var(--color-text) 65%, transparent);
+  --text-62: color-mix(in srgb, var(--color-text) 62%, transparent);
+  --text-60: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --text-58: color-mix(in srgb, var(--color-text) 58%, transparent);
+  --text-55: color-mix(in srgb, var(--color-text) 55%, transparent);
+  --text-50: color-mix(in srgb, var(--color-text) 50%, transparent);
+  --text-45: color-mix(in srgb, var(--color-text) 47%, transparent);
+  --text-40: color-mix(in srgb, var(--color-text) 43%, transparent);
+  --text-35: color-mix(in srgb, var(--color-text) 40%, transparent);
+  --text-30: color-mix(in srgb, var(--color-text) 38%, transparent);
 
   /* aliases kept for pages not yet ported to the new component set */
   --bg-header: var(--bg-nav);
   --bg-row: var(--bg-card);
 
-  --good: oklch(0.72 0.13 145);
-  --good-dim: oklch(0.72 0.13 145 / 18%);
-  --bad: oklch(0.68 0.16 25);
-  --bad-dim: oklch(0.62 0.18 25 / 18%);
-  --blue: oklch(0.62 0.16 255);
+  /* Functional status colours (kill/wipe, deltas) — kept as a minimal
+     green/red pair, darkened to read on the light ground. */
+  --good: oklch(0.5 0.13 150);
+  --good-dim: color-mix(in srgb, oklch(0.5 0.13 150) 15%, transparent);
+  --bad: oklch(0.53 0.2 27);
+  --bad-dim: color-mix(in srgb, oklch(0.53 0.2 27) 15%, transparent);
+  --blue: oklch(0.5 0.17 255);
 
-  --parse-99: oklch(0.86 0.19 85);
-  --parse-99-bg: oklch(0.86 0.19 85 / 16%);
-  --parse-95: oklch(0.72 0.22 25);
-  --parse-95-bg: oklch(0.72 0.22 25 / 16%);
-  --parse-75: oklch(0.62 0.19 320);
-  --parse-75-bg: oklch(0.62 0.19 320 / 16%);
-  --parse-50: oklch(0.62 0.16 255);
-  --parse-50-bg: oklch(0.62 0.16 255 / 16%);
-  --parse-25: oklch(0.72 0.15 145);
-  --parse-25-bg: oklch(0.72 0.15 145 / 16%);
-  --parse-0: oklch(0.6 0.015 90);
-  --parse-0-bg: oklch(1 0 0 / 6%);
+  /* FFLogs-style parse tiers — same hue wheel, dropped in lightness so the
+     percentile colours stay legible on a light ground. */
+  --parse-99: oklch(0.62 0.15 85);
+  --parse-99-bg: color-mix(in srgb, oklch(0.62 0.15 85) 16%, transparent);
+  --parse-95: oklch(0.55 0.21 28);
+  --parse-95-bg: color-mix(in srgb, oklch(0.55 0.21 28) 16%, transparent);
+  --parse-75: oklch(0.5 0.2 320);
+  --parse-75-bg: color-mix(in srgb, oklch(0.5 0.2 320) 16%, transparent);
+  --parse-50: oklch(0.5 0.17 255);
+  --parse-50-bg: color-mix(in srgb, oklch(0.5 0.17 255) 16%, transparent);
+  --parse-25: oklch(0.5 0.14 150);
+  --parse-25-bg: color-mix(in srgb, oklch(0.5 0.14 150) 16%, transparent);
+  --parse-0: color-mix(in srgb, var(--color-text) 52%, transparent);
+  --parse-0-bg: color-mix(in srgb, var(--color-text) 8%, transparent);
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: 'Archivo', system-ui, sans-serif;
+  --font-mono: 'Archivo', system-ui, sans-serif;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -169,7 +213,7 @@ p {
 }
 
 ::selection {
-  background: oklch(0.6 0.13 85 / 30%);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 ::-webkit-scrollbar {
@@ -182,8 +226,8 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.32 0.01 250);
-  border-radius: 8px;
+  background: var(--color-neutral-400);
+  border-radius: 0;
 }
 
 @keyframes fadeIn {
@@ -252,10 +296,10 @@ p {
 @keyframes tourPulse {
   0%,
   100% {
-    border-color: oklch(0.78 0.14 85 / 80%);
+    border-color: color-mix(in srgb, var(--color-accent) 80%, transparent);
   }
   50% {
-    border-color: oklch(0.85 0.16 85 / 100%);
+    border-color: var(--color-accent);
   }
 }
 
@@ -272,10 +316,10 @@ p {
 @keyframes iconGlow {
   0%,
   100% {
-    filter: drop-shadow(0 0 2px oklch(0.78 0.14 85 / 0%));
+    filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-accent) 0%, transparent));
   }
   50% {
-    filter: drop-shadow(0 0 10px oklch(0.78 0.14 85 / 45%));
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 45%, transparent));
   }
 }
 
@@ -314,7 +358,7 @@ p {
   transition: background 0.15s ease;
 }
 .u-row:hover {
-  background: oklch(1 0 0 / 4%);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 
 /* Filter pills / secondary chip buttons. */
@@ -322,9 +366,9 @@ p {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .u-chip:hover {
-  background: oklch(1 0 0 / 9%);
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
   color: var(--text-85);
-  border-color: oklch(1 0 0 / 16%);
+  border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
 }
 .u-chip:active {
   transform: translateY(1px);
@@ -343,7 +387,7 @@ select.u-select {
   color: var(--text);
   border-radius: 8px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23c9a94f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ec3013' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 11px center !important;
   background-size: 10px 6px !important;
@@ -351,40 +395,39 @@ select.u-select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 select.u-select:hover:not(:disabled) {
-  border-color: oklch(0.78 0.14 85 / 40%);
-  background-color: oklch(0.14 0.016 250);
+  border-color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 select.u-select:focus-visible {
   outline: none;
-  border-color: oklch(0.78 0.14 85 / 60%);
-  box-shadow: 0 0 0 3px oklch(0.78 0.14 85 / 14%);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 select.u-select:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: default;
 }
 select.u-select option,
 select.u-select optgroup {
-  background: oklch(0.16 0.014 250);
-  color: oklch(0.88 0.01 250);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 select.u-select optgroup {
   font-style: normal;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--color-accent);
 }
 
-/* Primary gold call-to-action buttons/links. */
+/* Primary accent call-to-action buttons/links. Flat — the fill darkens a
+   ramp step on hover/press rather than glowing or lifting. */
 .u-btn-gold {
-  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 .u-btn-gold:hover {
-  filter: brightness(1.07);
-  box-shadow: 0 4px 18px oklch(0.78 0.14 85 / 28%);
+  background: var(--color-accent-600);
 }
 .u-btn-gold:active {
   transform: translateY(1px);
-  filter: brightness(0.97);
+  background: var(--color-accent-700);
 }
 
 /* Quiet bordered buttons (sign out, unlink, ghost actions). */
@@ -392,68 +435,67 @@ select.u-select optgroup {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .u-btn-ghost:hover {
-  background: oklch(1 0 0 / 6%);
-  border-color: oklch(1 0 0 / 18%);
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
 }
 .u-btn-ghost:active {
   transform: translateY(1px);
 }
 
-/* Whole cards that navigate somewhere (best parses, group tiles). */
+/* Whole cards that navigate somewhere (best parses, group tiles). Nothing
+   floats in Modernist — the edge warms to the accent instead of lifting. */
 .u-card-link {
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .u-card-link:hover {
-  border-color: oklch(1 0 0 / 15%);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
 }
 
 /* Nav tabs: hover only affects the inactive ones — the active tab is
-   already filled gold and shouldn't shift under the cursor. */
+   already filled with the accent and shouldn't shift under the cursor. */
 .nav-tab {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .nav-tab:not(.is-active):hover {
-  background: oklch(1 0 0 / 7%);
-  color: var(--text-85);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  color: var(--color-accent);
 }
 
-/* Floating-pill nav search: rounded field whose border warms to gold on
-   focus (the focus treatment from the GW2 Stats Platform design). */
+/* Nav search field: border warms to the accent on focus. */
 .nav-search {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .nav-search:focus {
-  border-color: oklch(0.78 0.14 85 / 50%);
-  background: oklch(0.1 0.012 250 / 90%);
+  border-color: var(--color-accent);
+  background: var(--color-surface);
 }
 
-/* Account avatar in the nav: gold halo ring that grows on hover. */
+/* Account avatar in the nav: square, edged in the divider; the ring warms
+   to the accent on hover. */
 .nav-avatar {
-  box-shadow: 0 0 0 3px oklch(0.78 0.14 85 / 8%);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 0 0 2px var(--color-divider);
+  transition: box-shadow 0.15s ease;
 }
 .nav-avatar:hover {
-  box-shadow: 0 0 0 4px oklch(0.78 0.14 85 / 16%);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 /* Loading skeletons (see QueryStates.tsx). */
 .u-skeleton {
-  border-radius: 8px;
+  border-radius: 0;
   background: linear-gradient(
     100deg,
-    oklch(1 0 0 / 4%) 40%,
-    oklch(1 0 0 / 9%) 50%,
-    oklch(1 0 0 / 4%) 60%
+    color-mix(in srgb, var(--color-text) 6%, transparent) 40%,
+    color-mix(in srgb, var(--color-text) 12%, transparent) 50%,
+    color-mix(in srgb, var(--color-text) 6%, transparent) 60%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.42 0.01 250);
+  background: var(--color-neutral-500);
 }
 
 /* Anyone who asked their OS for less motion gets it: transitions and

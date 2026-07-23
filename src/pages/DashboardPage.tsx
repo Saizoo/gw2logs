@@ -20,10 +20,10 @@ import { LoadingState, ErrorState } from '../components/QueryStates';
 /* -------------------------------------------------------------------------- */
 
 const PANEL: CSSProperties = {
-  background: 'oklch(0.19 0.014 250 / 70%)',
-  border: '1px solid oklch(1 0 0 / 8%)',
-  borderRadius: 16,
-  boxShadow: '0 1px 0 oklch(1 0 0 / 6%) inset, 0 14px 34px -18px rgba(0,0,0,.55)',
+  background: 'var(--color-surface)',
+  border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
+  borderRadius: 0,
+  boxShadow: '0 1px 0 color-mix(in srgb, var(--color-text) 8%, transparent) inset, 0 14px 34px -18px rgba(0,0,0,.55)',
 };
 const CARD_LABEL: CSSProperties = {
   font: '700 11px var(--font-sans)',
@@ -102,8 +102,8 @@ function Panel({ children, style }: { children: ReactNode; style?: CSSProperties
 function HeroStat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div>
-      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px' }}>{value}</div>
-      <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-62)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
+      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--color-bg)' }}>{value}</div>
+      <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
         {label}
       </div>
     </div>
@@ -117,7 +117,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
     <div
       style={{
         position: 'relative',
-        borderRadius: 20,
+        borderRadius: 0,
         overflow: 'hidden',
         padding: 'clamp(32px, 5vw, 48px) clamp(22px, 4vw, 40px)',
         marginBottom: 20,
@@ -125,8 +125,8 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
-        boxShadow: '0 24px 60px -24px rgba(0,0,0,.65)',
-        border: '1px solid oklch(1 0 0 / 8%)',
+        boxShadow: 'var(--shadow-md)',
+        border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
       }}
     >
       {bg && <ArtImg src={bg} style={{ objectPosition: 'center 28%' }} />}
@@ -135,21 +135,21 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(0deg, oklch(0.1 0.012 250 / 96%) 0%, oklch(0.1 0.012 250 / 55%) 55%, oklch(0.1 0.012 250 / 25%) 100%)',
+          background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-900) 92%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 55%, transparent) 55%, color-mix(in srgb, var(--color-neutral-900) 22%, transparent) 100%)',
         }}
       />
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', color: 'var(--color-bg)' }}>
         <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '2px', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
           Guild Wars 2
         </div>
         <div style={{ font: '800 clamp(30px, 5vw, 42px) var(--font-sans)', letterSpacing: '-1px', lineHeight: 1.05, marginBottom: 10 }}>
           Combat Analytics
         </div>
-        <div style={{ font: '500 14px var(--font-sans)', color: 'var(--text-75, oklch(0.75 0.015 90))', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
+        <div style={{ font: '500 14px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 78%, transparent)', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
           Analyze your logs, track your parses, and climb the leaderboards with your guild.
         </div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 26, flexWrap: 'wrap' }}>
-          <GoldButton to="/upload" style={{ padding: '11px 20px', font: '700 13px var(--font-sans)', boxShadow: '0 4px 16px oklch(0.7 0.14 85 / 32%)' }}>
+          <GoldButton to="/upload" style={{ padding: '11px 20px', font: '700 13px var(--font-sans)', boxShadow: '0 4px 16px color-mix(in srgb, var(--color-accent) 32%, transparent)' }}>
             Upload Log
           </GoldButton>
           <Link
@@ -160,11 +160,11 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
               alignItems: 'center',
               font: '600 13px var(--font-sans)',
               padding: '11px 20px',
-              borderRadius: 10,
-              background: 'oklch(1 0 0 / 8%)',
+              borderRadius: 0,
+              background: 'color-mix(in srgb, var(--color-bg) 14%, transparent)',
               backdropFilter: 'blur(6px)',
-              color: 'var(--text-92)',
-              border: '1px solid oklch(1 0 0 / 14%)',
+              color: 'var(--color-bg)',
+              border: '1px solid color-mix(in srgb, var(--color-bg) 40%, transparent)',
             }}
           >
             View Leaderboards
@@ -185,22 +185,22 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
       className="u-card-link"
       style={{
         position: 'relative',
-        borderRadius: 14,
+        borderRadius: 0,
         overflow: 'hidden',
         height: 130,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
         padding: 12,
-        border: '1px solid oklch(1 0 0 / 8%)',
+        border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
         boxShadow: '0 10px 26px -16px rgba(0,0,0,.55)',
-        background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.15 0.01 250))',
+        background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))',
       }}
     >
       {bg && <ArtImg src={bg} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, oklch(0.1 0.012 250 / 92%) 0%, oklch(0.1 0.012 250 / 15%) 65%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-surface) 92%, transparent) 0%, color-mix(in srgb, var(--color-surface) 15%, transparent) 65%)' }} />
       {enc.hasCmClear && (
-        <span style={{ position: 'absolute', top: 10, right: 10, font: '800 9px var(--font-sans)', letterSpacing: '.06em', padding: '3px 7px', borderRadius: 6, color: 'var(--gold-fg)', background: 'var(--gold-grad)' }}>
+        <span style={{ position: 'absolute', top: 10, right: 10, font: '800 9px var(--font-sans)', letterSpacing: '.06em', padding: '3px 7px', borderRadius: 0, color: 'var(--gold-fg)', background: 'var(--gold-grad)' }}>
           CM
         </span>
       )}
@@ -248,7 +248,7 @@ function PopularEncounters() {
 function FeedCard({ title, action, children }: { title: string; action?: { label: string; to: string }; children: ReactNode }) {
   return (
     <Panel style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '14px 18px', borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '14px 18px', borderBottom: '1px solid color-mix(in srgb, var(--color-text) 8%, transparent)' }}>
         <div style={{ font: '700 12px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{title}</div>
         {action && (
           <Link to={action.to} style={{ font: '600 11px var(--font-sans)', color: 'var(--gold)' }}>
@@ -325,7 +325,7 @@ function LoggedOutDashboard() {
                       className="u-row"
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === home.recentLogs.length - 1 ? 'none' : '1px solid var(--border-faint)' }}
                     >
-                      <div style={{ position: 'relative', width: 38, height: 38, borderRadius: 9, overflow: 'hidden', flex: 'none', background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.16 0.01 250))' }}>
+                      <div style={{ position: 'relative', width: 38, height: 38, borderRadius: 0, overflow: 'hidden', flex: 'none', background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-neutral-200))' }}>
                         {bg && <ArtImg src={bg} style={{ opacity: 0.75 }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -423,8 +423,8 @@ function MyCharacterCard({ profile, displayName, linked }: { profile: PlayerProf
     <Panel style={{ padding: 18 }}>
       <div style={{ ...CARD_LABEL, marginBottom: 12 }}>My Character</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, padding: 2, background: `linear-gradient(135deg, ${color}, oklch(0.14 0.01 250 / 60%))`, flex: 'none' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: 10, background: 'oklch(0.13 0.01 250 / 90%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 0, padding: 2, background: `linear-gradient(135deg, ${color}, var(--color-surface))`, flex: 'none' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: 0, background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {main ? (
               <img src={professionIconPath(main)} alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
             ) : (
@@ -463,9 +463,9 @@ function BestEncounterCard({ profile }: { profile: PlayerProfile | null }) {
   return (
     <Panel style={{ overflow: 'hidden' }}>
       <div style={{ ...CARD_LABEL, padding: '18px 18px 0' }}>Best Encounter</div>
-      <div style={{ position: 'relative', height: 64, margin: '10px 0', background: 'linear-gradient(135deg, oklch(0.24 0.03 260), oklch(0.15 0.01 250))' }}>
+      <div style={{ position: 'relative', height: 64, margin: '10px 0', background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))' }}>
         {bg && <ArtImg src={bg} />}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, oklch(0.13 0.014 250 / 95%), oklch(0.13 0.014 250 / 20%))' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-surface) 95%, transparent), color-mix(in srgb, var(--color-surface) 20%, transparent))' }} />
       </div>
       <div style={{ padding: '0 18px 18px' }}>
         {best ? (
@@ -505,12 +505,12 @@ function PerformanceTrendCard({ weeklyActivity, logsThisWeek, avgDps }: { weekly
       <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} style={{ overflow: 'visible' }} role="img" aria-label="Uploads over the last week">
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.78 0.14 85)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="oklch(0.78 0.14 85)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#trendFill)" />
-        <path d={line} fill="none" stroke="oklch(0.78 0.14 85)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path d={line} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div style={{ display: 'flex', gap: 16, marginTop: 8, font: '400 11px var(--font-sans)', color: 'var(--text-58)' }}>
         <div>This week <span style={{ color: 'var(--text-85)', fontWeight: 700 }}>{logsThisWeek}</span></div>
@@ -544,12 +544,12 @@ function LogsByRoleCard({ profile, recentLogs }: { profile: PlayerProfile | null
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', flex: 'none', background: conicGradient(segments, total), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'oklch(0.16 0.014 250)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px var(--font-mono)' }}>{total}</div>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px var(--font-mono)' }}>{total}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
             {segments.slice(0, 4).map((s) => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11px var(--font-sans)', color: 'var(--text-70)' }}>
-                <div style={{ width: 7, height: 7, borderRadius: 2, background: s.color, flex: 'none' }} />
+                <div style={{ width: 7, height: 7, borderRadius: 0, background: s.color, flex: 'none' }} />
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
                 <span style={{ color: 'var(--text-50)' }}>{Math.round((s.value / total) * 100)}%</span>
               </div>
@@ -583,9 +583,9 @@ function RecentUploadsCard({ logs }: { logs: DashboardSummary['recentLogs'] }) {
             key={log.logId}
             to={`/logs/${log.logId}`}
             className="u-row"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i === logs.length - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i === logs.length - 1 ? 'none' : '1px solid color-mix(in srgb, var(--color-text) 6%, transparent)' }}
           >
-            <img src={professionIconPath(log.profession)} alt="" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 7, background: 'oklch(0.14 0.01 250 / 60%)', padding: 2, flex: 'none' }} />
+            <img src={professionIconPath(log.profession)} alt="" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 2, flex: 'none' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ font: '600 12px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.boss}{log.isCm ? ' CM' : ''}</div>
               <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>{log.wing ?? 'Other'} · {timeAgo(log.uploadedAt)}</div>
@@ -613,7 +613,7 @@ function ActivityAndLeaderboard({ ownAccount }: { ownAccount: string | null }) {
           home.recentLogs.slice(0, 5).map((log, i) => {
             const color = log.success ? 'var(--good)' : 'var(--bad)';
             return (
-              <div key={log.id} style={{ display: 'flex', gap: 10, padding: '11px 18px', alignItems: 'flex-start', borderBottom: i === Math.min(home.recentLogs.length, 5) - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)' }}>
+              <div key={log.id} style={{ display: 'flex', gap: 10, padding: '11px 18px', alignItems: 'flex-start', borderBottom: i === Math.min(home.recentLogs.length, 5) - 1 ? 'none' : '1px solid color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flex: 'none', background: color }} />
                 <div style={{ font: '400 11.5px var(--font-sans)', lineHeight: 1.45, color: 'var(--text-80)' }}>
                   <Link to={`/logs/${log.id}`} style={{ color, fontWeight: 700 }}>{log.boss}{log.isCm ? ' CM' : ''}</Link>{' '}
@@ -638,7 +638,7 @@ function ActivityAndLeaderboard({ ownAccount }: { ownAccount: string | null }) {
                 key={row.profession}
                 to={`/logs/${row.logId}`}
                 className="u-row"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderBottom: i === Math.min(home.topByProfession.length, 5) - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)', background: mine ? 'oklch(0.78 0.14 85 / 8%)' : undefined }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderBottom: i === Math.min(home.topByProfession.length, 5) - 1 ? 'none' : '1px solid color-mix(in srgb, var(--color-text) 6%, transparent)', background: mine ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : undefined }}
               >
                 <div style={{ width: 16, font: '800 12px var(--font-mono)', color: rankColor, flex: 'none' }}>{i + 1}</div>
                 <ProfDot color={professionColor(row.profession)} size={8} />
@@ -679,8 +679,8 @@ function MySquad({ logId }: { logId: string }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
         {subgroups.map(([sg, players]) => (
-          <Panel key={sg} style={{ borderRadius: 18, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
+          <Panel key={sg} style={{ borderRadius: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid color-mix(in srgb, var(--color-text) 8%, transparent)' }}>
               Subgroup {sg}
             </div>
             {players.map((p, i) => {
@@ -688,11 +688,11 @@ function MySquad({ logId }: { logId: string }) {
               const specBg = specBgPath(p.profession, p.spec);
               const barWidth = `${(p.total / maxDps) * 100}%`;
               return (
-                <div key={`${p.name}-${i}`} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === players.length - 1 ? 'none' : '1px solid oklch(1 0 0 / 4%)', overflow: 'hidden' }}>
+                <div key={`${p.name}-${i}`} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === players.length - 1 ? 'none' : '1px solid color-mix(in srgb, var(--color-text) 6%, transparent)', overflow: 'hidden' }}>
                   <ArtImg src={specBg} style={{ opacity: 0.32 }} />
-                  <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 88%) 0%, oklch(0.13 0.014 250 / 55%) 55%, oklch(0.13 0.014 250 / 88%) 100%)' }} />
+                  <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 88%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 55%, color-mix(in srgb, var(--color-surface) 88%, transparent) 100%)' }} />
                   <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, transparent ${barWidth})`, opacity: 0.16 }} />
-                  <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'oklch(0.14 0.01 250 / 60%)', padding: 3, flex: 'none' }} />
+                  <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 3, flex: 'none' }} />
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                     <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color }}>{playerRoleLabel(p.squadRole, p.role)} · {p.spec || p.profession}</div>
                     <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.account ?? p.name}</div>

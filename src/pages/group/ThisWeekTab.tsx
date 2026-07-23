@@ -101,7 +101,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
   if (loading) {
     return (
       <Card style={{ padding: '18px 22px' }}>
-        <div className="u-skeleton" style={{ height: 14, width: 220, borderRadius: 6 }} />
+        <div className="u-skeleton" style={{ height: 14, width: 220, borderRadius: 0 }} />
       </Card>
     );
   }
@@ -139,7 +139,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Raid Plan / Fractal Plan sub-tabs. */}
-      <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 12, background: 'oklch(0.12 0.014 250 / 55%)', border: '1px solid var(--border)', alignSelf: 'flex-start' }}>
+      <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 0, background: 'var(--color-surface)', border: '1px solid var(--border)', alignSelf: 'flex-start' }}>
         {SUB_TABS.map((t) => {
           const active = planTab === t.id;
           return (
@@ -148,7 +148,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
               onClick={() => { setPlanTab(t.id); setEditing(false); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
-                padding: '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                padding: '7px 16px', borderRadius: 0, border: 'none', cursor: 'pointer',
                 font: '700 12.5px var(--font-sans)',
                 background: active ? 'var(--gold-grad)' : 'transparent',
                 color: active ? 'var(--gold-fg)' : 'var(--text-60)',
@@ -156,7 +156,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
             >
               {t.label}
               {t.count > 0 && (
-                <span style={{ font: '800 10px var(--font-sans)', padding: '1px 6px', borderRadius: 10, background: active ? 'var(--gold-fg)' : 'oklch(1 0 0 / 10%)', color: active ? 'var(--gold)' : 'var(--text-60)' }}>
+                <span style={{ font: '800 10px var(--font-sans)', padding: '1px 6px', borderRadius: 0, background: active ? 'var(--gold-fg)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)', color: active ? 'var(--gold)' : 'var(--text-60)' }}>
                   {t.count}
                 </span>
               )}
@@ -215,7 +215,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
 function DayCard({ day, items, weekStart, isTonight }: { day: string | null; items: WeekPlanItem[]; weekStart: string; isTonight: boolean }) {
   return (
     <Card style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 22px', borderBottom: '1px solid var(--border-soft)', background: 'oklch(1 0 0 / 2.5%)', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 22px', borderBottom: '1px solid var(--border-soft)', background: 'color-mix(in srgb, var(--color-text) 3%, transparent)', flexWrap: 'wrap' }}>
         <div style={{ font: '800 15px var(--font-sans)', letterSpacing: '-.2px' }}>
           {day ? DAY_FULL[day] : 'Anytime this week'}
         </div>
@@ -223,7 +223,7 @@ function DayCard({ day, items, weekStart, isTonight }: { day: string | null; ite
           <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>{dayDateLabel(weekStart, day)}</div>
         )}
         {isTonight && (
-          <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)', background: 'oklch(0.78 0.14 85 / 15%)', border: '1px solid oklch(0.78 0.14 85 / 35%)', padding: '3px 9px', borderRadius: 12 }}>
+          <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)', padding: '3px 9px', borderRadius: 0 }}>
             Tonight
           </span>
         )}
@@ -329,8 +329,8 @@ function CompositionRoster({ composition, isParty }: { composition: WeekPlanComp
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 14 }}>
         {subgroups.map(([subgroup, slots]) => (
-          <div key={subgroup} style={{ border: '1px solid var(--border-faint)', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', background: 'oklch(1 0 0 / 3%)', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase' }}>
+          <div key={subgroup} style={{ border: '1px solid var(--border-faint)', borderRadius: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 14px', background: 'color-mix(in srgb, var(--color-text) 4%, transparent)', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase' }}>
               {isParty ? 'Party' : `Subgroup ${subgroup}`}
             </div>
             {slots.map((slot) => {
@@ -340,15 +340,15 @@ function CompositionRoster({ composition, isParty }: { composition: WeekPlanComp
                 {/* Spec banner art under a profession-color wash, matching the Characters page rows. */}
                 <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden>
                   <ArtImg src={specBgPath(slot.profession, slot.spec)} style={{ opacity: 0.42 }} />
-                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 45%, transparent) 0%, oklch(0.15 0.014 250 / 55%) 40%, oklch(0.15 0.014 250 / 94%) 68%)` }} />
-                  <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 40%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 45%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 40%, color-mix(in srgb, var(--color-surface) 94%, transparent) 68%)` }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'color-mix(in srgb, var(--color-surface) 40%, transparent)' }} />
                 </div>
                 <img
                   src={professionIconPath(slot.profession, slot.spec)}
                   alt=""
                   width={22}
                   height={22}
-                  style={{ position: 'relative', borderRadius: 5, flexShrink: 0 }}
+                  style={{ position: 'relative', borderRadius: 0, flexShrink: 0 }}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <div style={{ position: 'relative', minWidth: 0 }}>
@@ -482,7 +482,7 @@ function PlanEditor({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {days.map((dayGroup, di) => (
         <Card key={dayGroup.day ?? 'any'} style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid var(--border-soft)', background: 'oklch(1 0 0 / 2.5%)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid var(--border-soft)', background: 'color-mix(in srgb, var(--color-text) 3%, transparent)', flexWrap: 'wrap' }}>
             <div style={{ font: '800 14px var(--font-sans)' }}>{dayGroup.day ? DAY_FULL[dayGroup.day] : 'Anytime this week'}</div>
             {dayGroup.day && (
               <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-55)' }}>{dayDateLabel(weekStart, dayGroup.day)}</div>
@@ -573,11 +573,11 @@ function PlanEditor({
               title={raidDays.includes(day) ? 'One of your scheduled raid days' : undefined}
               style={{
                 padding: '7px 14px',
-                borderRadius: 14,
+                borderRadius: 0,
                 font: '600 12px var(--font-sans)',
-                background: 'oklch(1 0 0 / 4%)',
+                background: 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                 color: usedDays.has(day) ? 'var(--text-35)' : raidDays.includes(day) ? 'var(--gold)' : 'var(--text-70)',
-                border: `1px solid ${raidDays.includes(day) && !usedDays.has(day) ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
+                border: `1px solid ${raidDays.includes(day) && !usedDays.has(day) ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'var(--border)'}`,
                 cursor: usedDays.has(day) ? 'default' : 'pointer',
                 opacity: usedDays.has(day) ? 0.5 : 1,
               }}
@@ -592,9 +592,9 @@ function PlanEditor({
             disabled={usedDays.has('any')}
             style={{
               padding: '7px 14px',
-              borderRadius: 14,
+              borderRadius: 0,
               font: '600 12px var(--font-sans)',
-              background: 'oklch(1 0 0 / 4%)',
+              background: 'color-mix(in srgb, var(--color-text) 6%, transparent)',
               color: usedDays.has('any') ? 'var(--text-35)' : 'var(--text-70)',
               border: '1px solid var(--border)',
               cursor: usedDays.has('any') ? 'default' : 'pointer',

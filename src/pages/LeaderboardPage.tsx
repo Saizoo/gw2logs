@@ -10,7 +10,7 @@ import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBa
 import { Select } from '../components/Select';
 import { LoadingState, ErrorState, EmptyState } from '../components/QueryStates';
 
-const RANK_COLORS = ['var(--gold)', 'oklch(0.7 0.03 85)', 'oklch(0.7 0.03 85)'];
+const RANK_COLORS = ['var(--gold)', 'var(--text-70)', 'var(--text-70)'];
 
 export default function LeaderboardPage() {
   const [params, setParams] = useSearchParams();
@@ -157,7 +157,7 @@ export default function LeaderboardPage() {
                 }}
               >
                 <ArtImg src={specBgPath(row.profession, row.spec)} style={{ opacity: 0.22, zIndex: -1 }} />
-                <div style={{ position: 'absolute', inset: 0, zIndex: -1, background: 'linear-gradient(90deg, oklch(0.13 0.014 250 / 90%) 0%, oklch(0.13 0.014 250 / 60%) 55%, oklch(0.13 0.014 250 / 90%) 100%)' }} />
+                <div style={{ position: 'absolute', inset: 0, zIndex: -1, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 90%, transparent) 0%, color-mix(in srgb, var(--color-surface) 60%, transparent) 55%, color-mix(in srgb, var(--color-surface) 90%, transparent) 100%)' }} />
                 {candidate ? (
                   <CompareCheckbox checked={picker.isSelected(candidate)} onToggle={() => picker.toggle(candidate)} label={row.name} />
                 ) : (

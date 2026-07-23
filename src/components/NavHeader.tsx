@@ -43,20 +43,18 @@ export function NavHeader() {
   const tabs = [...TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
 
   return (
-    <div style={{ position: 'sticky', top: 0, zIndex: 50, padding: '14px 20px 0' }}>
+    <div style={{ position: 'sticky', top: 0, zIndex: 50 }}>
       <div
         className="nav-bar-inner"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 20,
-          padding: '0 22px',
+          padding: '0 24px',
           height: 60,
-          borderRadius: 18,
-          background: 'linear-gradient(180deg, oklch(0.2 0.017 250 / 97%), oklch(0.15 0.014 250 / 97%))',
-          backdropFilter: 'blur(16px) saturate(140%)',
-          border: '1px solid oklch(1 0 0 / 9%)',
-          boxShadow: '0 1px 0 oklch(1 0 0 / 8%) inset, 0 20px 44px -20px rgba(0,0,0,.65)',
+          borderRadius: 0,
+          background: 'var(--bg-nav)',
+          borderBottom: '2px solid var(--border)',
         }}
       >
         <Logo />
@@ -73,7 +71,7 @@ export function NavHeader() {
             gap: 4,
             width: 34,
             height: 34,
-            borderRadius: 8,
+            borderRadius: 0,
             background: 'var(--bg-chip)',
             border: '1px solid var(--border)',
             flex: 'none',
@@ -83,9 +81,9 @@ export function NavHeader() {
             <span style={{ font: '700 15px var(--font-sans)', color: 'var(--text-80)', lineHeight: '1' }}>×</span>
           ) : (
             <>
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 1 }} />
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 1 }} />
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 1 }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
             </>
           )}
         </button>
@@ -95,11 +93,8 @@ export function NavHeader() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 3,
-              background: 'oklch(0.12 0.014 250 / 65%)',
-              border: '1px solid oklch(1 0 0 / 7%)',
-              borderRadius: 12,
-              padding: 4,
+              gap: 4,
+              padding: 0,
               overflowX: 'auto',
             }}
           >
@@ -116,19 +111,18 @@ export function NavHeader() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '7px 14px',
-                    borderRadius: 9,
-                    font: '600 12.5px var(--font-sans)',
+                    padding: '7px 12px',
+                    borderRadius: 0,
+                    font: '700 12.5px var(--font-sans)',
+                    letterSpacing: '.04em',
+                    textTransform: 'uppercase',
                     whiteSpace: 'nowrap',
-                    background: active ? 'var(--gold-grad)' : 'transparent',
-                    color: active ? 'var(--gold-fg)' : 'var(--text-65)',
-                    boxShadow: active ? '0 4px 16px oklch(0.7 0.14 85 / 30%)' : undefined,
+                    background: 'transparent',
+                    color: active ? 'var(--gold)' : 'var(--text-65)',
                   }}
                 >
                   {tab.label}
-                  {badgeCount > 0 && (
-                    <CountBadge count={badgeCount} style={active ? { background: 'var(--gold-fg)', color: 'var(--gold)' } : undefined} />
-                  )}
+                  {badgeCount > 0 && <CountBadge count={badgeCount} />}
                 </Link>
               );
             })}
@@ -158,15 +152,14 @@ export function NavHeader() {
         <div
           style={{
             position: 'absolute',
-            top: 78,
-            left: 20,
-            right: 20,
+            top: 62,
+            left: 0,
+            right: 0,
             padding: 16,
-            borderRadius: 16,
-            background: 'oklch(0.16 0.014 250 / 99%)',
-            backdropFilter: 'blur(16px) saturate(140%)',
-            border: '1px solid oklch(1 0 0 / 9%)',
-            boxShadow: '0 20px 44px rgba(0,0,0,.5)',
+            borderRadius: 0,
+            background: 'var(--color-surface)',
+            borderBottom: '2px solid var(--border)',
+            boxShadow: 'var(--shadow-md)',
             animation: 'fadeIn 0.18s ease both',
             zIndex: 60,
           }}
@@ -189,11 +182,12 @@ export function NavHeader() {
                     alignItems: 'center',
                     gap: 8,
                     padding: '11px 14px',
-                    borderRadius: 9,
-                    font: '600 13px var(--font-sans)',
-                    background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
+                    borderRadius: 0,
+                    font: '700 13px var(--font-sans)',
+                    letterSpacing: '.04em',
+                    textTransform: 'uppercase',
+                    background: active ? 'var(--gold)' : 'var(--bg-chip)',
                     color: active ? 'var(--gold-fg)' : 'var(--text-70)',
-                    boxShadow: active ? '0 4px 16px oklch(0.7 0.14 85 / 30%)' : undefined,
                   }}
                 >
                   {tab.label}

@@ -101,7 +101,7 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
         {/* Recessive vertical gridlines with axis labels */}
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={x(t)} x2={x(t)} y1={PAD_TOP} y2={PAD_TOP + rows.length * ROW_H} stroke="oklch(1 0 0 / 6%)" strokeWidth="1" />
+            <line x1={x(t)} x2={x(t)} y1={PAD_TOP} y2={PAD_TOP + rows.length * ROW_H} stroke="color-mix(in srgb, var(--color-text) 8%, transparent)" strokeWidth="1" />
             <text x={x(t)} y={PAD_TOP + rows.length * ROW_H + 20} textAnchor="middle" style={{ font: '600 11px var(--font-mono)', fill: 'var(--text-50)' }}>
               {t >= 1000 ? `${Math.round(t / 1000)}k` : t}
             </text>
@@ -143,7 +143,7 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
 
               {/* Best on record: dot with a 2px surface ring so it stays
                   readable when it sits on the whisker */}
-              <circle cx={x(row.max)} cy={cy} r={5} fill="var(--bg-card, oklch(0.13 0.014 250))" />
+              <circle cx={x(row.max)} cy={cy} r={5} fill="var(--bg-card, var(--color-surface))" />
               <circle cx={x(row.max)} cy={cy} r={3.6} fill={color} />
 
               {/* Full-row hit target for hover + click-through to the record log */}
@@ -170,8 +170,8 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
           style={{
             width: 244,
             padding: '12px 14px',
-            borderRadius: 12,
-            background: 'oklch(0.16 0.016 250 / 97%)',
+            borderRadius: 0,
+            background: 'color-mix(in srgb, var(--color-surface) 97%, transparent)',
             border: '1px solid var(--border)',
             boxShadow: '0 18px 44px -14px rgba(0,0,0,.7)',
           }}

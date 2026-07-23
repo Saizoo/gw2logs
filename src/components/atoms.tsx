@@ -8,7 +8,7 @@ import { PARSE_LEGEND, parseTier } from '../data/gw2-data';
 export function SubNav({ tabs }: { tabs: { label: string; to: string }[] }) {
   const location = useLocation();
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
       {tabs.map((t) => {
         const active = location.pathname === t.to;
         return (
@@ -17,10 +17,10 @@ export function SubNav({ tabs }: { tabs: { label: string; to: string }[] }) {
             to={t.to}
             style={{
               padding: '12px 2px',
-              marginBottom: -1,
+              marginBottom: -2,
               font: '700 13.5px var(--font-sans)',
-              borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
-              color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+              borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
+              color: active ? 'var(--text)' : 'var(--text-55)',
               transition: 'color .15s ease, border-color .15s ease',
             }}
           >
@@ -43,14 +43,13 @@ export function Logo() {
         style={{
           width: 32,
           height: 32,
-          borderRadius: 10,
+          borderRadius: 0,
           flex: 'none',
-          boxShadow: '0 3px 12px oklch(0 0 0 / 45%), 0 0 0 1px oklch(1 0 0 / 12%) inset',
         }}
       />
-      <div style={{ font: '700 15px var(--font-sans)', letterSpacing: '.2px', whiteSpace: 'nowrap' }}>
+      <div style={{ font: '800 16px var(--font-sans)', letterSpacing: '-.01em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
         Hero<span style={{ color: 'var(--gold)' }}>Panel</span>
-        <span className="nav-logo-sub" style={{ color: 'var(--text-55)', fontWeight: 500 }}> GW2</span>
+        <span className="nav-logo-sub" style={{ color: 'var(--text-55)', fontWeight: 600 }}> GW2</span>
       </div>
     </Link>
   );
@@ -72,9 +71,9 @@ export function Avatar({
   const style: CSSProperties = {
     width: size,
     height: size,
-    borderRadius: 10,
+    borderRadius: 0,
     background: 'var(--bg-chip)',
-    border: '1px solid oklch(0.78 0.14 85 / 30%)',
+    border: '1px solid var(--border)',
     flex: 'none',
     display: 'flex',
     alignItems: 'center',
@@ -116,7 +115,9 @@ export function ArtImg({ src, style }: { src: string; style?: CSSProperties }) {
       onError={(e) => {
         e.currentTarget.style.display = 'none';
       }}
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', ...style }}
+      // Modernist prints photography in black and white (readme: the .grayscale
+      // wrapper). Every raid/spec backdrop goes through it here.
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1) contrast(1.05)', ...style }}
     />
   );
 }
@@ -140,7 +141,7 @@ export function ParseBadge({ pct, style }: { pct: number; style?: CSSProperties 
         minWidth: 26,
         height: 20,
         padding: '0 6px',
-        borderRadius: 6,
+        borderRadius: 0,
         font: '800 11px var(--font-mono)',
         color: tier.color,
         background: tier.bg,
@@ -171,7 +172,7 @@ export function ParseLegend() {
 
 const SQUAD_ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   boon_heal: { label: 'Healer', color: 'var(--good)', bg: 'var(--good-dim)' },
-  boon_dps: { label: 'Boon DPS', color: 'var(--gold)', bg: 'oklch(0.7 0.15 85 / 15%)' },
+  boon_dps: { label: 'Boon DPS', color: 'var(--gold)', bg: 'var(--gold-dim)' },
 };
 
 // Only rendered for boon-support roles — plain 'dps' is the unmarked
@@ -186,7 +187,7 @@ export function SquadRoleBadge({ squadRole, style }: { squadRole: string; style?
         alignItems: 'center',
         height: 18,
         padding: '0 6px',
-        borderRadius: 5,
+        borderRadius: 0,
         font: '700 9.5px var(--font-sans)',
         letterSpacing: '.3px',
         textTransform: 'uppercase',
@@ -210,7 +211,7 @@ export function LoadMoreButton({ onClick, loading }: { onClick: () => void; load
         display: 'block',
         margin: '16px auto 0',
         padding: '9px 20px',
-        borderRadius: 10,
+        borderRadius: 0,
         font: '600 12.5px var(--font-sans)',
         background: 'var(--bg-chip)',
         color: 'var(--text-80)',
@@ -237,7 +238,7 @@ export function CountBadge({ count, style }: { count: number; style?: CSSPropert
         minWidth: 16,
         height: 16,
         padding: '0 4px',
-        borderRadius: 8,
+        borderRadius: 0,
         font: '800 10px var(--font-mono)',
         color: 'var(--gold-fg)',
         background: 'var(--gold-grad)',
@@ -256,7 +257,7 @@ export function ResultPill({ success }: { success: boolean }) {
         font: '700 10px var(--font-sans)',
         letterSpacing: '.4px',
         padding: '2px 7px',
-        borderRadius: 5,
+        borderRadius: 0,
         background: success ? 'var(--good-dim)' : 'var(--bad-dim)',
         color: success ? 'var(--good)' : 'var(--bad)',
         border: `1px solid color-mix(in oklab, ${success ? 'var(--good)' : 'var(--bad)'} 30%, transparent)`,
@@ -273,10 +274,8 @@ export function Card({ children, style, className }: { children: ReactNode; styl
       className={className}
       style={{
         background: 'var(--bg-card)',
-        backdropFilter: 'blur(10px)',
         border: '1px solid var(--border)',
-        borderRadius: 18,
-        boxShadow: '0 1px 2px rgba(0,0,0,.25), 0 12px 32px -18px rgba(0,0,0,.55)',
+        borderRadius: 0,
         ...style,
       }}
     >
@@ -352,7 +351,7 @@ export function Badge({ children, tone = 'gold' }: { children: ReactNode; tone?:
         padding: '2px 8px',
         background: bg,
         color,
-        borderRadius: 4,
+        borderRadius: 0,
       }}
     >
       {children}
@@ -380,12 +379,12 @@ export function GoldButton({
   const style: CSSProperties = {
     cursor: disabled ? 'default' : 'pointer',
     display: 'inline-block',
-    font: '600 12.5px var(--font-sans)',
+    font: '700 12.5px var(--font-sans)',
     padding: '9px 16px',
-    borderRadius: 10,
+    borderRadius: 0,
     background: 'var(--gold-grad)',
     color: 'var(--gold-fg)',
-    opacity: disabled ? 0.6 : 1,
+    opacity: disabled ? 0.45 : 1,
     ...styleOverride,
   };
   if (to) {

@@ -83,7 +83,7 @@ export default function CharactersPage() {
   return (
     <div>
       {/* Underline tab strip (design: All Characters / Assigned) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid oklch(1 0 0 / 8%)', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)', marginBottom: 20 }}>
         {(
           [
             { key: 'all', label: 'All Characters' },
@@ -99,8 +99,8 @@ export default function CharactersPage() {
                 padding: '12px 2px',
                 marginBottom: -1,
                 font: '700 13.5px var(--font-sans)',
-                borderBottom: `2px solid ${active ? 'oklch(0.95 0.01 90)' : 'transparent'}`,
-                color: active ? 'oklch(0.95 0.01 90)' : 'var(--text-55)',
+                borderBottom: `2px solid ${active ? 'var(--text)' : 'transparent'}`,
+                color: active ? 'var(--text)' : 'var(--text-55)',
                 borderRadius: 0,
                 transition: 'color .15s ease, border-color .15s ease',
               }}
@@ -121,13 +121,13 @@ export default function CharactersPage() {
               gap: 7,
               font: '700 12.5px var(--font-sans)',
               padding: '9px 16px',
-              borderRadius: 20,
-              background: 'oklch(0.95 0.01 90)',
-              color: 'oklch(0.15 0.02 250)',
+              borderRadius: 0,
+              background: 'var(--text)',
+              color: 'var(--color-surface)',
             }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 2l7 4v6c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-4z" stroke="oklch(0.15 0.02 250)" strokeWidth="2" strokeLinejoin="round" />
+              <path d="M12 2l7 4v6c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-4z" stroke="var(--color-surface)" strokeWidth="2" strokeLinejoin="round" />
             </svg>
             API Key Connected
           </div>
@@ -140,7 +140,7 @@ export default function CharactersPage() {
               gap: 7,
               font: '700 12.5px var(--font-sans)',
               padding: '9px 16px',
-              borderRadius: 20,
+              borderRadius: 0,
               background: 'var(--bad-dim)',
               color: 'var(--bad)',
               border: '1px solid color-mix(in oklab, var(--bad) 30%, transparent)',
@@ -273,16 +273,16 @@ function CharacterRow({
         flexWrap: 'wrap',
         gap: 16,
         padding: '14px 20px',
-        borderRadius: 14,
-        border: '1px solid oklch(1 0 0 / 7%)',
+        borderRadius: 0,
+        border: '1px solid color-mix(in srgb, var(--color-text) 9%, transparent)',
         boxShadow: '0 10px 26px -18px rgba(0,0,0,.6)',
       }}
     >
       {/* Spec banner art under a profession-color wash */}
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden' }} aria-hidden>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 0, overflow: 'hidden' }} aria-hidden>
         <ArtImg src={specBgPath(character.profession, spec)} style={{ opacity: 0.5 }} />
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 55%, transparent) 0%, oklch(0.15 0.014 250 / 55%) 45%, oklch(0.15 0.014 250 / 96%) 70%)` }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.15 0.014 250 / 45%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 55%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 45%, color-mix(in srgb, var(--color-surface) 96%, transparent) 70%)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'color-mix(in srgb, var(--color-surface) 45%, transparent)' }} />
       </div>
 
       {/* Glowing profession/spec emblem */}
@@ -297,7 +297,7 @@ function CharacterRow({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'oklch(0.13 0.01 250 / 80%)',
+          background: 'color-mix(in srgb, var(--color-surface) 80%, transparent)',
           boxShadow: `0 0 10px ${color}`,
         }}
       >
@@ -343,8 +343,8 @@ function CharacterRow({
                 font: '700 11px var(--font-sans)',
                 flex: 'none',
                 ...(isSelected
-                  ? { background: 'oklch(0.95 0.01 90)', color: 'oklch(0.13 0.01 250)', boxShadow: '0 0 0 1px oklch(1 0 0 / 30%)' }
-                  : { background: 'oklch(1 0 0 / 6%)', color: 'var(--text-65)', border: '1px solid oklch(1 0 0 / 10%)' }),
+                  ? { background: 'var(--text)', color: 'var(--color-surface)', boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-text) 40%, transparent)' }
+                  : { background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', color: 'var(--text-65)', border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)' }),
               }}
             >
               {t.tab}
@@ -381,18 +381,18 @@ function CharacterRow({
                 alignItems: 'center',
                 gap: 10,
                 padding: '8px 14px',
-                borderRadius: 10,
-                background: 'oklch(1 0 0 / 6%)',
-                border: '1px solid oklch(1 0 0 / 9%)',
+                borderRadius: 0,
+                background: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-text) 12%, transparent)',
               }}
             >
               <div
                 style={{
                   width: 20,
                   height: 20,
-                  borderRadius: 6,
+                  borderRadius: 0,
                   background: color,
-                  color: 'oklch(0.13 0.01 250)',
+                  color: 'var(--color-surface)',
                   font: '800 11px var(--font-sans)',
                   display: 'flex',
                   alignItems: 'center',
@@ -434,7 +434,7 @@ function CharacterRow({
             onClick={onDelete}
             title={`Delete ${character.name}`}
             className="u-btn-ghost"
-            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--bad)', padding: '8px 12px', borderRadius: 20, border: '1px solid oklch(1 0 0 / 10%)', whiteSpace: 'nowrap' }}
+            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--bad)', padding: '8px 12px', borderRadius: 0, border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)', whiteSpace: 'nowrap' }}
           >
             Delete
           </button>
@@ -450,19 +450,19 @@ const pillBtnStyle = {
   gap: 7,
   font: '600 12.5px var(--font-sans)',
   padding: '9px 16px',
-  borderRadius: 20,
-  background: 'oklch(1 0 0 / 6%)',
+  borderRadius: 0,
+  background: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
   color: 'var(--text-85)',
-  border: '1px solid oklch(1 0 0 / 9%)',
+  border: '1px solid color-mix(in srgb, var(--color-text) 12%, transparent)',
 } as const;
 
 const assignBtnStyle = {
   font: '700 12px var(--font-sans)',
   padding: '9px 16px',
-  borderRadius: 20,
-  background: 'oklch(1 0 0 / 8%)',
+  borderRadius: 0,
+  background: 'color-mix(in srgb, var(--color-text) 11%, transparent)',
   color: 'var(--text-92)',
-  border: '1px solid oklch(1 0 0 / 10%)',
+  border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)',
   whiteSpace: 'nowrap',
 } as const;
 
@@ -472,6 +472,6 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 8,
+  borderRadius: 0,
   fontFamily: 'var(--font-sans)',
 } as const;

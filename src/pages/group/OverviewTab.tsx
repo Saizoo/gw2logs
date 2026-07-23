@@ -116,7 +116,7 @@ function RaidScheduleCard({
               onClick={() => toggleDay(d)}
               style={{
                 padding: '6px 12px',
-                borderRadius: 8,
+                borderRadius: 0,
                 font: '600 12px var(--font-sans)',
                 background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
                 color: active ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -221,11 +221,11 @@ function RaidSignupsCard({
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: 14,
+                  borderRadius: 0,
                   font: '600 11.5px var(--font-sans)',
-                  background: active ? 'oklch(0.78 0.14 85 / 18%)' : 'oklch(1 0 0 / 4%)',
+                  background: active ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                   color: active ? 'var(--gold)' : 'var(--text-60)',
-                  border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
+                  border: `1px solid ${active ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'var(--border)'}`,
                 }}
               >
                 {signupDateLabel(d, group.resolvedTimezone)}
@@ -249,9 +249,9 @@ function RaidSignupsCard({
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '6px 16px',
-                  borderRadius: 16,
+                  borderRadius: 0,
                   font: '700 12px var(--font-sans)',
-                  background: active ? meta.bg : 'oklch(1 0 0 / 4%)',
+                  background: active ? meta.bg : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                   color: active ? meta.color : 'var(--text-60)',
                   border: `1px solid ${active ? `color-mix(in oklab, ${meta.color} 40%, transparent)` : 'var(--border)'}`,
                 }}
@@ -278,9 +278,9 @@ function RaidSignupsCard({
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 10px',
-                borderRadius: 14,
+                borderRadius: 0,
                 font: '600 11px var(--font-sans)',
-                background: meta ? meta.bg : 'oklch(1 0 0 / 3%)',
+                background: meta ? meta.bg : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
                 color: meta ? meta.color : 'var(--text-50)',
                 border: `1px solid ${meta ? `color-mix(in oklab, ${meta.color} 30%, transparent)` : 'var(--border)'}`,
               }}
@@ -358,7 +358,7 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
               alignItems: 'center',
               gap: 6,
               padding: '5px 11px',
-              borderRadius: 14,
+              borderRadius: 0,
               font: '600 11.5px var(--font-sans)',
               background: 'var(--good-dim)',
               color: 'var(--good)',
@@ -420,7 +420,7 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
                     alignItems: 'center',
                     gap: 6,
                     padding: '6px 12px',
-                    borderRadius: 20,
+                    borderRadius: 0,
                     cursor: 'pointer',
                     font: '600 11.5px var(--font-sans)',
                     background: on ? 'var(--good-dim)' : 'var(--bg-chip)',
@@ -492,9 +492,9 @@ function WeeklyClearsCard({ clears }: { clears: GroupClears }) {
                       alignItems: 'center',
                       gap: 5,
                       padding: '4px 9px',
-                      borderRadius: 14,
+                      borderRadius: 0,
                       font: '600 11px var(--font-sans)',
-                      background: enc.killedThisWeek ? 'var(--good-dim)' : 'oklch(1 0 0 / 4%)',
+                      background: enc.killedThisWeek ? 'var(--good-dim)' : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                       color: enc.killedThisWeek ? 'var(--good)' : 'var(--text-50)',
                       border: `1px solid ${enc.killedThisWeek ? 'color-mix(in oklab, var(--good) 30%, transparent)' : 'var(--border)'}`,
                       whiteSpace: 'nowrap',
@@ -503,14 +503,14 @@ function WeeklyClearsCard({ clears }: { clears: GroupClears }) {
                     <span aria-hidden style={{ font: '800 10px var(--font-sans)' }}>{enc.killedThisWeek ? '✓' : '·'}</span>
                     {enc.fightName}
                     {enc.cmThisWeek && (
-                      <span style={{ font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '1px 4px', borderRadius: 4, background: 'oklch(0.78 0.14 85 / 18%)', color: 'var(--gold)' }}>
+                      <span style={{ font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '1px 4px', borderRadius: 0, background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--gold)' }}>
                         CM
                       </span>
                     )}
                   </span>
                 );
                 return enc.lastKill ? (
-                  <Link key={enc.fightName} to={`/logs/${enc.lastKill.logId}`} className="u-chip" title={`Last kill ${new Date(enc.lastKill.date).toLocaleDateString()}`} style={{ borderRadius: 14 }}>
+                  <Link key={enc.fightName} to={`/logs/${enc.lastKill.logId}`} className="u-chip" title={`Last kill ${new Date(enc.lastKill.date).toLocaleDateString()}`} style={{ borderRadius: 0 }}>
                     {chip}
                   </Link>
                 ) : (

@@ -24,7 +24,7 @@ export function ToastHost() {
             width: '100%',
             cursor: 'pointer',
             padding: '12px 16px',
-            borderRadius: 12,
+            borderRadius: 0,
             font: '600 12.5px var(--font-sans)',
             lineHeight: 1.4,
             background: t.tone === 'success' ? 'oklch(0.19 0.03 145 / 96%)' : 'oklch(0.2 0.04 25 / 96%)',

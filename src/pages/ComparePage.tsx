@@ -133,7 +133,7 @@ function Comparison({ data }: { data: CompareResult }) {
         {bg && (
           <>
             <ArtImg src={bg} style={{ opacity: 0.4, objectPosition: 'center 30%' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, oklch(0.14 0.014 250 / 55%), oklch(0.14 0.014 250 / 92%))' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 55%, transparent), color-mix(in srgb, var(--color-surface) 92%, transparent))' }} />
           </>
         )}
         <div style={{ position: 'relative', padding: '18px 22px' }}>
@@ -175,14 +175,14 @@ function Comparison({ data }: { data: CompareResult }) {
                 </div>
                 {/* mirrored bars */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center', marginTop: 4 }}>
-                  <div style={{ height: 7, background: 'var(--bg-chip)', borderRadius: 4, overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{ width: `${row.aPct}%`, height: '100%', borderRadius: 4, background: 'var(--gold)', opacity: row.winner === 'a' ? 1 : 0.4 }} />
+                  <div style={{ height: 7, background: 'var(--bg-chip)', borderRadius: 0, overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ width: `${row.aPct}%`, height: '100%', borderRadius: 0, background: 'var(--gold)', opacity: row.winner === 'a' ? 1 : 0.4 }} />
                   </div>
                   <div style={{ minWidth: 92, textAlign: 'center', font: '700 9.5px var(--font-mono)', color: delta ? (row.winner === 'a' ? 'var(--gold)' : 'var(--blue)') : 'var(--text-45)' }}>
                     {delta ? `${row.winner === 'a' ? '◀' : '▶'} ${delta}%` : '—'}
                   </div>
-                  <div style={{ height: 7, background: 'var(--bg-chip)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${row.bPct}%`, height: '100%', borderRadius: 4, background: 'var(--blue)', opacity: row.winner === 'b' ? 1 : 0.4 }} />
+                  <div style={{ height: 7, background: 'var(--bg-chip)', borderRadius: 0, overflow: 'hidden' }}>
+                    <div style={{ width: `${row.bPct}%`, height: '100%', borderRadius: 0, background: 'var(--blue)', opacity: row.winner === 'b' ? 1 : 0.4 }} />
                   </div>
                 </div>
               </div>
@@ -214,12 +214,12 @@ function PlayerHead({ parse, align, score }: { parse: CompareParse | null; align
         style={{
           width: 44,
           height: 44,
-          borderRadius: 11,
+          borderRadius: 0,
           flex: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'oklch(0.13 0.01 250 / 75%)',
+          background: 'color-mix(in srgb, var(--color-surface) 75%, transparent)',
           border: `1px solid ${color}`,
           boxShadow: `0 0 10px ${color}`,
         }}
@@ -316,7 +316,7 @@ function PlayerField({ label, value, onPick, accent }: { label: string; value: s
           width: '100%',
           minHeight: 38,
           padding: '7px 11px',
-          borderRadius: 10,
+          borderRadius: 0,
           background: 'var(--bg-input)',
           border: `1px solid ${value ? accent : 'var(--border)'}`,
           color: 'var(--text)',
@@ -329,7 +329,7 @@ function PlayerField({ label, value, onPick, accent }: { label: string; value: s
           role="listbox"
           style={{
             position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40, marginTop: 4,
-            background: 'oklch(0.17 0.016 255 / 98%)', border: '1px solid oklch(1 0 0 / 12%)', borderRadius: 10,
+            background: 'var(--color-surface)', border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)', borderRadius: 0,
             boxShadow: '0 18px 40px -14px rgba(0,0,0,.7)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto', padding: 4,
           }}
         >
@@ -339,8 +339,8 @@ function PlayerField({ label, value, onPick, accent }: { label: string; value: s
               role="option"
               aria-selected={acc === value}
               onMouseDown={(e) => { e.preventDefault(); choose(acc); }}
-              style={{ padding: '8px 10px', borderRadius: 7, cursor: 'pointer', font: '600 12.5px var(--font-sans)', color: 'var(--text-85)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'oklch(1 0 0 / 6%)'; }}
+              style={{ padding: '8px 10px', borderRadius: 0, cursor: 'pointer', font: '600 12.5px var(--font-sans)', color: 'var(--text-85)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'color-mix(in srgb, var(--color-text) 8%, transparent)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
               {acc}

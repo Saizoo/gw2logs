@@ -140,10 +140,10 @@ export function OnboardingTour() {
             key={step}
             style={{
               width: 'min(560px, 100%)',
-              borderRadius: 20,
-              border: '1px solid oklch(1 0 0 / 12%)',
-              background: 'linear-gradient(165deg, oklch(0.22 0.02 250) 0%, oklch(0.15 0.014 250) 70%)',
-              boxShadow: '0 30px 80px -20px rgba(0,0,0,.7), 0 0 60px -30px oklch(0.7 0.14 85 / 40%)',
+              borderRadius: 0,
+              border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
+              background: 'linear-gradient(165deg, var(--color-surface) 0%, var(--color-surface) 70%)',
+              boxShadow: '0 30px 80px -20px rgba(0,0,0,.7), 0 0 60px -30px color-mix(in srgb, var(--color-accent) 40%, transparent)',
               padding: '34px 36px 28px',
               animation: 'tourCardIn .38s cubic-bezier(.2,.9,.3,1.2) both',
             }}
@@ -154,13 +154,13 @@ export function OnboardingTour() {
             {step === TOTAL - 1 && <FinishStep />}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
-              <button onClick={finish} className="u-btn-ghost" style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-50)', padding: '8px 10px', borderRadius: 8 }}>
+              <button onClick={finish} className="u-btn-ghost" style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-50)', padding: '8px 10px', borderRadius: 0 }}>
                 Skip tour
               </button>
               <ProgressDots step={step} />
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                 {step > 0 && step < TOTAL - 1 && (
-                  <button onClick={back} className="u-btn-ghost" style={{ font: '600 12.5px var(--font-sans)', color: 'var(--text-70)', padding: '9px 16px', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <button onClick={back} className="u-btn-ghost" style={{ font: '600 12.5px var(--font-sans)', color: 'var(--text-70)', padding: '9px 16px', borderRadius: 0, border: '1px solid var(--border)' }}>
                     Back
                   </button>
                 )}
@@ -187,8 +187,8 @@ function ProgressDots({ step }: { step: number }) {
           style={{
             width: i === step ? 16 : 6,
             height: 6,
-            borderRadius: 3,
-            background: i === step ? 'var(--gold)' : i < step ? 'oklch(0.78 0.14 85 / 45%)' : 'oklch(1 0 0 / 15%)',
+            borderRadius: 0,
+            background: i === step ? 'var(--gold)' : i < step ? 'color-mix(in srgb, var(--color-accent) 45%, transparent)' : 'color-mix(in srgb, var(--color-text) 20%, transparent)',
             transition: 'all .25s ease',
           }}
         />
@@ -218,14 +218,14 @@ function WelcomeStep({ username }: { username: string }) {
           width: 64,
           height: 64,
           margin: '0 auto 18px',
-          borderRadius: 18,
-          background: 'linear-gradient(135deg, oklch(0.8 0.15 85), oklch(0.58 0.1 45))',
+          borderRadius: 0,
+          background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-600))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           font: '800 28px var(--font-sans)',
-          color: 'oklch(0.16 0.02 85)',
-          boxShadow: '0 8px 30px oklch(0.7 0.14 85 / 45%)',
+          color: 'var(--color-bg)',
+          boxShadow: '0 8px 30px color-mix(in srgb, var(--color-accent) 45%, transparent)',
           animation: 'tourLogoFloat 3s ease-in-out infinite',
         }}
       >
@@ -271,7 +271,7 @@ function ApiKeyStep({ linkedAccount, onLinked }: { linkedAccount: string | null;
         with the <b>account</b>, <b>characters</b> and <b>builds</b> permissions.
       </StepTitle>
       {linkedAccount ? (
-        <div style={{ marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 14, background: 'var(--good-dim)', color: 'var(--good)', font: '600 13px var(--font-sans)' }}>
+        <div style={{ marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 0, background: 'var(--good-dim)', color: 'var(--good)', font: '600 13px var(--font-sans)' }}>
           ✓ Linked as {linkedAccount}
         </div>
       ) : (
@@ -289,7 +289,7 @@ function ApiKeyStep({ linkedAccount, onLinked }: { linkedAccount: string | null;
                 color: 'var(--text)',
                 fontSize: 12.5,
                 padding: '10px 14px',
-                borderRadius: 10,
+                borderRadius: 0,
                 fontFamily: 'var(--font-mono)',
               }}
             />
@@ -337,7 +337,7 @@ function DpsReportStep() {
       </StepTitle>
       <div style={{ marginTop: 18 }}>
         {started ? (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 14, background: 'var(--good-dim)', color: 'var(--good)', font: '600 13px var(--font-sans)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 0, background: 'var(--good-dim)', color: 'var(--good)', font: '600 13px var(--font-sans)' }}>
             ✓ Import running — check your Account page for progress
           </div>
         ) : (
@@ -355,7 +355,7 @@ function DpsReportStep() {
                   color: 'var(--text)',
                   fontSize: 12.5,
                   padding: '10px 14px',
-                  borderRadius: 10,
+                  borderRadius: 0,
                   fontFamily: 'var(--font-mono)',
                 }}
               />
@@ -438,9 +438,9 @@ function SpotlightFrame({
             left: rect.left - pad,
             width: rect.width + pad * 2,
             height: rect.height + pad * 2,
-            borderRadius: 12,
+            borderRadius: 0,
             boxShadow: '0 0 0 9999px oklch(0.08 0.01 250 / 72%)',
-            border: '2px solid oklch(0.78 0.14 85 / 80%)',
+            border: '2px solid color-mix(in srgb, var(--color-accent) 80%, transparent)',
             animation: 'tourPulse 2s ease-in-out infinite',
             transition: 'top .3s ease, left .3s ease, width .3s ease, height .3s ease',
             pointerEvents: 'none',
@@ -459,9 +459,9 @@ function SpotlightFrame({
           transform: cardLeft === undefined ? 'translateX(-50%)' : undefined,
           width: 380,
           maxWidth: 'calc(100vw - 40px)',
-          borderRadius: 16,
-          border: '1px solid oklch(1 0 0 / 12%)',
-          background: 'linear-gradient(165deg, oklch(0.22 0.02 250) 0%, oklch(0.15 0.014 250) 70%)',
+          borderRadius: 0,
+          border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
+          background: 'linear-gradient(165deg, var(--color-surface) 0%, var(--color-surface) 70%)',
           boxShadow: '0 24px 60px -16px rgba(0,0,0,.7)',
           padding: '20px 22px 16px',
           animation: 'tourCardIn .32s cubic-bezier(.2,.9,.3,1.15) both',
@@ -473,11 +473,11 @@ function SpotlightFrame({
         <div style={{ font: '800 17px var(--font-sans)', letterSpacing: '-.2px', marginBottom: 6 }}>{step.title}</div>
         <div style={{ font: '400 12.5px var(--font-sans)', color: 'var(--text-70)', lineHeight: 1.55 }}>{step.body}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
-          <button onClick={onSkip} className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', color: 'var(--text-50)', padding: '7px 9px', borderRadius: 8 }}>
+          <button onClick={onSkip} className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', color: 'var(--text-50)', padding: '7px 9px', borderRadius: 0 }}>
             End tour
           </button>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button onClick={onBack} className="u-btn-ghost" style={{ font: '600 12px var(--font-sans)', color: 'var(--text-70)', padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)' }}>
+            <button onClick={onBack} className="u-btn-ghost" style={{ font: '600 12px var(--font-sans)', color: 'var(--text-70)', padding: '8px 14px', borderRadius: 0, border: '1px solid var(--border)' }}>
               Back
             </button>
             <GoldButton onClick={onNext}>{index === count - 1 ? 'Finish' : 'Next'}</GoldButton>

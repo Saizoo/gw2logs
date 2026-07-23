@@ -56,6 +56,7 @@ export default function LoginPage() {
               backgroundImage: `url(${src})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
+              filter: 'grayscale(1) contrast(1.05)',
               opacity: i === active ? 1 : 0,
               transform: i === active ? 'scale(1.05)' : 'scale(1)',
               transition: 'opacity 1.4s ease, transform 8s ease',
@@ -71,31 +72,31 @@ export default function LoginPage() {
           style={{
             position: 'absolute', inset: 0,
             background:
-              'linear-gradient(90deg, oklch(0.09 0.015 55 / 20%) 0%, oklch(0.09 0.015 55 / 10%) 40%, transparent 62%, var(--bg-card) 100%),' +
-              'linear-gradient(180deg, oklch(0.05 0.01 55 / 30%) 0%, oklch(0.05 0.01 55 / 12%) 40%, oklch(0.05 0.01 55 / 78%) 100%)',
+              'linear-gradient(90deg, color-mix(in srgb, var(--color-neutral-900) 35%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 20%, transparent) 40%, transparent 62%, var(--bg-card) 100%),' +
+              'linear-gradient(180deg, color-mix(in srgb, var(--color-neutral-900) 40%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 25%, transparent) 40%, color-mix(in srgb, var(--color-neutral-900) 88%, transparent) 100%)',
           }}
         />
         <div style={{ position: 'relative' }}>
           <Logo />
         </div>
-        <div style={{ position: 'relative' }}>
-          <div style={{ font: '800 32px var(--font-sans)', color: 'var(--text)', lineHeight: 1.2 }}>
+        <div style={{ position: 'relative', color: 'var(--color-bg)' }}>
+          <div style={{ font: '800 32px var(--font-sans)', color: 'var(--color-bg)', lineHeight: 1.2 }}>
             Every log makes
             <br />
             the rankings sharper.
           </div>
-          <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-50)', marginTop: 14, maxWidth: 360 }}>
+          <div style={{ font: '500 13px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)', marginTop: 14, maxWidth: 360 }}>
             Upload arcdps logs, rank your parses against the whole community, and track your progress patch over
             patch.
           </div>
           <div style={{ display: 'flex', gap: 20, marginTop: 26 }}>
             <div>
               <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalLogs ?? '—'}</div>
-              <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)' }}>logs parsed</div>
+              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)' }}>logs parsed</div>
             </div>
             <div>
               <div style={{ font: '800 20px var(--font-mono)', color: 'var(--gold)' }}>{stats?.totalPlayers ?? '—'}</div>
-              <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)' }}>players ranked</div>
+              <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--color-bg) 62%, transparent)' }}>players ranked</div>
             </div>
           </div>
         </div>
@@ -113,10 +114,10 @@ export default function LoginPage() {
             className="u-btn-gold"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
-              background: '#5865F2', borderRadius: 10,
+              background: '#5865F2', borderRadius: 0,
             }}
           >
-            <div style={{ width: 18, height: 18, borderRadius: 5, background: 'rgba(255,255,255,.9)' }} />
+            <div style={{ width: 18, height: 18, borderRadius: 0, background: 'rgba(255,255,255,.9)' }} />
             <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord</span>
           </a>
         </div>
@@ -130,7 +131,7 @@ export default function LoginPage() {
         <Link
           to="/upload"
           className="u-btn-ghost"
-          style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 10, textAlign: 'center', display: 'block' }}
+          style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 0, textAlign: 'center', display: 'block' }}
         >
           <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload without an account</span>
           <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>

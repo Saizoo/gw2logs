@@ -71,10 +71,10 @@ export default function UploadPage() {
           onClick={() => fileInputRef.current?.click()}
           style={{
             border: `2px dashed ${dragOver ? 'var(--gold)' : 'var(--gold-dim)'}`,
-            borderRadius: 18,
+            borderRadius: 0,
             padding: '40px 28px',
             textAlign: 'center',
-            background: dragOver ? 'oklch(0.7 0.15 85 / 8%)' : 'oklch(0.7 0.15 85 / 4%)',
+            background: dragOver ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'color-mix(in srgb, var(--color-accent) 5%, transparent)',
             cursor: 'pointer',
             transition: 'border-color .18s ease, background .18s ease, transform .18s ease',
             transform: dragOver ? 'scale(1.008)' : 'none',
@@ -82,7 +82,7 @@ export default function UploadPage() {
         >
           <div
             style={{
-              width: 52, height: 52, borderRadius: 12, background: 'var(--gold-dim)',
+              width: 52, height: 52, borderRadius: 0, background: 'var(--gold-dim)',
               margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
@@ -106,7 +106,7 @@ export default function UploadPage() {
           <div
             style={{
               display: 'inline-block', marginTop: 16, padding: '9px 20px', background: 'var(--gold-grad)',
-              color: 'var(--gold-fg)', borderRadius: 10, font: '700 12.5px var(--font-sans)',
+              color: 'var(--gold-fg)', borderRadius: 0, font: '700 12.5px var(--font-sans)',
             }}
           >
             Choose files
@@ -143,7 +143,7 @@ export default function UploadPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{item.fileName}</div>
-                    <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 20, color: '#14120f', background: meta.color }}>
+                    <span style={{ font: '700 10px var(--font-sans)', padding: '2px 9px', borderRadius: 0, color: '#14120f', background: meta.color }}>
                       {meta.label}
                     </span>
                   </div>

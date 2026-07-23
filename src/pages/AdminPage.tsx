@@ -38,7 +38,7 @@ export default function AdminPage() {
             className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
-              borderRadius: 9,
+              borderRadius: 0,
               font: '600 12px var(--font-sans)',
               background: tab === t ? 'var(--gold-grad)' : 'var(--bg-chip)',
               color: tab === t ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -525,7 +525,7 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
 function pillStyle(active: boolean) {
   return {
     padding: '6px 12px',
-    borderRadius: 8,
+    borderRadius: 0,
     font: '600 11.5px var(--font-sans)',
     background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
     color: active ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -539,14 +539,14 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 8,
+  borderRadius: 0,
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const ghostBtnStyle = {
   font: '600 12px var(--font-sans)',
   padding: '8px 14px',
-  borderRadius: 10,
+  borderRadius: 0,
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
@@ -574,7 +574,7 @@ function UserDetailPanel({ userId, isSelf, onChanged }: { userId: string; isSelf
   if (!data) return null;
 
   return (
-    <div style={{ padding: '4px 18px 16px', background: 'oklch(1 0 0 / 2%)' }}>
+    <div style={{ padding: '4px 18px 16px', background: 'color-mix(in srgb, var(--color-text) 3%, transparent)' }}>
       <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', font: '400 11.5px var(--font-sans)', color: 'var(--text-62)', marginBottom: 10 }}>
         <span><b style={{ color: 'var(--text-80)' }}>{data.counts.uploads}</b> uploads</span>
         <span><b style={{ color: 'var(--text-80)' }}>{data.counts.characters}</b> characters</span>
@@ -587,7 +587,7 @@ function UserDetailPanel({ userId, isSelf, onChanged }: { userId: string; isSelf
       {data.groups.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
           {data.groups.map((g) => (
-            <span key={g.id} style={{ font: '600 10.5px var(--font-sans)', padding: '3px 9px', borderRadius: 10, background: 'var(--bg-chip)', border: '1px solid var(--border)', color: 'var(--text-70)' }}>
+            <span key={g.id} style={{ font: '600 10.5px var(--font-sans)', padding: '3px 9px', borderRadius: 0, background: 'var(--bg-chip)', border: '1px solid var(--border)', color: 'var(--text-70)' }}>
               {g.isGuild ? '⚜ ' : ''}{g.name} · {g.role}
             </span>
           ))}
@@ -887,7 +887,7 @@ function AnnouncementsTab() {
     color: 'var(--text)',
     font: '400 12.5px var(--font-sans)',
     padding: '9px 12px',
-    borderRadius: 8,
+    borderRadius: 0,
   } as const;
 
   return (
@@ -938,11 +938,11 @@ function AnnouncementsTab() {
                 {' · '}by {a.createdBy}
               </span>
               {!a.expired && (
-                <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }} onClick={() => run(() => api.adminExpireAnnouncement(a.id), 'Announcement expired')}>
+                <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }} onClick={() => run(() => api.adminExpireAnnouncement(a.id), 'Announcement expired')}>
                   Expire now
                 </button>
               )}
-              <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 8, background: 'var(--bg-chip)', color: 'var(--bad)', border: '1px solid var(--border)' }} onClick={() => { if (confirm('Delete this announcement?')) run(() => api.adminDeleteAnnouncement(a.id), 'Announcement deleted'); }}>
+              <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--bad)', border: '1px solid var(--border)' }} onClick={() => { if (confirm('Delete this announcement?')) run(() => api.adminDeleteAnnouncement(a.id), 'Announcement deleted'); }}>
                 Delete
               </button>
             </div>
@@ -1034,9 +1034,9 @@ function SwitchRow({ title, description, on, onToggle }: { title: string; descri
           position: 'relative',
           width: 46,
           height: 25,
-          borderRadius: 14,
+          borderRadius: 0,
           flexShrink: 0,
-          background: on ? 'var(--gold-grad)' : 'oklch(1 0 0 / 10%)',
+          background: on ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
           border: '1px solid ' + (on ? 'transparent' : 'var(--border)'),
           cursor: 'pointer',
           transition: 'background .15s ease',
@@ -1051,7 +1051,7 @@ function SwitchRow({ title, description, on, onToggle }: { title: string; descri
             width: 19,
             height: 19,
             borderRadius: '50%',
-            background: on ? 'oklch(0.15 0.02 85)' : 'oklch(0.85 0.01 250)',
+            background: on ? 'var(--gold-fg)' : 'var(--text-85)',
             transition: 'left .15s ease',
           }}
         />

@@ -70,10 +70,10 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 16,
-        border: '1px solid oklch(1 0 0 / 8%)',
-        background: 'linear-gradient(150deg, oklch(0.2 0.02 250) 0%, oklch(0.14 0.014 250) 60%)',
-        boxShadow: '0 1px 2px rgba(0,0,0,.25), 0 12px 32px -18px rgba(0,0,0,.55)',
+        borderRadius: 0,
+        border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
+        background: 'linear-gradient(150deg, var(--color-surface) 0%, var(--color-surface) 60%)',
+        boxShadow: '0 1px 2px rgba(0,0,0,.25), var(--shadow-md)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -85,7 +85,7 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(180deg, oklch(0.13 0.014 250 / 30%) 0%, oklch(0.13 0.014 250 / 88%) 62%, oklch(0.12 0.014 250 / 97%) 100%)',
+          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 30%, transparent) 0%, color-mix(in srgb, var(--color-surface) 88%, transparent) 62%, color-mix(in srgb, var(--color-surface) 97%, transparent) 100%)',
         }}
       />
 
@@ -106,10 +106,10 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
                 font: '800 9.5px var(--font-sans)',
                 letterSpacing: '.5px',
                 padding: '2px 6px',
-                borderRadius: 5,
+                borderRadius: 0,
                 color: 'var(--gold)',
-                background: 'oklch(0.78 0.14 85 / 15%)',
-                border: '1px solid oklch(0.78 0.14 85 / 35%)',
+                background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
               }}
             >
               CM
@@ -159,9 +159,9 @@ function EncounterCard({ enc }: { enc: OverviewEncounter }) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '6px 10px',
-                borderRadius: 8,
-                background: 'oklch(1 0 0 / 4%)',
-                border: '1px solid oklch(1 0 0 / 6%)',
+                borderRadius: 0,
+                background: 'color-mix(in srgb, var(--color-text) 6%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-text) 8%, transparent)',
               }}
             >
               <span

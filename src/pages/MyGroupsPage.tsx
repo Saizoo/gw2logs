@@ -103,7 +103,7 @@ export default function MyGroupsPage() {
       </div>
 
       {user && invites && invites.length > 0 && (
-        <Card style={{ padding: '16px 20px', marginBottom: 20, borderColor: 'oklch(0.78 0.14 85 / 35%)' }}>
+        <Card style={{ padding: '16px 20px', marginBottom: 20, borderColor: 'color-mix(in srgb, var(--color-accent) 35%, transparent)' }}>
           <div style={{ font: '700 12px var(--font-sans)', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
             Invitations ({invites.length})
           </div>
@@ -118,7 +118,7 @@ export default function MyGroupsPage() {
                 <button
                   onClick={() => declineInvite(inv.id)}
                   className="u-btn-ghost"
-                  style={{ font: '600 12px var(--font-sans)', padding: '9px 14px', borderRadius: 10, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }}
+                  style={{ font: '600 12px var(--font-sans)', padding: '9px 14px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }}
                 >
                   Decline
                 </button>
@@ -199,7 +199,7 @@ export default function MyGroupsPage() {
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '5px 11px',
-                  borderRadius: 20,
+                  borderRadius: 0,
                   font: '600 11.5px var(--font-sans)',
                   background: active ? 'var(--gold-dim)' : 'var(--bg-chip)',
                   color: active ? 'var(--gold)' : 'var(--text-65)',
@@ -250,14 +250,14 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 8,
+  borderRadius: 0,
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const ghostBtnStyle = {
   font: '600 12px var(--font-sans)',
   padding: '8px 14px',
-  borderRadius: 10,
+  borderRadius: 0,
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
@@ -274,10 +274,10 @@ export function GuildBadge({ tag }: { tag: string }) {
         letterSpacing: '.6px',
         textTransform: 'uppercase',
         padding: '2px 7px',
-        borderRadius: 5,
+        borderRadius: 0,
         color: 'var(--gold)',
-        background: 'oklch(0.78 0.14 85 / 15%)',
-        border: '1px solid oklch(0.78 0.14 85 / 35%)',
+        background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
         whiteSpace: 'nowrap',
       }}
     >

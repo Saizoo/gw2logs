@@ -21,20 +21,20 @@ function readDismissed(): Set<string> {
 const SEVERITY_STYLE: Record<Announcement['severity'], { color: string; bg: string; border: string; icon: string }> = {
   info: {
     color: 'var(--gold)',
-    bg: 'oklch(0.78 0.14 85 / 8%)',
-    border: 'oklch(0.78 0.14 85 / 30%)',
+    bg: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+    border: 'color-mix(in srgb, var(--color-accent) 30%, transparent)',
     icon: 'ℹ',
   },
   warning: {
-    color: 'oklch(0.8 0.15 70)',
-    bg: 'oklch(0.8 0.15 70 / 10%)',
-    border: 'oklch(0.8 0.15 70 / 35%)',
+    color: 'var(--color-accent)',
+    bg: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+    border: 'color-mix(in srgb, var(--color-accent) 35%, transparent)',
     icon: '⚠',
   },
   critical: {
     color: 'var(--bad)',
-    bg: 'oklch(0.6 0.2 25 / 12%)',
-    border: 'oklch(0.6 0.2 25 / 40%)',
+    bg: 'color-mix(in srgb, var(--bad) 12%, transparent)',
+    border: 'color-mix(in srgb, var(--bad) 40%, transparent)',
     icon: '⚠',
   },
 };
@@ -71,7 +71,7 @@ export function AnnouncementBanner() {
               alignItems: 'center',
               gap: 10,
               padding: '10px 16px',
-              borderRadius: 12,
+              borderRadius: 0,
               background: s.bg,
               border: `1px solid ${s.border}`,
             }}
@@ -87,7 +87,7 @@ export function AnnouncementBanner() {
               onClick={() => dismiss(a.id)}
               aria-label="Dismiss announcement"
               className="u-btn-ghost"
-              style={{ marginLeft: 'auto', flexShrink: 0, font: '600 12px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', padding: '2px 6px', borderRadius: 6, cursor: 'pointer' }}
+              style={{ marginLeft: 'auto', flexShrink: 0, font: '600 12px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', padding: '2px 6px', borderRadius: 0, cursor: 'pointer' }}
             >
               ✕
             </button>

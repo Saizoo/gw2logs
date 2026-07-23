@@ -75,11 +75,11 @@ export default function LogsPage() {
               alignItems: 'center',
               gap: 7,
               padding: '7px 14px',
-              borderRadius: 20,
+              borderRadius: 0,
               font: '700 12px var(--font-sans)',
-              background: 'oklch(0.78 0.14 85 / 18%)',
+              background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: 'var(--gold)',
-              border: '1px solid oklch(0.78 0.14 85 / 35%)',
+              border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
             }}
           >
             {boss} <span aria-hidden style={{ opacity: 0.75 }}>✕</span>
@@ -94,11 +94,11 @@ export default function LogsPage() {
               className={active ? undefined : 'u-chip'}
               style={{
                 padding: '7px 14px',
-                borderRadius: 20,
+                borderRadius: 0,
                 font: '600 12px var(--font-sans)',
-                background: active ? 'oklch(0.78 0.14 85 / 18%)' : 'oklch(1 0 0 / 5%)',
+                background: active ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'color-mix(in srgb, var(--color-text) 7%, transparent)',
                 color: active ? 'var(--gold)' : 'var(--text-65)',
-                border: `1px solid ${active ? 'oklch(0.78 0.14 85 / 35%)' : 'var(--border)'}`,
+                border: `1px solid ${active ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'var(--border)'}`,
               }}
             >
               {f.label}

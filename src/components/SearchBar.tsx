@@ -29,9 +29,9 @@ export function SearchBar({ width = '100%', defaultValue = '' }: { width?: numbe
         className="nav-search"
         style={{
           width: '100%',
-          background: 'oklch(0.1 0.012 250 / 70%)',
+          background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)',
           border: '1px solid var(--border)',
-          borderRadius: 20,
+          borderRadius: 0,
           padding: '9px 14px 9px 38px',
           color: 'var(--text)',
           fontSize: 13,
