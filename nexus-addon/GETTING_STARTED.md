@@ -34,10 +34,17 @@ game → **(3)** make a token on the website → **(4)** download this code →
 
 ## Part 1 — Install the build tools
 
-### 1.1 Visual Studio 2022 Community (free)
+### 1.1 Visual Studio 2026 Community (free)
+
+> **"Visual Studio" ≠ "Visual Studio Code".** The **Desktop development with
+> C++** option you want is a *workload* inside **Visual Studio 2026** (the full
+> IDE) — Visual Studio *Code* is a separate, lightweight editor that has no such
+> workload. Install Visual Studio 2026 below. (If you love the VS Code editor
+> you can still write code in it, but the C++ compiler/workload has to come from
+> Visual Studio or its "Build Tools" package — so install this either way.)
 
 1. Go to <https://visualstudio.microsoft.com/downloads/> and download
-   **Visual Studio 2022 Community** (free). This is the full IDE, *not* "VS Code".
+   **Visual Studio 2026 Community** (free) — the full IDE.
 2. Run the installer. When it shows **Workloads**, tick:
    - ✅ **Desktop development with C++**
    That single workload gives you the compiler (MSVC), the Windows SDK, and
@@ -51,7 +58,7 @@ Accept all the defaults. This lets you download the code (and its dependencies)
 in one command.
 
 > **Checkpoint:** open the Start menu and confirm you can find
-> **"x64 Native Tools Command Prompt for VS 2022"**. You'll use it to build.
+> **"x64 Native Tools Command Prompt for VS 2026"**. You'll use it to build.
 > If it's there, Part 1 worked.
 
 ---
@@ -99,7 +106,7 @@ The addon uploads arcdps logs, so you need arcdps recording them:
 
 The addon needs the Nexus + ImGui SDK headers. They're wired in as **git
 submodules**, so one recursive clone gets everything. Open the
-**x64 Native Tools Command Prompt for VS 2022** and run (replace the URL with
+**x64 Native Tools Command Prompt for VS 2026** and run (replace the URL with
 your gw2logs repository):
 
 ```bat
@@ -134,12 +141,19 @@ cd gw2logs\nexus-addon
 Still in the **x64 Native Tools Command Prompt**, from the `nexus-addon` folder:
 
 ```bat
-cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake -B build -A x64
 cmake --build build --config Release
 ```
 
 - The first command generates a Visual Studio project in a new `build\` folder.
+  With no `-G` flag, CMake auto-picks the newest Visual Studio you have
+  installed (2026), so you don't have to name a version.
 - The second compiles it.
+
+> Want to pin the version explicitly? Add the generator flag —
+> `cmake -B build -G "Visual Studio 18 2026" -A x64`. If CMake replies that it
+> doesn't know that generator, your CMake is older than VS 2026: update CMake
+> (or just drop the `-G` flag as shown above and let it auto-detect).
 
 When it finishes you'll have:
 
@@ -149,7 +163,7 @@ nexus-addon\build\Release\gw2logs.dll
 
 That's your addon. 🎉
 
-> Prefer clicking? You can instead open Visual Studio 2022 → **Open a local
+> Prefer clicking? You can instead open Visual Studio 2026 → **Open a local
 > folder** → pick `nexus-addon`. VS reads `CMakeLists.txt` automatically; choose
 > the **x64-Release** configuration and **Build → Build All**. The DLL lands in
 > a `out\build\...` folder — search for `gw2logs.dll`.
@@ -205,7 +219,7 @@ to cover it. When the moment arrives you'll get an in-game Nexus alert like
 
 | Symptom | Fix |
 |---|---|
-| `cmake` isn't recognized | You're not in the **x64 Native Tools Command Prompt for VS 2022**. Open that specific prompt (Start menu), not a plain `cmd`. |
+| `cmake` isn't recognized | You're not in the **x64 Native Tools Command Prompt for VS 2026**. Open that specific prompt (Start menu), not a plain `cmd`. |
 | `Cannot open include file: 'nexus/Nexus.h'` | Submodules didn't download. From `nexus-addon` run `git submodule update --init --recursive`. |
 | `Cannot open include file: 'nlohmann/json.hpp'` | You missed Part 4.2. Put `json.hpp` at `nexus-addon\include\nlohmann\json.hpp`. |
 | Build fails with lots of ImGui errors | Your ImGui submodule didn't fully clone — rerun the submodule command above. |
