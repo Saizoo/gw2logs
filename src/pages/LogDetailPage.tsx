@@ -11,6 +11,7 @@ import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBa
 import { Select } from '../components/Select';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { toast } from '../lib/toast';
+import { findMechanicSkill, type MechanicSkill } from '../data/mechanicSkills';
 
 // A player's name linking to their profile — unless they hid their name
 // (account null), in which case it's plain text with no link (a link would
@@ -545,6 +546,55 @@ function summarizeMechanics(log: LogDetail): MechanicSummary[] {
   return [...byName.values()].sort((a, b) => severityRank(b.severity) - severityRank(a.severity) || b.total - a.total);
 }
 
+// A mechanic name that has a curated skill explainer — dotted-underlined, with
+// a hover/focus card describing the ability and a wiki link. Keyboard-focusable
+// so it isn't mouse-only.
+function SkillHint({ skill, children }: { skill: MechanicSkill; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-block', font: '600 12px var(--font-sans)', textDecoration: 'underline dotted', textUnderlineOffset: 3, textDecorationColor: 'var(--text-45)', cursor: 'help', outline: 'none' }}
+      tabIndex={0}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      {children}
+      {open && (
+        <span
+          role="tooltip"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            zIndex: 50,
+            width: 268,
+            padding: '11px 13px',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--border-soft)',
+            boxShadow: 'var(--shadow-md)',
+            cursor: 'default',
+            whiteSpace: 'normal',
+          }}
+        >
+          <span style={{ display: 'block', font: '800 12px var(--font-sans)', color: 'var(--gold)', marginBottom: 4 }}>{skill.skill}</span>
+          <span style={{ display: 'block', font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-75)' }}>{skill.description}</span>
+          <a
+            href={skill.wiki}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{ display: 'inline-block', marginTop: 7, font: '700 10.5px var(--font-sans)', letterSpacing: '.02em', color: 'var(--gold)' }}
+          >
+            GW2 Wiki ↗
+          </a>
+        </span>
+      )}
+    </span>
+  );
+}
+
 function MechanicsTab({ log }: { log: LogDetail }) {
   const mechanics = useMemo(() => summarizeMechanics(log), [log]);
   const mechanicNames = mechanics.map((m) => m.name);
@@ -576,7 +626,14 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 }}
               >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor(m.severity), flex: 'none' }} />
-                <div style={{ font: '600 12px var(--font-sans)' }}>{m.name}</div>
+                {(() => {
+                  const sk = findMechanicSkill(log.boss, m.name);
+                  return sk ? (
+                    <SkillHint skill={sk}>{m.name}</SkillHint>
+                  ) : (
+                    <div style={{ font: '600 12px var(--font-sans)' }}>{m.name}</div>
+                  );
+                })()}
                 <div style={{ font: '700 10px var(--font-mono)', color: severityColor(m.severity) }}>{m.severity ?? '—'}</div>
                 <div style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)' }}>×{m.total}</div>
               </div>
