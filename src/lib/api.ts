@@ -223,6 +223,10 @@ export interface LogDetail {
   // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
   // EI itself didn't set one — never guessed client-side.
   mechanicEvents: { timeMs: number; name: string; actor: string | null; severity: string | null }[];
+  // Per-mechanic display metadata from Elite Insights, keyed by the mechanic's
+  // short name (the `name` above): FullName is the readable label, Description
+  // the hover explainer. May be missing for logs ingested before this existed.
+  mechanicsMeta: Record<string, { fullName: string | null; description: string | null }>;
   // From EI's own per-death recap (JsonPlayer.DeathRecap) — killedBy is the
   // resolved display name of whatever dealt the killing hit, already
   // human-readable from EI, not a raw skill/actor id.

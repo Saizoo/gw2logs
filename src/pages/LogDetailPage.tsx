@@ -11,7 +11,6 @@ import { CompareCheckbox, ComparePickerBar } from '../components/ComparePickerBa
 import { Select } from '../components/Select';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { toast } from '../lib/toast';
-import { findMechanicSkill, type MechanicSkill } from '../data/mechanicSkills';
 
 // A player's name linking to their profile — unless they hid their name
 // (account null), in which case it's plain text with no link (a link would
@@ -527,40 +526,43 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
 }
 
 interface MechanicSummary {
-  name: string;
-  severity: string | null;
+  name: string;                 // EI short name — the key into per-player counts
+  label: string;                // FullName when EI provides one, else the short name
+  description: string | null;   // EI's human-readable explanation, if any
   total: number;
 }
 
 function summarizeMechanics(log: LogDetail): MechanicSummary[] {
   const byName = new Map<string, MechanicSummary>();
   for (const e of log.mechanicEvents) {
-    const cur = byName.get(e.name) ?? { name: e.name, severity: e.severity, total: 0 };
+    let cur = byName.get(e.name);
+    if (!cur) {
+      const meta = log.mechanicsMeta?.[e.name];
+      cur = { name: e.name, label: meta?.fullName || e.name, description: meta?.description ?? null, total: 0 };
+      byName.set(e.name, cur);
+    }
     cur.total++;
-    if (!cur.severity) cur.severity = e.severity;
-    byName.set(e.name, cur);
   }
-  // Worst mechanics first — the whole point of surfacing severity is so the
-  // dangerous ones don't get lost in a dozen-plus alphabetically-sorted
-  // columns.
-  return [...byName.values()].sort((a, b) => severityRank(b.severity) - severityRank(a.severity) || b.total - a.total);
+  // Most-frequent first: Elite Insights emits no severity, so how often a
+  // mechanic fired is the meaningful ordering (not an inert severity rank).
+  return [...byName.values()].sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
 }
 
-// A mechanic name that has a curated skill explainer — dotted-underlined, with
-// a hover/focus card describing the ability and a wiki link. Keyboard-focusable
-// so it isn't mouse-only.
-function SkillHint({ skill, children }: { skill: MechanicSkill; children: ReactNode }) {
+// A mechanic label carrying Elite Insights' own description as a hover/focus
+// card (keyboard-focusable). Plain text when EI gave no description.
+function MechTip({ label, description, style }: { label: string; description: string | null; style?: CSSProperties }) {
   const [open, setOpen] = useState(false);
+  if (!description) return <span style={style}>{label}</span>;
   return (
     <span
-      style={{ position: 'relative', display: 'inline-block', font: '600 12px var(--font-sans)', textDecoration: 'underline dotted', textUnderlineOffset: 3, textDecorationColor: 'var(--text-45)', cursor: 'help', outline: 'none' }}
+      style={{ position: 'relative', display: 'inline-block', textDecoration: 'underline dotted', textUnderlineOffset: 3, textDecorationColor: 'var(--text-45)', cursor: 'help', outline: 'none', ...style }}
       tabIndex={0}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
     >
-      {children}
+      {label}
       {open && (
         <span
           role="tooltip"
@@ -569,26 +571,20 @@ function SkillHint({ skill, children }: { skill: MechanicSkill; children: ReactN
             top: 'calc(100% + 6px)',
             left: 0,
             zIndex: 50,
-            width: 268,
+            width: 260,
             padding: '11px 13px',
             background: 'var(--color-surface)',
             border: '1px solid var(--border-soft)',
             boxShadow: 'var(--shadow-md)',
             cursor: 'default',
             whiteSpace: 'normal',
+            textTransform: 'none',
+            letterSpacing: 'normal',
+            textAlign: 'left',
           }}
         >
-          <span style={{ display: 'block', font: '800 12px var(--font-sans)', color: 'var(--gold)', marginBottom: 4 }}>{skill.skill}</span>
-          <span style={{ display: 'block', font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-75)' }}>{skill.description}</span>
-          <a
-            href={skill.wiki}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            style={{ display: 'inline-block', marginTop: 7, font: '700 10.5px var(--font-sans)', letterSpacing: '.02em', color: 'var(--gold)' }}
-          >
-            GW2 Wiki ↗
-          </a>
+          <span style={{ display: 'block', font: '800 12px var(--font-sans)', color: 'var(--gold)', marginBottom: 4 }}>{label}</span>
+          <span style={{ display: 'block', font: '400 11.5px/1.55 var(--font-sans)', color: 'var(--text-75)' }}>{description}</span>
         </span>
       )}
     </span>
@@ -598,43 +594,27 @@ function SkillHint({ skill, children }: { skill: MechanicSkill; children: ReactN
 function MechanicsTab({ log }: { log: LogDetail }) {
   const mechanics = useMemo(() => summarizeMechanics(log), [log]);
   const mechanicNames = mechanics.map((m) => m.name);
-  const severityByName = new Map(mechanics.map((m) => [m.name, m.severity]));
-  // A real raid boss log can log a dozen-plus distinct mechanic names —
-  // this grid's width scales with that count, so it must scroll within its
-  // own card rather than being left to blow out the whole page's layout.
+  const byName = new Map(mechanics.map((m) => [m.name, m]));
+  // A real raid log can carry a dozen-plus mechanic columns — the grid scales
+  // with that, so it scrolls inside its own card rather than blowing out the
+  // page width.
   const gridColumns = `28px 1fr 90px repeat(${mechanicNames.length}, 100px)`;
+  const countColor = (count: number) => (count > 0 ? 'var(--gold)' : 'rgba(242,237,226,.25)');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {mechanics.length > 0 && (
         <Card style={{ padding: '16px 20px' }}>
           <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 10 }}>
-            Mechanic legend — worst first
+            Mechanics — most frequent first
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {mechanics.map((m) => (
               <div
                 key={m.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '6px 10px',
-                  borderRadius: 0,
-                  background: 'var(--bg-chip)',
-                  border: `1px solid ${severityColor(m.severity)}`,
-                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', background: 'var(--bg-chip)', border: '1px solid var(--border-faint)' }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor(m.severity), flex: 'none' }} />
-                {(() => {
-                  const sk = findMechanicSkill(log.boss, m.name);
-                  return sk ? (
-                    <SkillHint skill={sk}>{m.name}</SkillHint>
-                  ) : (
-                    <div style={{ font: '600 12px var(--font-sans)' }}>{m.name}</div>
-                  );
-                })()}
-                <div style={{ font: '700 10px var(--font-mono)', color: severityColor(m.severity) }}>{m.severity ?? '—'}</div>
+                <MechTip label={m.label} description={m.description} style={{ font: '600 12px var(--font-sans)', color: 'var(--text-85)' }} />
                 <div style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)' }}>×{m.total}</div>
               </div>
             ))}
@@ -656,11 +636,17 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 <div style={{ textAlign: 'left' }}>Sub</div>
                 <div style={{ textAlign: 'left' }}>Player</div>
                 <div style={{ textAlign: 'left' }}>Prof</div>
-                {mechanicNames.map((n) => (
-                  <div key={n} title={severityByName.get(n) ?? undefined} style={{ color: severityColor(severityByName.get(n) ?? null) }}>
-                    {n}
-                  </div>
-                ))}
+                {mechanicNames.map((n) => {
+                  const m = byName.get(n);
+                  // Compact grid keeps EI's short name; the readable full name +
+                  // description ride along as a native hover tooltip.
+                  const tip = m ? [m.label, m.description].filter(Boolean).join(' — ') : '';
+                  return (
+                    <div key={n} title={tip || undefined} style={{ color: 'var(--text-65)', cursor: tip ? 'help' : undefined }}>
+                      {n}
+                    </div>
+                  );
+                })}
               </div>
               {log.players.map((p) => (
                 <div key={p.account ?? p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
@@ -673,7 +659,7 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                   {mechanicNames.map((n) => {
                     const count = p.mechanics[n] ?? 0;
                     return (
-                      <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: count > 0 ? severityColor(severityByName.get(n) ?? null) : 'rgba(242,237,226,.25)' }}>
+                      <div key={n} style={{ textAlign: 'center', font: '700 13px var(--font-mono)', color: countColor(count) }}>
                         {count}
                       </div>
                     );
@@ -685,7 +671,7 @@ function MechanicsTab({ log }: { log: LogDetail }) {
                 <div style={{ font: '700 11px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Squad total</div>
                 <div />
                 {mechanics.map((m) => (
-                  <div key={m.name} style={{ textAlign: 'center', font: '800 13px var(--font-mono)', color: severityColor(m.severity) }}>
+                  <div key={m.name} style={{ textAlign: 'center', font: '800 13px var(--font-mono)', color: 'var(--gold)' }}>
                     {m.total}
                   </div>
                 ))}

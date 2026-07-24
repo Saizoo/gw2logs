@@ -161,6 +161,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       squadDps: true,
       encounterTime: true,
       private: true,
+      mechanicsMeta: true,
       uploadedBy: true,
       uploader: { select: { discordUsername: true } },
       groupId: true,
@@ -313,6 +314,9 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       actor: e.actor ? maskedActorName.get(e.actor) ?? e.actor : e.actor,
       killedBy: e.killedBy,
     })),
+    // Per-mechanic FullName + Description from Elite Insights, keyed by short
+    // name — powers the readable label + hover explainer on the Mechanics tab.
+    mechanicsMeta: (log.mechanicsMeta as Record<string, { fullName: string | null; description: string | null }>) ?? {},
   });
 }));
 

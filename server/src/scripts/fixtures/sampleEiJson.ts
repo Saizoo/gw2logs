@@ -108,14 +108,21 @@ export const sampleEiJson: RawEiJson = {
       Healing: 10,
     },
   ],
+  // EI's JsonMechanics: Name = short label, FullName = readable name,
+  // Description = the hover explainer. (There is no Severity field — it's kept
+  // here only to exercise the legacy pass-through; real EI logs never carry it.)
   Mechanics: [
     {
       Name: 'Green Hit',
+      FullName: 'Green Teleport Hit',
+      Description: 'Was hit by the green teleport AoE (failed to have enough players inside).',
       Severity: 'Sev2',
       MechanicsData: [{ Time: 78000, Actor: 'Moira Ashfall' }],
     },
     {
       Name: 'Shackled',
+      FullName: 'Shackled by Dhuum',
+      Description: 'Chained in place by Dhuum and must be freed by allies before the shackle expires.',
       Severity: 'Sev4',
       MechanicsData: [{ Time: 100000, Actor: 'Sai Zu' }],
     },

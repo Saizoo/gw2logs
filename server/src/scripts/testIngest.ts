@@ -40,6 +40,15 @@ async function main() {
     ],
     ['2 mechanic events persisted', reloaded?.mechanicEvents.length === 2],
     ['Shackled mechanic carries severity Sev4', reloaded?.mechanicEvents.find((e) => e.name === 'Shackled')?.severity === 'Sev4'],
+    [
+      'mechanicsMeta captures EI FullName for Shackled',
+      (reloaded?.mechanicsMeta as any)?.['Shackled']?.fullName === 'Shackled by Dhuum',
+    ],
+    [
+      'mechanicsMeta captures EI Description for Green Hit',
+      typeof (reloaded?.mechanicsMeta as any)?.['Green Hit']?.description === 'string' &&
+        (reloaded?.mechanicsMeta as any)['Green Hit'].description.includes('green teleport'),
+    ],
     ['1 death event persisted', reloaded?.deathEvents.length === 1],
     ['Moira death event has correct actor/time', reloaded?.deathEvents[0]?.actor === 'Moira Ashfall' && reloaded?.deathEvents[0]?.timeMs === 120500],
     ['Death killedBy resolves to the last ToKill hit\'s Src', reloaded?.deathEvents[0]?.killedBy === 'Dhuum'],

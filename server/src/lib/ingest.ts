@@ -106,6 +106,10 @@ export interface NormalizedLog {
   players: NormalizedPlayer[];
   mechanicEvents: NormalizedMechanicEvent[];
   deathEvents: NormalizedDeathEvent[];
+  // Display metadata per mechanic short name, straight from Elite Insights:
+  // FullName (readable label) + Description (the hover explainer). Lets the
+  // Mechanics tab show what a mechanic actually is instead of EI's terse code.
+  mechanicsMeta: Record<string, { fullName: string | null; description: string | null }>;
 }
 
 function extractPlayerDps(player: any) {
@@ -248,14 +252,24 @@ function computeSquadRoles(
 function extractMechanics(raw: RawEiJson): {
   perPlayerCounts: Map<string, Record<string, number>>;
   events: NormalizedMechanicEvent[];
+  meta: Record<string, { fullName: string | null; description: string | null }>;
 } {
   const perPlayerCounts = new Map<string, Record<string, number>>();
   const events: NormalizedMechanicEvent[] = [];
+  const meta: Record<string, { fullName: string | null; description: string | null }> = {};
   const mechanics: any[] = field(raw, 'Mechanics') ?? [];
 
   for (const mech of mechanics) {
+    // EI's JsonMechanics: Name = ShortName (terse), FullName = readable label,
+    // Description = the human-readable explanation. Key everything by the short
+    // name (matches the per-player counts and events), and stash the readable
+    // pair in `meta` for display. (JsonMechanics has no Severity field — an
+    // earlier version of this parser read one that EI never emits.)
     const name: string = field(mech, 'Name') ?? field(mech, 'FullName') ?? 'Mechanic';
+    const fullName: string | null = field(mech, 'FullName') ?? null;
+    const description: string | null = field(mech, 'Description') ?? null;
     const severity: string | null = field(mech, 'Severity') ?? null;
+    if (!(name in meta)) meta[name] = { fullName, description };
     const instances: any[] = field(mech, 'MechanicsData') ?? [];
     for (const inst of instances) {
       const actor: string | null = field(inst, 'Actor') ?? null;
@@ -268,7 +282,7 @@ function extractMechanics(raw: RawEiJson): {
     }
   }
 
-  return { perPlayerCounts, events };
+  return { perPlayerCounts, events, meta };
 }
 
 // JsonPlayer.DeathRecap — one entry per actual death (downs that were
@@ -298,7 +312,7 @@ function extractDeaths(raw: RawEiJson): NormalizedDeathEvent[] {
 
 export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
   const players: any[] = field(raw, 'Players') ?? [];
-  const { perPlayerCounts, events } = extractMechanics(raw);
+  const { perPlayerCounts, events, meta: mechanicsMeta } = extractMechanics(raw);
 
   const normalizedPlayers: NormalizedPlayer[] = players.map((p) => {
     const dps = extractPlayerDps(p);
@@ -352,5 +366,6 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
     players: normalizedPlayers,
     mechanicEvents: events,
     deathEvents: extractDeaths(raw),
+    mechanicsMeta,
   };
 }

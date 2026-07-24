@@ -31,6 +31,7 @@ export async function persistLog(params: {
           // owner-less private log would be unmanageable (see routes/uploads.ts).
           private: params.private ?? false,
           sourceFileName,
+          mechanicsMeta: normalized.mechanicsMeta as any,
         },
       });
 

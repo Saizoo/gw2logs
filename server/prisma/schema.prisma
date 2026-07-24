@@ -139,6 +139,12 @@ model Log {
   uploadedBy     String?
   uploader       User?           @relation("LogUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
   sourceFileName String?
+  // Per-mechanic display metadata from Elite Insights, keyed by the mechanic's
+  // short name: { [shortName]: { fullName, description } }. EI's Description is
+  // the human-readable explanation shown on the Mechanics tab (what dps.report
+  // surfaces on hover); shortName alone is a terse label. Null on logs ingested
+  // before this was captured.
+  mechanicsMeta  Json?
   // Uploader-controlled privacy. A private log is kept off the public browse
   // surfaces (All Reports list, search, recent feeds) and its detail page is
   // access-controlled — only the uploader, admins, and (if assigned) the
