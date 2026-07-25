@@ -446,10 +446,25 @@ export default function PlayerProfilePage() {
 
       {tab === 'professions' && (
         <>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ font: '800 20px var(--font-sans)', letterSpacing: '-.4px' }}>Professions</div>
+            <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>
+              Every profession {player.account} has parsed on, ranked by average percentile.
+            </div>
+          </div>
+          {player.specPerformance.length === 0 ? (
+            <PlaceholderPanel title="No parses yet" body="Upload a kill log to start ranking the professions this character has played." />
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16, marginBottom: 24 }}>
+              {player.specPerformance.map((s) => (
+                <SpecCard key={s.spec} s={s} />
+              ))}
+            </div>
+          )}
+
           <div style={{ marginBottom: 20 }}>
             <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
           </div>
-          {player.specPerformance.length > 0 && <SpecPerformanceTable rows={player.specPerformance} />}
 
           <div style={{ marginBottom: 12 }}>
             <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
@@ -1040,45 +1055,49 @@ function IconPickerModal({
 
 // --- Per-spec performance table -------------------------------------------
 
-function SpecPerformanceTable({ rows }: { rows: PlayerProfile['specPerformance'] }) {
+// Professions tab card — one per spec: a tinted icon badge + identity, then a
+// 2×2 stat grid (Fights / Avg parse / Best / Best DPS) with rule dividers,
+// matching the design comp. Parse values carry their tier colour.
+function fmtDpsShort(n: number): string {
+  return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(Math.round(n));
+}
+
+function SpecStatCell({ label, value, color, borderTop, borderLeft }: { label: string; value: React.ReactNode; color?: string; borderTop?: boolean; borderLeft?: boolean }) {
   return (
-    <Card style={{ marginBottom: 20, overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
-        Performance by Specialization
-      </div>
-      <div style={{ overflowX: 'auto' }}>
-        <div style={{ minWidth: 460 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 0.9fr 0.9fr', gap: 8, padding: '10px 20px', font: '700 10px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-55)', borderBottom: '1px solid var(--border-faint)' }}>
-            <div>Specialization</div>
-            <div style={{ textAlign: 'right' }}>Parses</div>
-            <div style={{ textAlign: 'right' }}>Avg</div>
-            <div style={{ textAlign: 'right' }}>Best</div>
-          </div>
-          {rows.map((r, i) => (
-            <div key={r.spec} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 0.9fr 0.9fr', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--border-faint)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                <img
-                  src={professionIconPath(r.profession, r.spec !== r.profession ? r.spec : null)}
-                  alt=""
-                  width={22}
-                  height={22}
-                  style={{ objectFit: 'contain', flex: 'none' }}
-                  onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                />
-                <span style={{ font: '600 12.5px var(--font-sans)', color: professionColor(r.profession), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.spec}</span>
-              </div>
-              <div style={{ textAlign: 'right', font: '600 12px var(--font-mono)', color: 'var(--text-70)' }}>{r.plays}</div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <ParseBadge pct={r.avgPct} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Link to={`/logs/${r.bestLogId}`} title="Open best parse">
-                  <ParseBadge pct={r.bestPct} />
-                </Link>
-              </div>
-            </div>
-          ))}
+    <div style={{ padding: '13px 17px', borderTop: borderTop ? '1px solid var(--border)' : undefined, borderLeft: borderLeft ? '1px solid var(--border)' : undefined }}>
+      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-50)', marginBottom: 5 }}>{label}</div>
+      <div style={{ font: '800 20px var(--font-sans)', letterSpacing: '-.3px', color: color ?? 'var(--text)' }}>{value}</div>
+    </div>
+  );
+}
+
+function SpecCard({ s }: { s: PlayerProfile['specPerformance'][number] }) {
+  const color = professionColor(s.profession);
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '15px 17px' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, flex: 'none', display: 'grid', placeItems: 'center', background: professionColorAlpha(s.profession, 16), border: `1px solid ${professionColorAlpha(s.profession, 45)}` }}>
+          <img
+            src={professionIconPath(s.profession, s.spec !== s.profession ? s.spec : null)}
+            alt=""
+            width={26}
+            height={26}
+            style={{ objectFit: 'contain' }}
+            onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+          />
         </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ font: '750 15px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.spec}</div>
+          <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)' }}>
+            <span style={{ color }}>{s.profession}</span> · {s.role}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid var(--border)' }}>
+        <SpecStatCell label="Fights" value={s.plays.toLocaleString()} />
+        <SpecStatCell label="Avg parse" value={s.avgPct} color={parseTier(s.avgPct).color} borderLeft />
+        <SpecStatCell label="Best" value={s.bestPct} color={parseTier(s.bestPct).color} borderTop />
+        <SpecStatCell label="Best DPS" value={fmtDpsShort(s.bestDps)} borderTop borderLeft />
       </div>
     </Card>
   );

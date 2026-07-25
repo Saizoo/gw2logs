@@ -67,6 +67,8 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
       profession: true,
       spec: true,
       totalDps: true,
+      powerDps: true,
+      condiDps: true,
       squadRole: true,
       log: { select: { fightName: true, isCm: true, uploadedAt: true, success: true, private: true } },
     },
@@ -192,13 +194,22 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
   // how many parses, their average and best percentile, and the log behind
   // the best one. Wipes are excluded (no parse), matching the score/best
   // logic above.
-  const specPerfAgg = new Map<string, { profession: string; plays: number; pctSum: number; bestPct: number; bestLogId: string }>();
+  const specPerfAgg = new Map<
+    string,
+    { profession: string; plays: number; pctSum: number; bestPct: number; bestLogId: string; bestDps: number; powerSum: number; condiSum: number; roleCounts: Map<string, number> }
+  >();
   for (const lp of logPlayers) {
     if (!lp.log.success) continue;
     const pct = pctByLogPlayerId.get(lp.id) ?? 0;
-    const entry = specPerfAgg.get(lp.spec) ?? { profession: lp.profession, plays: 0, pctSum: 0, bestPct: -1, bestLogId: lp.logId };
+    const entry =
+      specPerfAgg.get(lp.spec) ??
+      { profession: lp.profession, plays: 0, pctSum: 0, bestPct: -1, bestLogId: lp.logId, bestDps: 0, powerSum: 0, condiSum: 0, roleCounts: new Map<string, number>() };
     entry.plays += 1;
     entry.pctSum += pct;
+    entry.bestDps = Math.max(entry.bestDps, lp.totalDps);
+    entry.powerSum += lp.powerDps;
+    entry.condiSum += lp.condiDps;
+    entry.roleCounts.set(lp.squadRole, (entry.roleCounts.get(lp.squadRole) ?? 0) + 1);
     // Count private parses toward plays/avg, but only link to a public log.
     if (!lp.log.private && pct > entry.bestPct) {
       entry.bestPct = pct;
@@ -207,14 +218,22 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     specPerfAgg.set(lp.spec, entry);
   }
   const specPerformance = [...specPerfAgg.entries()]
-    .map(([spec, e]) => ({
-      spec,
-      profession: e.profession,
-      plays: e.plays,
-      avgPct: Math.round(e.pctSum / e.plays),
-      bestPct: Math.round(Math.max(0, e.bestPct)),
-      bestLogId: e.bestLogId,
-    }))
+    .map(([spec, e]) => {
+      // The spec's characteristic role: its most-frequent squad role, split
+      // into Power/Condi for plain DPS by whichever damage type dominated.
+      const topRole = [...e.roleCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'dps';
+      const role = topRole === 'boon_heal' ? 'Heal' : topRole === 'boon_dps' ? 'Boon' : e.powerSum >= e.condiSum ? 'Power' : 'Condi';
+      return {
+        spec,
+        profession: e.profession,
+        plays: e.plays,
+        avgPct: Math.round(e.pctSum / e.plays),
+        bestPct: Math.round(Math.max(0, e.bestPct)),
+        bestLogId: e.bestLogId,
+        bestDps: e.bestDps,
+        role,
+      };
+    })
     .sort((a, b) => b.avgPct - a.avgPct || b.plays - a.plays);
 
   // Encounter coverage ("collection"): every canonical boss grouped by its

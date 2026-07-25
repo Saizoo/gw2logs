@@ -166,7 +166,7 @@ export interface PlayerProfile {
   record: { kills: number; wipes: number; total: number; successRate: number };
   roleBreakdown: { role: string; count: number; pct: number }[];
   specBreakdown: { spec: string; profession: string; count: number; pct: number }[];
-  specPerformance: { spec: string; profession: string; plays: number; avgPct: number; bestPct: number; bestLogId: string }[];
+  specPerformance: { spec: string; profession: string; plays: number; avgPct: number; bestPct: number; bestLogId: string; bestDps: number; role: string }[];
   coverage: { wing: string; killed: number; total: number; encounters: PlayerCoverageEncounter[] }[];
   professionBreakdown: { profession: string; pct: number }[];
   bestParses: { boss: string; isCm: boolean; spec: string; dps: number; pct: number; logId: string }[];
