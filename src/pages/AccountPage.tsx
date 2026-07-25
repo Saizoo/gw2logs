@@ -1,7 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { REPLAY_TOUR_EVENT } from '../components/OnboardingTour';
-import { api, ApiError, type ApiTokenSummary, type CurrentUser, type DpsReportImportStatus } from '../lib/api';
+import { api, ApiError, type ApiTokenSummary, type CurrentUser } from '../lib/api';
+
+// Relative "3h" / "2d" ago from an ISO timestamp, for the auto-import status.
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { LoadingState } from '../components/QueryStates';
 import { Badge, Card, GoldButton } from '../components/atoms';
@@ -18,16 +29,9 @@ export default function AccountPage() {
   const [result, setResult] = useState<string | null>(null);
 
   const [dpsToken, setDpsToken] = useState('');
-  const [dpsStarting, setDpsStarting] = useState(false);
+  const [dpsBusy, setDpsBusy] = useState(false);
   const [dpsError, setDpsError] = useState<string | null>(null);
-  const [dpsStatus, setDpsStatus] = useState<DpsReportImportStatus | null>(null);
-  const dpsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (dpsPollRef.current) clearInterval(dpsPollRef.current);
-    };
-  }, []);
+  const [dpsNote, setDpsNote] = useState<string | null>(null);
 
   if (loading) return <LoadingState label="Loading account…" />;
   if (!user) return <Navigate to="/login" replace />;
@@ -68,38 +72,50 @@ export default function AccountPage() {
     window.location.href = '/';
   }
 
-  async function handleImportDpsReport(e: React.FormEvent) {
+  async function handleLinkDpsReport(e: React.FormEvent) {
     e.preventDefault();
     setDpsError(null);
-    setDpsStatus(null);
-    setDpsStarting(true);
+    setDpsNote(null);
+    setDpsBusy(true);
     try {
-      const start = await api.importDpsReport(dpsToken.trim());
-      if (!start.batchId) {
-        setDpsError('No uploads found for that token.');
-        return;
-      }
-      setDpsStatus({ total: start.total, processed: 0, succeeded: 0, failed: 0, done: false });
-      if (dpsPollRef.current) clearInterval(dpsPollRef.current);
-      dpsPollRef.current = setInterval(async () => {
-        try {
-          const status = await api.importDpsReportStatus(start.batchId!);
-          setDpsStatus(status);
-          if (status.done && dpsPollRef.current) {
-            clearInterval(dpsPollRef.current);
-            dpsPollRef.current = null;
-          }
-        } catch {
-          if (dpsPollRef.current) {
-            clearInterval(dpsPollRef.current);
-            dpsPollRef.current = null;
-          }
-        }
-      }, 1500);
+      await api.linkDpsReport(dpsToken.trim());
+      setDpsToken('');
+      setDpsNote('Linked — importing your recent history now. New logs will auto-import every 15 minutes.');
+      refresh();
     } catch (err) {
-      setDpsError(err instanceof ApiError ? err.message : 'Failed to start import');
+      setDpsError(err instanceof ApiError ? err.message : 'Failed to link dps.report token');
     } finally {
-      setDpsStarting(false);
+      setDpsBusy(false);
+    }
+  }
+
+  async function handleUnlinkDpsReport() {
+    setDpsError(null);
+    setDpsNote(null);
+    setDpsBusy(true);
+    try {
+      await api.unlinkDpsReport();
+      setDpsNote('Disconnected — new dps.report uploads will no longer import.');
+      refresh();
+    } catch (err) {
+      setDpsError(err instanceof ApiError ? err.message : 'Failed to disconnect');
+    } finally {
+      setDpsBusy(false);
+    }
+  }
+
+  async function handleSyncDpsReport() {
+    setDpsError(null);
+    setDpsNote(null);
+    setDpsBusy(true);
+    try {
+      const res = await api.syncDpsReport();
+      setDpsNote(res.imported > 0 ? `Imported ${res.imported} new log${res.imported === 1 ? '' : 's'}.` : 'Already up to date — no new logs.');
+      refresh();
+    } catch (err) {
+      setDpsError(err instanceof ApiError ? err.message : 'Failed to sync');
+    } finally {
+      setDpsBusy(false);
     }
   }
 
@@ -206,67 +222,75 @@ export default function AccountPage() {
       )}
 
       <Card style={{ padding: 22, marginTop: 16 }}>
-        <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)', marginBottom: 4 }}>Import from dps.report</div>
-        <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
-          Already have a history of logs on dps.report? Paste your user token below to import them here instead of
-          re-uploading each file. Find your token at{' '}
-          <a href="https://dps.report/" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
-            dps.report
-          </a>{' '}
-          — it's stored in your browser's cookies for that site, or shown on any log page you've uploaded. Treat it
-          like a password: anyone with it can see everything ever uploaded under it.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <div style={{ font: '700 14px var(--font-sans)', color: 'var(--text)' }}>dps.report auto-import</div>
+          {user.dpsReportLinked && (
+            <span style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.05em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, color: 'var(--good)', background: 'var(--good-dim, color-mix(in srgb, var(--good) 15%, transparent))', border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)' }}>
+              Connected
+            </span>
+          )}
         </div>
-        <form onSubmit={handleImportDpsReport}>
-          <input
-            type="text"
-            value={dpsToken}
-            onChange={(e) => setDpsToken(e.target.value)}
-            placeholder="dps.report user token"
-            disabled={Boolean(dpsStatus && !dpsStatus.done)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              background: 'var(--bg-input)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              font: '400 12px var(--font-mono)',
-              color: 'var(--text)',
-            }}
-          />
-          <div style={{ marginTop: 12 }}>
-            <GoldButton type="submit" disabled={dpsStarting || !dpsToken.trim() || Boolean(dpsStatus && !dpsStatus.done)}>
-              {dpsStarting ? 'Starting…' : 'Import logs'}
-            </GoldButton>
-          </div>
-        </form>
 
-        {dpsStatus && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 'var(--radius-md)' }}>
-              <div
-                style={{
-                  height: 6,
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--gold)',
-                  width: `${dpsStatus.total ? Math.round((dpsStatus.processed / dpsStatus.total) * 100) : 100}%`,
-                }}
-              />
-            </div>
-            <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8 }}>
-              {dpsStatus.done ? (
-                <>
-                  Done — {dpsStatus.succeeded} imported, {dpsStatus.failed} skipped/failed of {dpsStatus.total}.
-                </>
-              ) : (
-                <>
-                  Importing… {dpsStatus.processed} / {dpsStatus.total} processed ({dpsStatus.succeeded} succeeded so
-                  far).
-                </>
+        {user.dpsReportLinked ? (
+          <>
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
+              New logs you upload to dps.report import here automatically, about every 15 minutes — no re-uploading.
+              {user.dpsReportLastImportAt && (
+                <> Last new log seen <b style={{ color: 'var(--text-75)' }}>{timeAgo(user.dpsReportLastImportAt)}</b>.</>
               )}
             </div>
-          </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <GoldButton type="button" onClick={handleSyncDpsReport} disabled={dpsBusy}>
+                {dpsBusy ? 'Working…' : 'Import now'}
+              </GoldButton>
+              <button
+                type="button"
+                onClick={handleUnlinkDpsReport}
+                disabled={dpsBusy}
+                style={{ font: '650 12.5px var(--font-sans)', padding: '9px 15px', borderRadius: 'var(--radius-md)', background: 'var(--bad-dim)', color: 'var(--bad)', border: '1px solid color-mix(in srgb, var(--bad) 40%, transparent)', cursor: dpsBusy ? 'default' : 'pointer', opacity: dpsBusy ? 0.6 : 1 }}
+              >
+                Disconnect
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 8, marginBottom: 14, lineHeight: 1.6 }}>
+              Link your dps.report user token and every log you upload there imports here automatically. Find your token
+              at{' '}
+              <a href="https://dps.report/" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>
+                dps.report
+              </a>{' '}
+              — it's in that site's cookies, or shown on any log page you've uploaded. Treat it like a password: anyone
+              with it can see everything ever uploaded under it.
+            </div>
+            <form onSubmit={handleLinkDpsReport}>
+              <input
+                type="text"
+                value={dpsToken}
+                onChange={(e) => setDpsToken(e.target.value)}
+                placeholder="dps.report user token"
+                disabled={dpsBusy}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  font: '400 12px var(--font-mono)',
+                  color: 'var(--text)',
+                }}
+              />
+              <div style={{ marginTop: 12 }}>
+                <GoldButton type="submit" disabled={dpsBusy || !dpsToken.trim()}>
+                  {dpsBusy ? 'Linking…' : 'Connect & import'}
+                </GoldButton>
+              </div>
+            </form>
+          </>
         )}
 
+        {dpsNote && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--text-70)' }}>{dpsNote}</div>}
         {dpsError && <div style={{ marginTop: 14, font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{dpsError}</div>}
       </Card>
 

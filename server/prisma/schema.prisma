@@ -49,6 +49,14 @@ model User {
   gw2AccountName   String?        @unique
   gw2ApiKeyEnc     String?
   gw2LinkedAt      DateTime?
+  // dps.report auto-import: the user's dps.report userToken (encrypted at rest,
+  // same scheme as gw2ApiKeyEnc). When set, a background poller periodically
+  // pulls that token's newly-uploaded logs into gw2logs. linkedAt marks when
+  // it was connected; lastImportAt is the newest upload time seen so the poller
+  // can stop early instead of re-walking the whole history each tick.
+  dpsReportTokenEnc    String?
+  dpsReportLinkedAt    DateTime?
+  dpsReportLastImportAt DateTime?
   createdAt        DateTime       @default(now())
   // Bootstrapped from ADMIN_DISCORD_IDS on login (see routes/auth.ts) so the
   // first admin exists without manual SQL after a DB reset; promotable/

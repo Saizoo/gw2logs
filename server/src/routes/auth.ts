@@ -109,7 +109,12 @@ authRouter.get('/me', asyncHandler(async (req, res) => {
     res.status(401).json({ error: 'Not signed in' });
     return;
   }
-  const { gw2ApiKeyEnc: _gw2ApiKeyEnc, ...safe } = req.user;
+  const { gw2ApiKeyEnc: _gw2ApiKeyEnc, dpsReportTokenEnc, ...rest } = req.user;
+  // Never leak the stored secrets; surface dps.report as a boolean + timestamps.
+  const safe = {
+    ...rest,
+    dpsReportLinked: Boolean(dpsReportTokenEnc),
+  };
 
   // Aggregate pending join-request count across every group this user
   // leads/subleads, so the nav badge doesn't need its own round trip.

@@ -9,6 +9,7 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 import { clearSessionCookie } from '../lib/session.js';
 import { isValidProfileIcon } from '../lib/gw2Specs.js';
 import { fetchDpsReportJson, fetchDpsReportUploads } from '../lib/dpsReportImport.js';
+import { importDpsReportForUser } from '../lib/dpsReportSync.js';
 import { normalizeEiJson } from '../lib/ingest.js';
 import { persistLog } from '../lib/persist.js';
 import { createBatch, getBatch, updateBatch } from '../lib/importBatches.js';
@@ -342,6 +343,75 @@ accountRouter.get('/import-dpsreport/:batchId', (req, res) => {
   }
   res.json(batch);
 });
+
+// --- dps.report auto-import: link a token once, then a background poller
+// (lib/dpsReportSync.ts) pulls newly-uploaded logs every ~15 minutes. -------
+
+function dpsReportStatus(user: { dpsReportTokenEnc: string | null; dpsReportLinkedAt: Date | null; dpsReportLastImportAt: Date | null }) {
+  return {
+    linked: Boolean(user.dpsReportTokenEnc),
+    linkedAt: user.dpsReportLinkedAt,
+    lastImportAt: user.dpsReportLastImportAt,
+  };
+}
+
+accountRouter.get('/dpsreport', asyncHandler(async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.id },
+    select: { dpsReportTokenEnc: true, dpsReportLinkedAt: true, dpsReportLastImportAt: true },
+  });
+  res.json(dpsReportStatus(user!));
+}));
+
+accountRouter.post('/dpsreport/link', asyncHandler(async (req, res) => {
+  const userToken = typeof req.body?.userToken === 'string' ? req.body.userToken.trim() : '';
+  if (!userToken) {
+    res.status(400).json({ error: 'A dps.report user token is required' });
+    return;
+  }
+
+  // Verify the token actually works before storing it.
+  try {
+    await fetchDpsReportUploads(userToken, 1);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to verify this token with dps.report' });
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { dpsReportTokenEnc: encrypt(userToken), dpsReportLinkedAt: new Date(), dpsReportLastImportAt: null },
+  });
+
+  // Backfill recent history in the background so the account isn't empty until
+  // the first poll tick. Bounded to a few pages; the poller keeps it current.
+  importDpsReportForUser(req.user!.id, userToken, { maxPages: 5, stopWhenSeen: false }).catch((err) =>
+    console.error('initial dps.report backfill failed:', err),
+  );
+
+  res.json({ linked: true, linkedAt: new Date(), lastImportAt: null });
+}));
+
+accountRouter.delete('/dpsreport/link', asyncHandler(async (req, res) => {
+  await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { dpsReportTokenEnc: null, dpsReportLinkedAt: null, dpsReportLastImportAt: null },
+  });
+  res.json({ linked: false, linkedAt: null, lastImportAt: null });
+}));
+
+accountRouter.post('/dpsreport/sync', asyncHandler(async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { dpsReportTokenEnc: true } });
+  if (!user?.dpsReportTokenEnc) {
+    res.status(400).json({ error: 'Link a dps.report token first' });
+    return;
+  }
+  const token = decrypt(user.dpsReportTokenEnc);
+  // Incremental catch-up on demand — a couple of pages, stopping at the first
+  // already-imported log. Runs inline since there should be few new ones.
+  const result = await importDpsReportForUser(req.user!.id, token, { maxPages: 3, stopWhenSeen: true });
+  res.json({ imported: result.imported, failed: result.failed });
+}));
 
 async function runDpsReportImport(userToken: string, batchId: string, total: number, userId: string): Promise<void> {
   let processed = 0;

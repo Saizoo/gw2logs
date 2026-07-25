@@ -577,6 +577,17 @@ export interface CurrentUser {
   // Chosen profile icon (spec/profession name), or null for the auto default.
   profileIcon: string | null;
   pendingGroupRequests: number;
+  // dps.report auto-import: whether a token is linked, and when it was linked /
+  // last pulled a newer log. The token itself is never sent to the client.
+  dpsReportLinked: boolean;
+  dpsReportLinkedAt: string | null;
+  dpsReportLastImportAt: string | null;
+}
+
+export interface DpsReportLinkStatus {
+  linked: boolean;
+  linkedAt: string | null;
+  lastImportAt: string | null;
 }
 
 export interface ApiTokenSummary {
@@ -879,6 +890,15 @@ export const api = {
     }),
   importDpsReportStatus: (batchId: string) =>
     apiFetch<DpsReportImportStatus>(`/account/import-dpsreport/${encodeURIComponent(batchId)}`),
+  dpsReportStatus: () => apiFetch<DpsReportLinkStatus>('/account/dpsreport'),
+  linkDpsReport: (userToken: string) =>
+    apiFetch<DpsReportLinkStatus>('/account/dpsreport/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userToken }),
+    }),
+  unlinkDpsReport: () => apiFetch<DpsReportLinkStatus>('/account/dpsreport/link', { method: 'DELETE' }),
+  syncDpsReport: () => apiFetch<{ imported: number; failed: number }>('/account/dpsreport/sync', { method: 'POST' }),
   home: () => apiFetch<HomeSummary>('/home'),
   // Sends the browser's IANA zone so the weekly-activity bars bucket on
   // the viewer's calendar days instead of UTC.
