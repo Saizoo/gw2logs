@@ -408,13 +408,126 @@
   @media (max-width: 1040px) { .cols, .gear-cols { grid-template-columns: 1fr; } .stat-row { grid-template-columns: repeat(2, 1fr); } .enc-page-grid { grid-template-columns: repeat(2, 1fr); } .prof-grid { grid-template-columns: repeat(2, 1fr); } .ach-cats { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 900px) { .menu, .nav-search { display: none; } .hamburger { display: grid; } .mega-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 620px) { .enc-page-grid, .prof-grid, .ach-tiles, .gear-list, .ach-cats { grid-template-columns: 1fr; } .id h1 { font-size: 32px; } .stat-row { grid-template-columns: 1fr 1fr; } .hero-actions { margin-left: 0; width: 100%; } .user-name { display: none; } }
+
+  /* ===================== VIEWS (top-level router) ===================== */
+  .view { animation: fade .28s ease; }
+  [data-view-go], [data-log-rows] tbody tr { cursor: pointer; }
+
+  /* ===================== DASHBOARD ===================== */
+  .dash-hero { position: relative; border-bottom: 1px solid var(--line); overflow: hidden; }
+  .dash-hero::before { content:""; position:absolute; inset:0; background: radial-gradient(700px 300px at 78% -12%, var(--teal-dim), transparent 60%), radial-gradient(500px 300px at 4% 130%, rgba(23,110,109,.16), transparent 60%); }
+  .dash-hero-in { position: relative; display:flex; gap:24px; align-items:flex-end; justify-content:space-between; padding: 38px 22px 30px; flex-wrap: wrap; }
+  .dash-title { font-size: 34px; font-weight: 800; letter-spacing:-.02em; margin-top:6px; text-wrap: balance; }
+  .dash-title span { color: var(--teal-300); }
+  .dash-sub { color: var(--muted); font-size: 14px; margin-top: 8px; max-width: 60ch; }
+  .dash-search { display:flex; align-items:center; gap:10px; margin-top:18px; background: var(--surface); border:1px solid var(--line-strong); border-radius: 11px; padding: 11px 14px; max-width: 460px; color: var(--muted); transition: border-color .15s; }
+  .dash-search:focus-within { border-color: var(--teal-600); }
+  .dash-search input { border:none; background:none; outline:none; color:var(--text); font-size:14px; width:100%; }
+  .dash-search input::placeholder { color: var(--muted-2); }
+  .dash-cta { display:flex; flex-direction:column; gap:9px; align-items:stretch; min-width: 210px; }
+  .dash-cta .up-card { background: var(--surface); border:1px dashed var(--line-strong); border-radius: var(--r-md); padding:16px; text-align:center; }
+  .dash-cta .up-card .hint { font-size:12px; color: var(--muted); margin-top:8px; }
+  .dash-stats { display:grid; grid-template-columns: repeat(4,1fr); gap:13px; margin: 24px 0; }
+  .spark { display:block; width:100%; height:30px; margin-top:9px; overflow:visible; }
+  .rank-row { display:flex; align-items:center; gap:12px; padding:11px 17px; border-bottom:1px solid var(--line-faint); transition: background .12s; cursor:pointer; }
+  .rank-row:last-child { border-bottom:none; }
+  .rank-row:hover { background: var(--teal-dimmer); }
+  .rank-n { width:20px; text-align:center; font-weight:800; color:var(--muted); font-size:13px; flex:none; }
+  .rank-row.top .rank-n { color: var(--p-legend); }
+  .rank-nm { font-weight:650; font-size:13.5px; }
+  .rank-sub { font-size:11.5px; color:var(--muted); }
+  .mini-links a { display:flex; align-items:center; justify-content:space-between; padding:11px 17px; border-bottom:1px solid var(--line-faint); font-size:13.5px; transition: background .12s; }
+  .mini-links a:last-child { border-bottom:none; }
+  .mini-links a:hover { background: var(--teal-dimmer); color: var(--teal-300); }
+  .feat-tiles { padding:14px; display:grid; gap:12px; }
+
+  /* ===================== LOG DETAIL ===================== */
+  .log-hero { position: relative; overflow:hidden; border-bottom:1px solid var(--line); }
+  .log-hero-art { position:absolute; inset:0; background: linear-gradient(150deg, var(--g1,#3fa06a), var(--g2,#0f3020)); }
+  .log-hero-art::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgba(8,8,8,.32), rgba(8,8,8,.88)); }
+  .log-hero-in { position: relative; max-width: var(--wrap); margin:0 auto; padding: 20px 22px 0; }
+  .log-crumb { display:flex; align-items:center; gap:8px; font-size:12.5px; color:rgba(255,255,255,.7); margin-bottom:18px; }
+  .log-crumb a { cursor:pointer; } .log-crumb a:hover { color:#fff; } .log-crumb .sep { opacity:.6; }
+  .log-head { display:flex; gap:20px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+  .log-boss { display:flex; gap:16px; align-items:center; }
+  .log-glyph { width:60px; height:60px; border-radius:14px; display:grid; place-items:center; background: rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.28); color:#fff; font-weight:800; font-size:19px; box-shadow: var(--shadow-md); flex:none; }
+  .log-boss h1 { font-size: 29px; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px; flex-wrap:wrap; letter-spacing:-.01em; }
+  .log-boss .lmeta { color: rgba(255,255,255,.82); font-size:13px; margin-top:6px; display:flex; gap:5px 14px; flex-wrap:wrap; }
+  .log-boss .lmeta b { color:#fff; font-weight:650; }
+  .kill-badge { font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; background: var(--p-green); color:#06210f; letter-spacing:.03em; }
+  .cm-chip { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid rgba(255,255,255,.45); color:#fff; }
+  .log-actions { display:flex; gap:8px; }
+  .log-actions .btn { border-color: rgba(255,255,255,.28); color:#fff; background: rgba(255,255,255,.08); }
+  .log-actions .btn:hover { background: rgba(255,255,255,.18); border-color:#fff; }
+  .log-tiles { position:relative; display:grid; grid-template-columns: repeat(5,1fr); gap:12px; margin-top:22px; transform: translateY(22px); }
+  .log-tile { background: linear-gradient(180deg,var(--surface-2),var(--surface)); border:1px solid var(--line); border-radius: var(--r-md); padding: 13px 15px; box-shadow: var(--shadow-md); }
+  .log-tile .k { font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  .log-tile .v { font-size:22px; font-weight:800; margin-top:4px; }
+  .log-tile .v small { font-size:13px; color:var(--muted); font-weight:600; }
+  .log-body { max-width: var(--wrap); margin:0 auto; padding: 46px 22px 0; }
+  .log-grid { display:grid; grid-template-columns: 1fr 300px; gap:22px; align-items:start; }
+  .subtabs { display:flex; gap:3px; border-bottom:1px solid var(--line); margin-bottom:20px; overflow-x:auto; }
+  .subtab { padding:11px 13px; font-size:13.5px; font-weight:650; color:var(--muted); border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer; background:none; }
+  .subtab:hover { color: var(--text-2); }
+  .subtab.on { color: var(--teal-300); border-color: var(--teal); }
+
+  .dmg-row { display:grid; grid-template-columns: 24px 150px 1fr 46px; gap:12px; align-items:center; padding:9px 17px; border-bottom:1px solid var(--line-faint); }
+  .dmg-row:last-child { border-bottom:none; }
+  .dmg-row:hover { background: var(--teal-dimmer); }
+  .dmg-rank { text-align:center; font-weight:800; color:var(--muted); font-size:12.5px; }
+  .dmg-nm { font-weight:650; font-size:13px; display:flex; align-items:center; gap:8px; min-width:0; }
+  .dmg-nm .pd { width:9px; height:9px; border-radius:3px; flex:none; }
+  .dmg-nm span.nt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dmg-role { font-size:11px; color:var(--muted); margin-left:17px; }
+  .dmg-track { position:relative; height:20px; }
+  .dmg-bar { position:absolute; left:0; top:2px; bottom:2px; border-radius:0 4px 4px 0; min-width:3px; }
+  .dmg-val { position:relative; font-size:12px; font-weight:700; color:var(--text); line-height:20px; padding-left:9px; }
+  .dmg-share { text-align:right; font-size:12px; color:var(--muted); font-weight:650; }
+
+  .heat { overflow-x:auto; padding: 8px 12px 14px; }
+  .heat table { border-collapse: separate; border-spacing: 2px; }
+  .heat th { font-size:10.5px; color:var(--muted); font-weight:700; padding:5px 4px; text-align:center; letter-spacing:.03em; }
+  .heat th.who, .heat td.who { text-align:left; white-space:nowrap; }
+  .heat td.who { font-size:12.5px; font-weight:650; padding-right:14px; display:flex; align-items:center; gap:8px; }
+  .heat td.who .pd { width:9px; height:9px; border-radius:3px; flex:none; }
+  .heat-cell { min-width:50px; height:30px; border-radius:6px; text-align:center; font-size:11.5px; font-weight:700; background: color-mix(in srgb, var(--teal) var(--u,0%), var(--surface-3)); color:#052422; }
+  .heat-cell.lo { color: var(--muted); }
+
+  .comp-row { display:flex; align-items:center; gap:11px; padding:9px 15px; border-bottom:1px solid var(--line-faint); font-size:13px; }
+  .comp-row:last-child { border-bottom:none; }
+  .comp-dot { width:10px; height:10px; border-radius:3px; flex:none; }
+  .comp-role { margin-left:auto; font-size:11.5px; color:var(--muted); }
+  .info-row { display:flex; align-items:center; justify-content:space-between; padding:10px 15px; font-size:13px; border-bottom:1px solid var(--line-faint); }
+  .info-row:last-child { border-bottom:none; }
+  .info-row .il { color:var(--muted); }
+  .info-row .iv { font-weight:650; }
+
+  .chart-wrap { position:relative; padding: 16px 14px 6px; }
+  .hp-svg { width:100%; height:auto; display:block; }
+  .hp-grid line { stroke: var(--line); stroke-width:1; }
+  .hp-phase { stroke: var(--line-strong); stroke-width:1; stroke-dasharray:3 4; }
+  .hp-area { fill: url(#hpgrad); }
+  .hp-line { fill:none; stroke: var(--teal); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .hp-end { fill: var(--teal-300); stroke: var(--surface); stroke-width:2; }
+  .hp-plabel { fill: var(--muted); font-size:10px; font-weight:700; letter-spacing:.08em; }
+  .hp-cross { stroke: var(--text-2); stroke-width:1; opacity:0; }
+  .hp-dot { fill: var(--teal-300); stroke: var(--surface); stroke-width:2; opacity:0; }
+  .hp-hit { cursor: crosshair; }
+  .hp-tip { position:absolute; pointer-events:none; background: var(--surface-2); border:1px solid var(--line-strong); border-radius:8px; padding:6px 10px; font-size:12px; box-shadow: var(--shadow-pop); opacity:0; transition: opacity .1s; white-space:nowrap; z-index:5; }
+  .hp-tip b { color: var(--teal-300); }
+  .hp-legend { display:flex; gap:16px; padding: 2px 16px 14px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; }
+  .hp-legend b { color: var(--text-2); font-weight:700; }
+
+  @media (max-width: 1040px) { .log-grid { grid-template-columns: 1fr; } .log-tiles, .dash-stats { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 620px) { .log-tiles, .dash-stats { grid-template-columns: 1fr 1fr; } .log-boss h1 { font-size:23px; } .dmg-row { grid-template-columns: 22px 1fr 70px; } .dmg-track { display:none; } .dash-title { font-size:27px; } }
+
   @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 </style>
 
 <!-- ============================ NAV ============================ -->
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="#" aria-label="GW2 Logs home">
+    <a class="brand" href="#" aria-label="GW2 Logs home" data-view-go="dashboard">
       <span class="brand-mark" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5 6 12l2 2 8.5-8.5zM6 12l-2 6 6-2M15 9l4.5 4.5a2 2 0 0 1 0 2.8L18 18"/></svg></span>
       <span class="brand-name">GW2<b>Logs</b></span>
     </a>
@@ -517,7 +630,7 @@
         <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
       </button>
       <div class="drop user-drop" role="menu">
-        <a class="u-item" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>My profile</a>
+        <a class="u-item" href="#" data-view-go="profile"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>My profile</a>
         <a class="u-item" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M9 4v16"/></svg></span>Manage characters</a>
         <a class="u-item" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></span>Update characters</a>
         <a class="u-item" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 12 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 .3 1.9 2 2 0 1 1 0 4z"/></svg></span>Settings</a>
@@ -529,6 +642,101 @@
     <button class="icon-btn hamburger" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   </div>
 </header>
+
+<!-- ============================ DASHBOARD VIEW ============================ -->
+<div class="view" data-view="dashboard">
+  <section class="dash-hero">
+    <div class="dash-hero-in wrap">
+      <div>
+        <div class="eyebrow">Guild Wars 2 · combat log platform</div>
+        <h1 class="dash-title">Welcome back, <span>Sai Zu</span></h1>
+        <p class="dash-sub">1,284 kills logged · median 88th percentile · ranked #142 in EU on Berserker. Pick up where you left off, or dig into this week's leaderboards.</p>
+        <label class="dash-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          <input placeholder="Search players, guilds or bosses…" aria-label="Search"><span class="kbd">Ctrl K</span>
+        </label>
+      </div>
+      <div class="dash-cta">
+        <div class="up-card">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 20h14"/></svg>
+          <div style="font-weight:750;margin-top:8px">Upload arcdps logs</div>
+          <div class="hint">Drop <b>.zevtc</b> files — parsed locally, never leave your server.</div>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:12px">Choose files</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="dash-stats">
+      <div class="stat"><div class="k">Logs parsed</div><div class="v">2.41M</div><div class="sub">all-time</div></div>
+      <div class="stat"><div class="k">Players tracked</div><div class="v">61,830</div><div class="sub">across NA &amp; EU</div></div>
+      <div class="stat"><div class="k">Encounters</div><div class="v">58</div><div class="sub">raids · strikes · fractals</div></div>
+      <div class="stat accent"><div class="k">Uploads today</div><div class="v">4,120</div><svg class="spark" id="spark" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    </div>
+
+    <div class="cols">
+      <div>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg></span>Recent parses</h2><span class="eyebrow">Global feed · live</span></div>
+          <div style="overflow-x:auto">
+            <table data-log-rows>
+              <thead><tr><th>Player</th><th>Encounter</th><th>Profession</th><th class="num">DPS</th><th class="num">Parse</th><th class="num">When</th></tr></thead>
+              <tbody>
+                <tr><td style="font-weight:650">Sai Zu</td><td><div class="boss"><span class="glyph2" style="--g1:#3fa06a;--g2:#0f3020">DH</span><span><div class="bn">Dhuum</div><div class="bw">Hall of Chains · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#e0342f"></span>Berserker</span></td><td class="num dps">41.2k</td><td class="num"><span class="pct legend">99</span></td><td class="num ago">now</td></tr>
+                <tr><td style="font-weight:650">Marra.6180</td><td><div class="boss"><span class="glyph2" style="--g1:#e0a94a;--g2:#5c4010">QP</span><span><div class="bn">Qadim the Peerless</div><div class="bw">Key of Ahdashim · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#d16e35"></span>Weaver</span></td><td class="num dps">40.6k</td><td class="num"><span class="pct gold">97</span></td><td class="num ago">1m</td></tr>
+                <tr><td style="font-weight:650">Kestrel.2043</td><td><div class="boss"><span class="glyph2" style="--g1:#c0446a;--g2:#4a1626">SH</span><span><div class="bn">Soulless Horror</div><div class="bw">Hall of Chains</div></span></div></td><td><span class="prof"><span class="pd" style="background:#b05fd6"></span>Virtuoso</span></td><td class="num dps">38.0k</td><td class="num"><span class="pct pink">86</span></td><td class="num ago">2m</td></tr>
+                <tr><td style="font-weight:650">Doran.9912</td><td><div class="boss"><span class="glyph2" style="--g1:#8a5fd6;--g2:#2e1e5a">CE</span><span><div class="bn">Cerus</div><div class="bw">Cosmic Observatory · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#3f8fd6"></span>Mechanist</span></td><td class="num dps">35.2k</td><td class="num"><span class="pct blue">78</span></td><td class="num ago">4m</td></tr>
+                <tr><td style="font-weight:650">Vael.7734</td><td><div class="boss"><span class="glyph2" style="--g1:#2f9d6c;--g2:#123a26">VG</span><span><div class="bn">Vale Guardian</div><div class="bw">Spirit Vale</div></span></div></td><td><span class="prof"><span class="pd" style="background:#3fb480"></span>Druid</span></td><td class="num dps">13.4k</td><td class="num"><span class="pct green">64</span></td><td class="num ago">5m</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-head" style="border-bottom:none;border-top:1px solid var(--line)"><span style="font-size:12.5px;color:var(--muted)">Click any parse to open the log</span><a class="link" data-view-go="log">Open a sample log →</a></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21h12M9 21V9m6 12V9M4 4h16l-2 5H6z"/></svg></span>Top this week — Dhuum CM</h2><a class="link">Full leaderboard →</a></div>
+          <div>
+            <div class="rank-row top"><span class="rank-n">1</span><span class="prof"><span class="pd" style="background:#e0342f"></span></span><span><div class="rank-nm">Sai Zu</div><div class="rank-sub">Berserker · [HWA]</div></span><span style="margin-left:auto;text-align:right"><div class="dps" style="font-size:13.5px">41.2k</div><span class="pct legend">99</span></span></div>
+            <div class="rank-row"><span class="rank-n">2</span><span class="prof"><span class="pd" style="background:#d16e35"></span></span><span><div class="rank-nm">Marra.6180</div><div class="rank-sub">Weaver · [rT]</div></span><span style="margin-left:auto;text-align:right"><div class="dps" style="font-size:13.5px">40.6k</div><span class="pct gold">97</span></span></div>
+            <div class="rank-row"><span class="rank-n">3</span><span class="prof"><span class="pd" style="background:#b05fd6"></span></span><span><div class="rank-nm">Kestrel.2043</div><div class="rank-sub">Virtuoso · [SC]</div></span><span style="margin-left:auto;text-align:right"><div class="dps" style="font-size:13.5px">39.1k</div><span class="pct gold">94</span></span></div>
+            <div class="rank-row"><span class="rank-n">4</span><span class="prof"><span class="pd" style="background:#3f8fd6"></span></span><span><div class="rank-nm">Doran.9912</div><div class="rank-sub">Mechanist · [dT]</div></span><span style="margin-left:auto;text-align:right"><div class="dps" style="font-size:13.5px">37.8k</div><span class="pct pink">88</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21h12M4 4h16l-2 5H6z"/></svg></span>Featured encounters</h2></div>
+          <div class="feat-tiles">
+            <a class="enc-tile" data-view-go="log" style="--g1:#3fa06a;--g2:#0f3020"><div class="art"></div><div class="glyph">DH</div><div class="scrim"></div><span class="badge-top"><span class="cm-chip" style="border-color:var(--teal-600);color:var(--teal-200)">CM</span></span><div class="lab"><div class="en">Dhuum</div><div class="ew">Hall of Chains · W5</div></div></a>
+            <a class="enc-tile" data-view-go="log" style="--g1:#8a5fd6;--g2:#2e1e5a"><div class="art"></div><div class="glyph">CE</div><div class="scrim"></div><span class="badge-top"><span class="cm-chip" style="border-color:var(--teal-600);color:var(--teal-200)">New</span></span><div class="lab"><div class="en">Cerus</div><div class="ew">Cosmic Observatory</div></div></a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Jump back in</h2></div>
+          <div class="mini-links">
+            <a data-view-go="profile"><span>My profile</span><span style="color:var(--muted)">88th median →</span></a>
+            <a data-view-go="profile"><span>My encounters</span><span style="color:var(--muted)">42 logged →</span></a>
+            <a data-view-go="log"><span>Latest log — Dhuum CM</span><span style="color:var(--teal-300)">99 →</span></a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/></svg></span>Active guilds</h2></div>
+          <div class="mini-links">
+            <a><span style="display:flex;gap:9px;align-items:center"><span class="ach-badge" style="width:26px;height:26px;font-size:10px;border-radius:7px">HWA</span>Heavy With Aether</span><span style="color:var(--muted)">312 logs</span></a>
+            <a><span style="display:flex;gap:9px;align-items:center"><span class="ach-badge" style="width:26px;height:26px;font-size:10px;border-radius:7px">rT</span>reType</span><span style="color:var(--muted)">288 logs</span></a>
+            <a><span style="display:flex;gap:9px;align-items:center"><span class="ach-badge" style="width:26px;height:26px;font-size:10px;border-radius:7px">SC</span>Snow Crows</span><span style="color:var(--muted)">241 logs</span></a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <div style="height:40px"></div>
+</div>
+
+<!-- ============================ PROFILE VIEW ============================ -->
+<div class="view" data-view="profile" hidden>
 
 <!-- ============================ HERO ============================ -->
 <section class="hero">
@@ -792,8 +1000,102 @@
     Design comp for GW2 Logs, modelled on tomestone.gg — flat #141414 ground, teal accent ramp, a full-width <b>Encounters</b> mega-menu with poster tiles, and tab-switched pages (Overview, Encounters, Professions, Achievements, Gear, Progression). Encounter art is CSS-generated; content is illustrative.
   </p>
 </main>
+</div><!-- /profile view -->
 
-<footer>
+<!-- ============================ LOG DETAIL VIEW ============================ -->
+<div class="view" data-view="log" hidden>
+  <section class="log-hero">
+    <div class="log-hero-art" style="--g1:#3fa06a;--g2:#0f3020" aria-hidden="true"></div>
+    <div class="log-hero-in">
+      <div class="log-crumb"><a data-view-go="dashboard">Dashboard</a><span class="sep">/</span><a data-view-go="profile">Sai Zu</a><span class="sep">/</span><span style="color:#fff">Dhuum · CM</span></div>
+      <div class="log-head">
+        <div class="log-boss">
+          <span class="log-glyph">DH</span>
+          <div>
+            <h1>Dhuum <span class="kill-badge">Kill</span> <span class="cm-chip">Challenge Mode</span></h1>
+            <div class="lmeta"><span>Hall of Chains · <b>Wing 5</b></span><span>·</span><span><b>7:42</b> duration</span><span>·</span><span>10-player squad</span><span>·</span><span>25 Jul 2026, 21:14</span><span>·</span><span>by <b>Sai Zu</b></span></div>
+          </div>
+        </div>
+        <div class="log-actions">
+          <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4m4-4v13"/></svg>Share</button>
+          <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/></svg>EI report</button>
+        </div>
+      </div>
+      <div class="log-tiles">
+        <div class="log-tile"><div class="k">Group DPS</div><div class="v">385<small>k</small></div></div>
+        <div class="log-tile"><div class="k">Duration</div><div class="v">7:42</div></div>
+        <div class="log-tile"><div class="k">Phases</div><div class="v">4</div></div>
+        <div class="log-tile"><div class="k">Result</div><div class="v" style="color:var(--good)">Success</div></div>
+        <div class="log-tile"><div class="k">Deaths</div><div class="v">1</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="log-body">
+    <div class="subtabs">
+      <button class="subtab on">Damage</button>
+      <button class="subtab">Boons</button>
+      <button class="subtab">Mechanics</button>
+      <button class="subtab">Timeline</button>
+      <button class="subtab">Players</button>
+    </div>
+
+    <div class="log-grid">
+      <div>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M6 20v-6m12 6V4"/></svg></span>Boss health &amp; phases</h2><span class="eyebrow">Target: Dhuum</span></div>
+          <div class="chart-wrap"><div id="hpchart"></div></div>
+          <div class="hp-legend"><span><b>P1</b> 100–66%</span><span><b>P2</b> 66–33% · greens</span><span><b>P3</b> 33–0% · soul split</span><span style="color:var(--teal-300)">● enrage cleared with 12% to spare</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5m5 14V9m5 10V4m5 15v-7"/></svg></span>Damage</h2><div class="seg"><button class="on">DPS</button><button>Total</button><button>Boss only</button></div></div>
+          <div id="dmgtable"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Boon uptime</h2><span class="eyebrow">% of fight · squad</span></div>
+          <div class="heat" id="heattable"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>Mechanics</h2><span class="eyebrow">Failure counts</span></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Player</th><th title="Greens — soul split soak" class="num">Green</th><th title="Death mark" class="num">Mark</th><th title="Touch of Death" class="num">Touch</th><th title="Cull the Weak" class="num">Cull</th><th class="num">Downs</th></tr></thead>
+              <tbody>
+                <tr><td><span class="prof"><span class="pd" style="background:#e0342f"></span>Sai Zu</span></td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+                <tr><td><span class="prof"><span class="pd" style="background:#d16e35"></span>Marra.6180</span></td><td class="num">2</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td></tr>
+                <tr><td><span class="prof"><span class="pd" style="background:#b05fd6"></span>Kestrel.2043</span></td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+                <tr><td><span class="prof"><span class="pd" style="background:#3f8fd6"></span>Doran.9912</span></td><td class="num">2</td><td class="num">1</td><td class="num">2</td><td class="num">0</td><td class="num" style="color:var(--bad)">1</td></tr>
+                <tr><td><span class="prof"><span class="pd" style="background:#8a5fd6"></span>Vera.1180</span></td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20a6 6 0 0 1 12 0M14 20a5 5 0 0 1 7-4.6"/></svg></span>Squad</h2><span class="eyebrow">10 · 2 sub</span></div>
+          <div id="comptable"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg></span>Fight info</h2></div>
+          <div class="info-row"><span class="il">Encounter</span><span class="iv">Dhuum · CM</span></div>
+          <div class="info-row"><span class="il">Difficulty</span><span class="iv" style="color:var(--p-legend)">Challenge Mode</span></div>
+          <div class="info-row"><span class="il">Duration</span><span class="iv">7:42.318</span></div>
+          <div class="info-row"><span class="il">Enrage</span><span class="iv">8:00 · cleared</span></div>
+          <div class="info-row"><span class="il">Recorded</span><span class="iv">arcdps · EIv3.12</span></div>
+          <div class="info-row"><span class="il">Uploaded</span><span class="iv">by Sai Zu</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <div style="height:46px"></div>
+</div>
+
+<footer
   <div class="wrap">
     <span>GW2 Logs · combat-log parses from arcdps &amp; Elite Insights. Not affiliated with ArenaNet.</span>
     <span style="display:flex;gap:18px"><a href="#">About</a><a href="#">API</a><a href="#">Discord</a><a href="#">Privacy</a></span>
@@ -839,6 +1141,115 @@
       });
     });
   })();
+
+  /* Top-level router: switch Dashboard / Profile / Log views. */
+  (function () {
+    const views = Array.from(document.querySelectorAll('.view'));
+    let logDone = false;
+    function showView(name) {
+      views.forEach(v => { v.hidden = v.dataset.view !== name; });
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      if (name === 'log' && !logDone) { logDone = true; renderLog(); }
+    }
+    document.querySelectorAll('[data-view-go]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); showView(el.dataset.viewGo); }));
+    document.querySelectorAll('[data-log-rows] tbody tr').forEach(tr => tr.addEventListener('click', () => showView('log')));
+    document.querySelectorAll('.subtabs').forEach(st => st.addEventListener('click', e => { const b = e.target.closest('.subtab'); if (!b) return; st.querySelectorAll('.subtab').forEach(x => x.classList.remove('on')); b.classList.add('on'); }));
+  })();
+
+  /* Dashboard sparkline — uploads across the day (single-series area). */
+  (function () {
+    const svg = document.getElementById('spark'); if (!svg) return;
+    const d = [8,10,9,13,12,18,22,19,26,31,28,34,30,38,44,41]; const W = 200, H = 30, mx = Math.max(...d);
+    const X = i => i / (d.length - 1) * W, Y = v => H - (v / mx) * (H - 4) - 2;
+    const line = d.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+    svg.innerHTML = `<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--teal)" stop-opacity=".35"/><stop offset="1" stop-color="var(--teal)" stop-opacity="0"/></linearGradient></defs><path d="${line} L ${W} ${H} L 0 ${H} Z" fill="url(#sg)"/><path d="${line}" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${X(d.length-1)}" cy="${Y(d[d.length-1])}" r="2.4" fill="var(--teal-300)"/>`;
+  })();
+
+  /* Log page renderers — squad damage bars, boon heatmap, squad list, boss HP chart. */
+  function renderLog() {
+    // squad data (sorted by dps desc). color = profession identity, always shown with a name label.
+    const squad = [
+      { n: 'Sai Zu',       p: 'Berserker',    c: '#e0342f', role: 'Power DPS',    dps: 41200, parse: 99, tier: 'legend', boons: { Might: 100, Quick: 12, Alac: 8,  Fury: 98, Prot: 22, Regen: 40 } },
+      { n: 'Marra.6180',   p: 'Weaver',       c: '#d16e35', role: 'Power DPS',    dps: 40600, parse: 97, tier: 'gold',   boons: { Might: 99,  Quick: 10, Alac: 6,  Fury: 96, Prot: 18, Regen: 38 } },
+      { n: 'Kestrel.2043', p: 'Virtuoso',     c: '#b05fd6', role: 'Power DPS',    dps: 38000, parse: 86, tier: 'pink',   boons: { Might: 98,  Quick: 11, Alac: 7,  Fury: 95, Prot: 20, Regen: 36 } },
+      { n: 'Doran.9912',   p: 'Mechanist',    c: '#3f8fd6', role: 'Condi DPS',    dps: 35200, parse: 78, tier: 'blue',   boons: { Might: 97,  Quick: 9,  Alac: 88, Fury: 92, Prot: 21, Regen: 42 } },
+      { n: 'Iris.5521',    p: 'Dragonhunter', c: '#4472c4', role: 'Power DPS',    dps: 31000, parse: 68, tier: 'blue',   boons: { Might: 96,  Quick: 90, Alac: 6,  Fury: 94, Prot: 24, Regen: 35 } },
+      { n: 'Nyx.7788',     p: 'Reaper',       c: '#3fb06a', role: 'Power DPS',    dps: 28500, parse: 61, tier: 'green',  boons: { Might: 95,  Quick: 88, Alac: 5,  Fury: 90, Prot: 19, Regen: 33 } },
+      { n: 'Vera.1180',    p: 'Chronomancer', c: '#8a5fd6', role: 'Quick support', dps: 6400, parse: 74, tier: 'blue',   boons: { Might: 92,  Quick: 99, Alac: 4,  Fury: 88, Prot: 96, Regen: 60 } },
+      { n: 'Tomm.4098',    p: 'Druid',        c: '#3fb480', role: 'Heal · Alac',   dps: 3100, parse: 70, tier: 'blue',   boons: { Might: 90,  Quick: 6,  Alac: 99, Fury: 86, Prot: 44, Regen: 99 } },
+    ];
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const maxDps = Math.max(...squad.map(s => s.dps));
+    const totDps = squad.reduce((a, s) => a + s.dps, 0);
+    const fmtk = v => (v / 1000).toFixed(1) + 'k';
+
+    // damage bars
+    document.getElementById('dmgtable').innerHTML = squad.map((s, i) => `
+      <div class="dmg-row">
+        <span class="dmg-rank">${i + 1}</span>
+        <span class="dmg-who"><span class="dmg-nm"><span class="pd" style="background:${s.c}"></span><span class="nt">${esc(s.n)}</span> <span class="pct ${s.tier}" style="min-width:auto;font-size:11px;padding:1px 6px">${s.parse}</span></span><span class="dmg-role">${esc(s.p)} · ${esc(s.role)}</span></span>
+        <span class="dmg-track"><span class="dmg-bar" style="width:${(s.dps / maxDps * 100).toFixed(1)}%;background:${s.c}"></span><span class="dmg-val">${fmtk(s.dps)}</span></span>
+        <span class="dmg-share">${(s.dps / totDps * 100).toFixed(1)}%</span>
+      </div>`).join('');
+
+    // boon heatmap — single-hue sequential (teal) by uptime; % text keeps it non-color-alone
+    const cols = ['Might', 'Quick', 'Alac', 'Fury', 'Prot', 'Regen'];
+    document.getElementById('heattable').innerHTML =
+      `<table><thead><tr><th class="who">Player</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>` +
+      squad.map(s => `<tr><td class="who"><span class="pd" style="background:${s.c}"></span>${esc(s.n)}</td>${
+        cols.map(c => { const u = s.boons[c]; return `<td class="heat-cell ${u < 40 ? 'lo' : ''}" style="--u:${u}%">${u}</td>`; }).join('')
+      }</tr>`).join('') + '</tbody></table>';
+
+    // squad composition sidebar
+    document.getElementById('comptable').innerHTML = squad.map(s =>
+      `<div class="comp-row"><span class="comp-dot" style="background:${s.c}"></span><span>${esc(s.n)}<div style="font-size:11px;color:var(--muted)">${esc(s.p)}</div></span><span class="comp-role">${esc(s.role)}</span></div>`
+    ).join('');
+
+    renderHP();
+  }
+
+  /* Boss health over time — single-series area: faint grid, phase dividers,
+     emphasized endpoint, crosshair + tooltip on hover. */
+  function renderHP() {
+    const host = document.getElementById('hpchart'); if (!host || host.dataset.done) return; host.dataset.done = '1';
+    const data = [[0,100],[18,95],[36,89],[55,82],[74,74],[92,66],[100,66],[112,60],[130,53],[150,45],[168,38],[182,33],[192,33],[204,28],[224,21],[244,14],[262,8],[280,3],[298,0]];
+    const dur = 300, W = 720, H = 240, L = 10, R = 10, T = 14, B = 22, iw = W - L - R, ih = H - T - B;
+    const X = t => L + t / dur * iw, Y = hp => T + (100 - hp) / 100 * ih;
+    const line = data.map((d, i) => (i ? 'L' : 'M') + X(d[0]).toFixed(1) + ' ' + Y(d[1]).toFixed(1)).join(' ');
+    const area = line + ` L ${X(dur).toFixed(1)} ${Y(0).toFixed(1)} L ${X(0).toFixed(1)} ${Y(0).toFixed(1)} Z`;
+    let grid = ''; for (let g = 0; g <= 100; g += 25) { const y = Y(g).toFixed(1); grid += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>`; }
+    let ph = ''; [[92, 'P2'], [182, 'P3']].forEach(p => { const x = X(p[0]).toFixed(1); ph += `<line class="hp-phase" x1="${x}" y1="${T}" x2="${x}" y2="${T + ih}"/><text class="hp-plabel" x="${(+x + 5).toFixed(1)}" y="${T + 11}">${p[1]}</text>`; });
+    const end = data[data.length - 1];
+    host.innerHTML = `
+      <svg class="hp-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Dhuum health from 100% to 0% over 7 minutes 42 seconds, across three phases">
+        <defs><linearGradient id="hpgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--teal)" stop-opacity="0.26"/><stop offset="1" stop-color="var(--teal)" stop-opacity="0.02"/></linearGradient></defs>
+        <g class="hp-grid">${grid}</g>
+        <text class="hp-plabel" x="${L}" y="${T + 11}">P1</text>${ph}
+        <path class="hp-area" d="${area}"/>
+        <path class="hp-line" d="${line}"/>
+        <line class="hp-cross" y1="${T}" y2="${T + ih}"/>
+        <circle class="hp-dot" r="4.5"/>
+        <circle class="hp-end" cx="${X(end[0]).toFixed(1)}" cy="${Y(end[1]).toFixed(1)}" r="4.5"/>
+        <rect class="hp-hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
+      </svg><div class="hp-tip"></div>`;
+    const svg = host.querySelector('svg'), tip = host.querySelector('.hp-tip'), cross = host.querySelector('.hp-cross'), dot = host.querySelector('.hp-dot'), hit = host.querySelector('.hp-hit');
+    const fmt = t => Math.floor(t / 60) + ':' + String(Math.round(t % 60)).padStart(2, '0');
+    hit.addEventListener('pointermove', e => {
+      const r = svg.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width * W;
+      const t = Math.max(0, Math.min(dur, (px - L) / iw * dur));
+      let best = data[0], bd = 1e9; data.forEach(d => { const dd = Math.abs(d[0] - t); if (dd < bd) { bd = dd; best = d; } });
+      const cx = X(best[0]), cy = Y(best[1]);
+      cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.style.opacity = .5;
+      dot.setAttribute('cx', cx); dot.setAttribute('cy', cy); dot.style.opacity = 1;
+      tip.innerHTML = `<b>${best[1]}%</b> HP · ${fmt(best[0])}`; tip.style.opacity = 1;
+      const hostR = host.getBoundingClientRect();
+      const leftPx = (cx / W) * r.width + (r.left - hostR.left);
+      tip.style.left = Math.min(hostR.width - tip.offsetWidth - 6, Math.max(6, leftPx - tip.offsetWidth / 2)) + 'px';
+      tip.style.top = Math.max(2, (cy / H) * r.height + (r.top - hostR.top) - 36) + 'px';
+    });
+    hit.addEventListener('pointerleave', () => { cross.style.opacity = 0; dot.style.opacity = 0; tip.style.opacity = 0; });
+  }
 
   /* Theme toggle: stamps data-theme, swaps sun / moon glyph. */
   (function () {
