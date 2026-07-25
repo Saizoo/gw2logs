@@ -74,11 +74,14 @@ function BuildPanel({ tab }: { tab: CharBuildTab }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {tab.specializations.length === 0 && <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>No traits</div>}
           {tab.specializations.map((s, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <SkillIcon ref={s} size={30} round />
-              <span style={{ font: '650 11.5px var(--font-sans)', color: s.elite ? 'var(--gold)' : 'var(--text-70)', width: 96, flex: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {s.traits.map((t, j) => <SkillIcon key={j} ref={t} size={26} />)}
+            <div key={i} title={s.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Spec icon carries the identity (elite gets a gold ring); the
+                  name is dropped so the trait row fits the card. */}
+              <div style={{ borderRadius: '50%', flex: 'none', padding: s.elite ? 2 : 0, background: s.elite ? 'var(--gold)' : 'transparent' }}>
+                <SkillIcon ref={s} size={30} round />
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {s.traits.map((t, j) => <SkillIcon key={j} ref={t} size={30} />)}
               </div>
             </div>
           ))}
