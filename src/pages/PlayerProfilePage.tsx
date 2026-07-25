@@ -32,15 +32,6 @@ function iconParts(iconName: string | null): { profession: string | null; spec: 
   return { profession, spec: iconName !== profession ? iconName : null };
 }
 
-// The 3-role classification (see server ingest.ts). SquadRoleBadge only
-// labels the two boon roles; the profile wants all three named with a
-// colour, so it keeps its own small map.
-const ROLE_META: Record<string, { label: string; color: string }> = {
-  dps: { label: 'DPS', color: 'var(--bad)' },
-  boon_dps: { label: 'Boon DPS', color: 'var(--gold)' },
-  boon_heal: { label: 'Healer', color: 'var(--good)' },
-};
-
 // The profile's body is split into sub-tabs so the page stays short — the
 // header (identity + kill record) is always visible, and the deeper detail
 // lives one tab-click away.
@@ -455,45 +446,12 @@ export default function PlayerProfilePage() {
           {player.specPerformance.length === 0 ? (
             <PlaceholderPanel title="No parses yet" body="Upload a kill log to start ranking the professions this character has played." />
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16 }}>
               {player.specPerformance.map((s) => (
                 <SpecCard key={s.spec} s={s} />
               ))}
             </div>
           )}
-
-          <div style={{ marginBottom: 20 }}>
-            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 12 }}>
-              Best parses
-            </div>
-            {player.bestParses.length === 0 && (
-              <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No logs yet.</div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-              {player.bestParses.map((bp) => (
-                <Card key={bp.logId} className="u-card-link" style={{ padding: 14 }}>
-                  <Link to={`/logs/${bp.logId}`} style={{ display: 'block' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <ProfDot color={professionColor(professionForSpec(bp.spec))} />
-                      <div style={{ font: '700 13px var(--font-sans)' }}>
-                        {bp.boss}
-                        {bp.isCm ? ' CM' : ''}
-                      </div>
-                    </div>
-                    <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 10 }}>{bp.spec}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <ParseBadge pct={bp.pct} style={{ height: 24, minWidth: 32, font: '800 13px var(--font-mono)' }} />
-                      <span style={{ font: '600 13px var(--font-mono)', color: 'var(--text-65)' }}>{bp.dps.toLocaleString()} dps</span>
-                    </div>
-                  </Link>
-                </Card>
-              ))}
-            </div>
-          </div>
         </>
       )}
 
@@ -834,73 +792,6 @@ function GroupChips({ groups }: { groups: NonNullable<PlayerProfile['affiliation
         </Link>
       ))}
     </div>
-  );
-}
-
-// --- Class & role identity ------------------------------------------------
-
-function IdentityPanel({
-  specBreakdown,
-  roleBreakdown,
-}: {
-  specBreakdown: PlayerProfile['specBreakdown'];
-  roleBreakdown: PlayerProfile['roleBreakdown'];
-}) {
-  const topSpecs = specBreakdown.slice(0, 6);
-  return (
-    <Card style={{ padding: '18px 20px' }}>
-      <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 14 }}>Class &amp; Role</div>
-
-      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)', marginBottom: 8 }}>
-        Specializations played
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {topSpecs.map((s) => {
-          const color = professionColor(s.profession);
-          return (
-            <div key={s.spec} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <img
-                src={professionIconPath(s.profession, s.spec !== s.profession ? s.spec : null)}
-                alt=""
-                width={20}
-                height={20}
-                style={{ objectFit: 'contain', flex: 'none' }}
-                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
-                  <span style={{ font: '600 12px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.spec}</span>
-                  <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{s.pct}%</span>
-                </div>
-                {/* Share-of-play bar, coloured by profession. */}
-                <div style={{ height: 6, borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
-                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 'var(--radius-md)', background: color }} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-50)', margin: '16px 0 8px' }}>
-        Role split
-      </div>
-      {/* Single stacked bar of the three squad roles + a labelled legend. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
-        {roleBreakdown.map((r) => (
-          <div key={r.role} title={`${ROLE_META[r.role]?.label ?? r.role} · ${r.pct}%`} style={{ width: `${r.pct}%`, background: ROLE_META[r.role]?.color ?? 'var(--text-40)' }} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
-        {roleBreakdown.map((r) => (
-          <div key={r.role} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 9, height: 9, borderRadius: 'var(--radius-md)', background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
-            <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-75)' }}>{ROLE_META[r.role]?.label ?? r.role}</span>
-            <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-50)' }}>{r.pct}%</span>
-          </div>
-        ))}
-      </div>
-    </Card>
   );
 }
 
