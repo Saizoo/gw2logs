@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { api, ApiError, type CharacterData, type CharBuildTab, type CharEquipmentTab, type GearItem, type GearRef, type ProfileCharacter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
@@ -24,20 +25,79 @@ const GEAR_SLOTS: { key: string; label: string }[] = [
   { key: 'WeaponB1', label: 'Main II' }, { key: 'WeaponB2', label: 'Off II' },
 ];
 
-function iconTitle(ref: GearItem): string {
-  const extras = [...ref.upgrades, ...ref.infusions].map((u) => u.name).filter(Boolean);
-  return [ref.name, ...extras].filter(Boolean).join(' · ');
+// A styled hover tooltip anchored to its child. Rendered through a portal to
+// document.body with fixed positioning, so the card's overflow:hidden never
+// clips it. Flips below the icon when there isn't room above.
+function Tip({ content, children }: { content: ReactNode; children: ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number; below: boolean } | null>(null);
+
+  const show = () => {
+    const r = ref.current?.getBoundingClientRect();
+    if (r) setPos({ x: r.left + r.width / 2, y: r.top, below: r.top < 130 });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <span ref={ref} style={{ display: 'inline-flex' }} onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+      {children}
+      {pos &&
+        content &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              left: pos.x,
+              top: pos.below ? undefined : pos.y - 9,
+              bottom: pos.below ? `calc(100vh - ${pos.y + (ref.current?.getBoundingClientRect().height ?? 0) + 9}px)` : undefined,
+              transform: pos.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+              zIndex: 200,
+              pointerEvents: 'none',
+              width: 'max-content',
+              maxWidth: 240,
+              padding: '9px 12px',
+              borderRadius: 9,
+              background: 'var(--color-surface)',
+              border: '1px solid var(--border-soft)',
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
+            {content}
+          </div>,
+          document.body,
+        )}
+    </span>
+  );
+}
+
+function itemTooltip(item: GearItem): ReactNode {
+  const rarityColor = item.rarity ? RARITY_COLOR[item.rarity] ?? 'var(--text)' : 'var(--text)';
+  return (
+    <div>
+      <div style={{ font: '800 12.5px var(--font-sans)', color: rarityColor, lineHeight: 1.3 }}>{item.name || '(empty)'}</div>
+      {item.rarity && <div style={{ font: '700 9px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--text-55)', marginTop: 1 }}>{item.rarity}</div>}
+      {[...item.upgrades, ...item.infusions].map((u, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, font: '500 11.5px var(--font-sans)', color: 'var(--text-75)' }}>
+          {u.icon && <img src={u.icon} alt="" style={{ width: 16, height: 16, borderRadius: 3, flex: 'none' }} />}
+          {u.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function nameTooltip(ref: GearRef | null): ReactNode {
+  if (!ref?.name) return null;
+  return <div style={{ font: '750 12px var(--font-sans)' }}>{ref.name}</div>;
 }
 
 // A single gear slot: item icon with a rarity-coloured border, tiny upgrade/
 // infusion pips in the corner, empty placeholder when the slot is unfilled.
 function GearSlot({ item, label }: { item: GearItem | undefined; label: string }) {
   const border = item?.rarity ? RARITY_COLOR[item.rarity] ?? 'var(--border-soft)' : 'var(--border)';
-  return (
-    <div
-      title={item ? iconTitle(item) : label}
-      style={{ position: 'relative', width: 46, height: 46, borderRadius: 8, border: `1.5px solid ${border}`, background: 'var(--color-neutral-800)', overflow: 'hidden', display: 'grid', placeItems: 'center' }}
-    >
+  const cell = (
+    <div style={{ position: 'relative', width: 46, height: 46, borderRadius: 8, border: `1.5px solid ${border}`, background: 'var(--color-neutral-800)', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
       {item?.icon ? (
         <img src={item.icon} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
       ) : (
@@ -46,24 +106,23 @@ function GearSlot({ item, label }: { item: GearItem | undefined; label: string }
       {item && (item.upgrades.length > 0 || item.infusions.length > 0) && (
         <span style={{ position: 'absolute', bottom: 2, right: 2, display: 'flex', gap: 1 }}>
           {[...item.upgrades, ...item.infusions].slice(0, 2).map((u, i) =>
-            u.icon ? <img key={i} src={u.icon} alt="" title={u.name} style={{ width: 13, height: 13, borderRadius: 3, border: '1px solid rgba(0,0,0,.6)' }} loading="lazy" /> : null,
+            u.icon ? <img key={i} src={u.icon} alt="" style={{ width: 13, height: 13, borderRadius: 3, border: '1px solid rgba(0,0,0,.6)' }} loading="lazy" /> : null,
           )}
         </span>
       )}
     </div>
   );
+  return item ? <Tip content={itemTooltip(item)}>{cell}</Tip> : cell;
 }
 
-// A small round icon for skills/traits.
+// A small round icon for skills/traits/specs, with a name tooltip on hover.
 function SkillIcon({ ref, size = 34, round }: { ref: GearRef | null; size?: number; round?: boolean }) {
-  return (
-    <div
-      title={ref?.name ?? undefined}
-      style={{ width: size, height: size, borderRadius: round ? '50%' : 7, border: '1px solid var(--border-soft)', background: 'var(--color-neutral-800)', overflow: 'hidden', flex: 'none', display: 'grid', placeItems: 'center' }}
-    >
+  const cell = (
+    <div style={{ width: size, height: size, borderRadius: round ? '50%' : 7, border: '1px solid var(--border-soft)', background: 'var(--color-neutral-800)', overflow: 'hidden', flex: 'none', display: 'grid', placeItems: 'center' }}>
       {ref?.icon && <img src={ref.icon} alt={ref.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />}
     </div>
   );
+  return ref?.name ? <Tip content={nameTooltip(ref)}>{cell}</Tip> : cell;
 }
 
 function BuildPanel({ tab }: { tab: CharBuildTab }) {
@@ -74,7 +133,7 @@ function BuildPanel({ tab }: { tab: CharBuildTab }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {tab.specializations.length === 0 && <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>No traits</div>}
           {tab.specializations.map((s, i) => (
-            <div key={i} title={s.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {/* Spec icon carries the identity (elite gets a gold ring); the
                   name is dropped so the trait row fits the card. */}
               <div style={{ borderRadius: '50%', flex: 'none', padding: s.elite ? 2 : 0, background: s.elite ? 'var(--gold)' : 'transparent' }}>
