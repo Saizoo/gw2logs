@@ -412,6 +412,26 @@ p {
   display: none;
 }
 
+/* Encounters mega-menu tile: the LEADERBOARDS / LOGS / STATISTICS action row
+   is hidden until the tile is hovered or something inside it is focused, so the
+   resting state is just boss art + name. */
+.enc-tile .enc-actions {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  pointer-events: none;
+}
+.enc-tile:hover .enc-actions,
+.enc-tile:focus-within .enc-actions {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.enc-tile:hover,
+.enc-tile:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
 /* Log Damage tab: chart + squad on the left, encounter rail on the right.
    Collapses to a single column (rail drops below) once the rail can't hold
    its width. */

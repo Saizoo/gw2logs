@@ -23,39 +23,80 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-// A single encounter poster: boss art under a bottom scrim, name pinned to the
-// bottom edge, and a CM chip top-right when the boss has a challenge mode.
-function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => void }) {
-  const img = bossImage(boss.name);
+// One encounter action pill (Leaderboards / Logs / Statistics), revealed on
+// tile hover. Dark translucent chip over the boss art, matching the design.
+function ActionPill({ to, label, onNavigate }: { to: string; label: string; onNavigate: () => void }) {
   return (
     <Link
-      to={`/rankings?boss=${encodeURIComponent(boss.name)}`}
+      to={to}
       onClick={onNavigate}
-      className="u-card-link"
+      style={{
+        font: '700 10px var(--font-sans)',
+        letterSpacing: '.06em',
+        textTransform: 'uppercase',
+        padding: '6px 11px',
+        borderRadius: 999,
+        color: 'var(--on-art)',
+        background: 'rgba(10,12,12,.72)',
+        border: '1px solid rgba(255,255,255,.16)',
+        whiteSpace: 'nowrap',
+        backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold-fg)'; e.currentTarget.style.borderColor = 'transparent'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(10,12,12,.72)'; e.currentTarget.style.color = 'var(--on-art)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.16)'; }}
+    >
+      {label}
+    </Link>
+  );
+}
+
+// A wide encounter tile: boss art under a scrim, its instance/wing label +
+// boss name pinned to the bottom, and a Leaderboards / Logs / Statistics action
+// row that fades in on hover (see .enc-tile in index.css).
+function BossTile({ boss, wing, onNavigate }: { boss: CatalogBoss; wing: string; onNavigate: () => void }) {
+  const img = bossImage(boss.name);
+  const q = `boss=${encodeURIComponent(boss.name)}`;
+  return (
+    <div
+      className="enc-tile"
       style={{
         position: 'relative',
-        height: 92,
+        height: 118,
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        padding: 10,
         border: '1px solid var(--border)',
         background: 'var(--color-neutral-800)',
+        transition: 'border-color .14s ease',
       }}
     >
       {img && <ArtImg src={img} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.86) 6%, rgba(0,0,0,.3) 46%, transparent 78%)' }} />
-      {boss.hasCm && (
-        <span style={{ position: 'absolute', top: 8, right: 8, font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 22%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)' }}>
-          CM
-        </span>
-      )}
-      <div style={{ position: 'relative', font: '700 12.5px var(--font-sans)', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {boss.name}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.88) 8%, rgba(0,0,0,.32) 52%, rgba(0,0,0,.15) 100%)' }} />
+
+      {/* Hover action row (top). */}
+      <div className="enc-actions" style={{ position: 'absolute', top: 11, left: 12, right: 12, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        <ActionPill to={`/rankings?${q}`} label="Leaderboards" onNavigate={onNavigate} />
+        <ActionPill to={`/reports?${q}`} label="Logs" onNavigate={onNavigate} />
+        <ActionPill to={`/statistics?${q}`} label="Statistics" onNavigate={onNavigate} />
       </div>
-    </Link>
+
+      {/* Identity (bottom). */}
+      <div style={{ position: 'absolute', left: 14, right: 14, bottom: 12 }}>
+        <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.09em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {wing}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+          <span style={{ font: '800 17px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)', textShadow: '0 1px 4px rgba(0,0,0,.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {boss.name}
+          </span>
+          {boss.hasCm && (
+            <span style={{ flex: 'none', font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 26%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)' }}>
+              CM
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -158,7 +199,7 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
             animation: 'fadeIn 0.16s ease both',
           }}
         >
-          <div style={{ maxWidth: 1220, margin: '0 auto', padding: '18px 24px 26px' }}>
+          <div style={{ maxWidth: 1640, margin: '0 auto', padding: '18px 32px 30px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
               {/* Category toggle bar */}
               <div style={{ display: 'inline-flex', gap: 3, padding: 4, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
@@ -191,19 +232,16 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
               </Link>
             </div>
 
-            {activeCat.catalog.map((group) => (
-              <div key={group.name} style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 11 }}>
-                  <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>{group.name}</div>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(188px, 1fr))', gap: 12 }}>
-                  {group.bosses.map((b) => (
-                    <BossTile key={b.name} boss={b} onNavigate={() => setOpen(false)} />
-                  ))}
-                </div>
-              </div>
-            ))}
+            {/* Every encounter in the category as one full-width two-column grid
+                of wide tiles — each tile carries its own instance/wing label, so
+                no separate section headers are needed. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {activeCat.catalog.flatMap((group) =>
+                group.bosses.map((b) => (
+                  <BossTile key={`${group.name}:${b.name}`} boss={b} wing={group.name} onNavigate={() => setOpen(false)} />
+                )),
+              )}
+            </div>
           </div>
         </div>
       )}
