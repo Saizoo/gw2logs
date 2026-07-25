@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -7,6 +7,7 @@ import { PROFESSIONS, parseTier, professionColor, professionColorAlpha, professi
 import { bossImage } from '../data/catalog';
 import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
 import { ProfileCharacters } from '../components/ProfileCharacters';
+import { ParseTrendCard } from '../components/ParseTrendCard';
 
 // Compact "2h" / "3d ago" for the recent-parses table.
 function timeAgo(iso: string): string {
@@ -39,7 +40,6 @@ function iconParts(iconName: string | null): { profession: string | null; spec: 
 // Internal rank titles, awarded purely on total boss kills logged. Highest
 // threshold met wins; the tiers ascend so the first match from the top is it.
 const KILL_TITLES: { min: number; title: string }[] = [
-  { min: 10000, title: "Tyria's Finest" },
   { min: 5000, title: 'Mistwalker Supreme' },
   { min: 1000, title: 'Dragonbane' },
   { min: 500, title: 'Legendary Raider' },
@@ -52,6 +52,33 @@ const KILL_TITLES: { min: number; title: string }[] = [
 ];
 function killTitle(kills: number): string {
   return KILL_TITLES.find((t) => kills >= t.min)?.title ?? 'Fresh Recruit';
+}
+
+// Compact DPS sparkline sized to sit in a stat tile in place of the big number,
+// so that tile keeps the same footprint as its neighbours.
+function StatSparkline({ data }: { data: number[] }) {
+  if (data.length < 2) {
+    return <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: 'var(--text-45)' }}>—</div>;
+  }
+  const w = 120, h = 30, pad = 2;
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const step = (w - pad * 2) / (data.length - 1);
+  const pts = data.map((v, i) => [pad + i * step, pad + (1 - (v - min) / range) * (h - pad * 2)] as const);
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={30} preserveAspectRatio="none" style={{ display: 'block', overflow: 'visible' }} aria-hidden>
+      <defs>
+        <linearGradient id="statSpk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--good)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--good)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${w - pad} ${h} L${pad} ${h} Z`} fill="url(#statSpk)" />
+      <path d={line} fill="none" stroke="var(--good)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={last[0]} cy={last[1]} r={2.6} fill="var(--good)" />
+    </svg>
+  );
 }
 
 type ProfileTab = 'overview' | 'encounters' | 'professions' | 'characters' | 'achievements' | 'progression';
@@ -71,69 +98,6 @@ function median(nums: number[]): number | null {
   return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
 }
 
-type RecentKill = PlayerProfile['recent'][number];
-interface TrendPoint {
-  x: number;
-  y: number;
-  kill: RecentKill;
-}
-
-// Hover card for a single DPS-trend point: names the fight, spec and parse
-// behind the dot, plus how it compares to the player's recent average.
-// Positioned in the chart's viewBox coordinate space (720×150) converted to
-// container percentages, and nudged to stay inside the card near the edges.
-function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
-  const { kill } = pt;
-  const leftPct = Math.min(86, Math.max(14, (pt.x / 720) * 100));
-  const below = pt.y < 52; // dot near the top → drop the card below it instead
-  const delta = avg && avg > 0 ? Math.round(((kill.dps - avg) / avg) * 100) : null;
-  const when = new Date(kill.uploadedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  const profColor = professionColor(professionForSpec(kill.spec));
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: `${leftPct}%`,
-        top: `${(pt.y / 150) * 100}%`,
-        transform: `translate(-50%, ${below ? '14px' : 'calc(-100% - 14px)'})`,
-        pointerEvents: 'none',
-        zIndex: 20,
-        width: 210,
-        background: 'color-mix(in srgb, var(--color-surface) 98%, transparent)',
-        border: '1px solid color-mix(in srgb, var(--color-text) 18%, transparent)',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: '0 18px 40px -14px rgba(0,0,0,.7)',
-        padding: '11px 13px',
-        animation: 'fadeIn .12s ease both',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-        <ProfDot color={profColor} />
-        <span style={{ font: '700 12.5px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {kill.boss}
-          {kill.isCm ? <span style={{ color: 'var(--gold)', fontWeight: 800 }}> CM</span> : ''}
-        </span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-        <span style={{ font: '800 20px var(--font-sans)', color: 'var(--good)', fontVariantNumeric: 'tabular-nums' }}>
-          {kill.dps.toLocaleString()}
-        </span>
-        <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-50)' }}>DPS</span>
-        {delta !== null && (
-          <span style={{ marginLeft: 'auto', font: '700 11px var(--font-sans)', color: delta >= 0 ? 'var(--good)' : 'var(--bad)' }}>
-            {delta >= 0 ? '+' : ''}{delta}% vs avg
-          </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', font: '500 10.5px var(--font-sans)', color: 'var(--text-50)' }}>
-        <span>{kill.spec} · {when}</span>
-        <span style={{ color: 'var(--gold)', fontWeight: 700 }}>View log →</span>
-      </div>
-    </div>
-  );
-}
-
 const TAB_IDS: ProfileTab[] = ['overview', 'encounters', 'professions', 'characters', 'achievements', 'progression'];
 
 export default function PlayerProfilePage() {
@@ -148,49 +112,15 @@ export default function PlayerProfilePage() {
   const [picking, setPicking] = useState(false);
   const initialTab = searchParams.get('tab');
   const [tab, setTab] = useState<ProfileTab>(TAB_IDS.includes(initialTab as ProfileTab) ? (initialTab as ProfileTab) : 'overview');
-  const navigate = useNavigate();
 
   // Private profiles resolve to a stub for non-owners; narrow to the full
   // profile for everything below.
   const isPrivate = !!data && data.private === true;
   const player = data && !isPrivate ? (data as PlayerProfile) : null;
 
-  // Wipes don't have a meaningful "final" DPS — the fight never finished,
-  // so a low number there just means it ended early, not that the parse was
-  // bad. Both the trend line and its average are kills-only for that reason.
+  // Kills only for the DPS sparkline — a wipe's "final" DPS just means the
+  // fight ended early, not a bad parse.
   const recentKills = useMemo(() => player?.recent.filter((r) => r.success) ?? [], [player]);
-
-  const avgRecentDps = useMemo(() => {
-    if (recentKills.length === 0) return null;
-    return Math.round(recentKills.reduce((s, r) => s + r.dps, 0) / recentKills.length);
-  }, [recentKills]);
-
-  const chart = useMemo(() => {
-    if (recentKills.length < 2) return null;
-    // Oldest kill on the left, newest on the right.
-    const ordered = [...recentKills].reverse();
-    const values = ordered.map((r) => r.dps);
-    const w = 720;
-    const h = 150;
-    const pad = 14;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
-    const step = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0;
-    // Each point carries its source kill so the hover tooltip can name the
-    // fight, spec and parse behind that dot. x/y stay in the 720×150 viewBox;
-    // the tooltip converts them to container percentages.
-    const pts = values.map((v, i) => ({
-      x: pad + i * step,
-      y: pad + (1 - (v - min) / range) * (h - pad * 2),
-      kill: ordered[i],
-    }));
-    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
-    return { line, area, pts, w, h, step };
-  }, [recentKills]);
-
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   if (loading) return <LoadingState label="Loading profile…" />;
   if (error) return <ErrorState message={error === 'Player not found' ? `No logs found for ${name} yet.` : error} />;
@@ -241,11 +171,13 @@ export default function PlayerProfilePage() {
 
   const bestParse = player.bestParses.length ? Math.max(...player.bestParses.map((b) => b.pct)) : player.overallScore;
   const medianParse = median(player.recent.filter((r) => r.success && r.parsePct != null).map((r) => r.parsePct as number));
-  const profileStats = [
+  // Last-7-kills DPS, oldest→newest, for the trend sparkline in the 4th tile.
+  const trendSpark = recentKills.slice(0, 7).reverse().map((r) => r.dps);
+  const profileStats: { label: string; value?: string; spark?: number[] }[] = [
     { label: 'Best parse', value: bestParse != null ? `${bestParse}` : '—' },
     { label: 'Boss kills', value: player.record.kills.toLocaleString() },
     { label: 'Median parse', value: medianParse != null ? `${medianParse}` : '—' },
-    { label: 'Success rate', value: `${player.record.successRate}%` },
+    { label: 'DPS trend', spark: trendSpark },
   ];
 
   return (
@@ -301,7 +233,6 @@ export default function PlayerProfilePage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 11, font: '500 13px var(--font-sans)', color: 'var(--text-60)' }}>
               {specLabel && <span style={{ color: ringColor, fontWeight: 700 }}>{specLabel}</span>}
               <span><b style={{ color: 'var(--text-80)' }}>{player.totalLogs.toLocaleString()}</b> logs</span>
-              <span><b style={{ color: 'var(--good)' }}>{player.record.successRate}%</b> success</span>
               {firstGuild && <span>Guild <b style={{ color: 'var(--text-80)' }}>{firstGuild.name}</b></span>}
             </div>
             {player.affiliations && player.affiliations.groups.length > 0 && (
@@ -317,7 +248,11 @@ export default function PlayerProfilePage() {
             {profileStats.map((s, i) => (
               <Card key={s.label} style={{ padding: '15px 17px 26px' }}>
                 <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{s.label}</div>
-                <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 0 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
+                {s.spark ? (
+                  <div style={{ marginTop: 6 }}><StatSparkline data={s.spark} /></div>
+                ) : (
+                  <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 0 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
+                )}
               </Card>
             ))}
           </div>
@@ -374,84 +309,8 @@ export default function PlayerProfilePage() {
             {player.specPerformance.length > 0 && <ProfessionBreakdownChart rows={player.specPerformance} onViewAll={() => setTab('professions')} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
-          {chart && (
-            <Card style={{ padding: '20px 20px 8px' }}>
-              <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
-              <div style={{ position: 'relative' }}>
-                <svg viewBox="0 0 720 150" style={{ width: '100%', height: 'auto', aspectRatio: '720 / 150', overflow: 'visible', display: 'block' }} preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="dpsFill2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--good)" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="var(--good)" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
-                    <line x1="0" y1="10" x2="720" y2="10" />
-                    <line x1="0" y1="56" x2="720" y2="56" />
-                    <line x1="0" y1="102" x2="720" y2="102" />
-                    <line x1="0" y1="148" x2="720" y2="148" />
-                  </g>
-                  <path d={chart.area} fill="url(#dpsFill2)" />
-                  <path d={chart.line} fill="none" stroke="var(--good)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                  {/* Guide line dropped from the hovered point. */}
-                  {hoverIdx !== null && chart.pts[hoverIdx] && (
-                    <line
-                      x1={chart.pts[hoverIdx].x}
-                      y1={chart.pts[hoverIdx].y}
-                      x2={chart.pts[hoverIdx].x}
-                      y2={148}
-                      stroke="color-mix(in srgb, var(--good) 45%, transparent)"
-                      strokeWidth={1}
-                      strokeDasharray="3 3"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  )}
-                  {chart.pts.map((pt, i) => {
-                    const on = hoverIdx === i;
-                    return (
-                      <circle
-                        key={i}
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={on ? 5 : 3.5}
-                        fill={on ? 'var(--good)' : 'var(--bg)'}
-                        stroke="var(--good)"
-                        strokeWidth={2}
-                        vectorEffect="non-scaling-stroke"
-                        style={{ transition: 'r .1s ease' }}
-                      />
-                    );
-                  })}
-                  {/* Invisible full-height hit columns — hovering anywhere in a
-                      point's column selects it, so tiny dots aren't a chore to
-                      hit. Click jumps to that fight's log. */}
-                  {chart.pts.map((pt, i) => {
-                    const colW = chart.step || chart.w;
-                    return (
-                      <a key={`hit-${i}`} href={`/logs/${pt.kill.logId}`} onClick={(e) => { e.preventDefault(); navigate(`/logs/${pt.kill.logId}`); }}>
-                        <rect
-                          x={pt.x - colW / 2}
-                          y={0}
-                          width={colW}
-                          height={150}
-                          fill="transparent"
-                          style={{ cursor: 'pointer' }}
-                          onMouseEnter={() => setHoverIdx(i)}
-                          onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
-                        />
-                      </a>
-                    );
-                  })}
-                </svg>
-
-                {hoverIdx !== null && chart.pts[hoverIdx] && (
-                  <DpsTrendTooltip pt={chart.pts[hoverIdx]} avg={avgRecentDps} />
-                )}
-              </div>
-            </Card>
-          )}
             <ClearProgressRings coverage={player.coverage} />
-            <HeaderRecord record={player.record} />
+            <ParseTrendCard history={player.parseHistory} />
           </div>
         </div>
       )}
@@ -813,49 +672,6 @@ function GroupChips({ groups }: { groups: NonNullable<PlayerProfile['affiliation
   );
 }
 
-// --- Kill / wipe record (compact, lives in the profile header) ------------
-
-function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
-  const killPct = record.total ? (record.kills / record.total) * 100 : 0;
-  return (
-    <div
-      style={{
-        minWidth: 220,
-        padding: '16px 18px',
-        borderRadius: 'var(--radius-md)',
-        background: 'color-mix(in srgb, var(--color-surface) 55%, transparent)',
-        border: '1px solid var(--border)',
-        backdropFilter: 'blur(4px)',
-      }}
-    >
-      <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-55)', marginBottom: 8 }}>
-        Kill Record
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-        <span style={{ font: '800 30px var(--font-sans)', color: 'var(--good)' }}>{record.successRate}%</span>
-        <span style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>success rate</span>
-      </div>
-      <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-58)', marginBottom: 12 }}>
-        across {record.total.toLocaleString()} logged encounter{record.total === 1 ? '' : 's'}
-      </div>
-
-      {/* Kills-vs-wipes ratio bar. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--bad-dim)' }}>
-        <div style={{ width: `${killPct}%`, background: 'var(--good)' }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-        <div>
-          <div style={{ font: '800 18px var(--font-sans)', color: 'var(--good)' }}>{record.kills.toLocaleString()}</div>
-          <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Kills</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ font: '800 18px var(--font-sans)', color: 'var(--bad)' }}>{record.wipes.toLocaleString()}</div>
-          <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Wipes</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // --- Profile icon picker (owner-only) -------------------------------------
 

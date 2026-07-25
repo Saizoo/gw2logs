@@ -128,6 +128,17 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
 
+  // Lock the page's scroll while the full-screen mega-menu is open — scrolling
+  // the page behind a viewport-height overlay feels broken.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   // Close on outside click, Escape, and whenever the route changes.
   useEffect(() => setOpen(false), [location.pathname, location.search]);
   useEffect(() => {
