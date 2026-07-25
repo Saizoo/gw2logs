@@ -14,15 +14,15 @@ const RARITY_COLOR: Record<string, string> = {
   Rare: '#fcd00b', Exotic: '#ffa405', Ascended: '#fb3e8d', Legendary: '#9d5cff',
 };
 
-// Hero-panel slot layout: armour, then trinkets, then the two weapon sets.
-const GEAR_SLOTS: { key: string; label: string }[] = [
+// Hero-panel slot layout — armour (3×2), weapons, then trinkets (3×2), each
+// in the fixed order the design calls for.
+const ARMOR_SLOTS: { key: string; label: string }[] = [
   { key: 'Helm', label: 'Head' }, { key: 'Shoulders', label: 'Shoulders' }, { key: 'Coat', label: 'Chest' },
   { key: 'Gloves', label: 'Hands' }, { key: 'Leggings', label: 'Legs' }, { key: 'Boots', label: 'Feet' },
-  { key: 'Backpack', label: 'Back' }, { key: 'Amulet', label: 'Amulet' },
-  { key: 'Ring1', label: 'Ring' }, { key: 'Ring2', label: 'Ring' },
-  { key: 'Accessory1', label: 'Accessory' }, { key: 'Accessory2', label: 'Accessory' },
-  { key: 'WeaponA1', label: 'Main' }, { key: 'WeaponA2', label: 'Off' },
-  { key: 'WeaponB1', label: 'Main II' }, { key: 'WeaponB2', label: 'Off II' },
+];
+const TRINKET_SLOTS: { key: string; label: string }[] = [
+  { key: 'Backpack', label: 'Back' }, { key: 'Accessory1', label: 'Accessory' }, { key: 'Accessory2', label: 'Accessory' },
+  { key: 'Amulet', label: 'Amulet' }, { key: 'Ring1', label: 'Ring' }, { key: 'Ring2', label: 'Ring' },
 ];
 
 // A styled hover tooltip anchored to its child. Rendered through a portal to
@@ -268,8 +268,28 @@ function HeroCard({
         <div>
           <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-50)', marginBottom: 8 }}>Equipment</div>
           {equip && equip.items.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(46px, 46px))', gap: 7 }}>
-              {GEAR_SLOTS.map((s) => <GearSlot key={s.key} item={itemsBySlot.get(s.key)} label={s.label} />)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Armour: 3 × 2. */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 7 }}>
+                {ARMOR_SLOTS.map((s) => <GearSlot key={s.key} item={itemsBySlot.get(s.key)} label={s.label} />)}
+              </div>
+              {/* Weapon sets: one row each. A two-handed main leaves no off-hand
+                  entry, so the off slot is simply omitted for that set. */}
+              {(['A', 'B'] as const).map((set) => {
+                const main = itemsBySlot.get(`Weapon${set}1`);
+                const off = itemsBySlot.get(`Weapon${set}2`);
+                if (!main && !off) return null;
+                return (
+                  <div key={set} style={{ display: 'flex', gap: 7 }}>
+                    <GearSlot item={main} label={set === 'A' ? 'Main' : 'Main II'} />
+                    {off && <GearSlot item={off} label="Off" />}
+                  </div>
+                );
+              })}
+              {/* Trinkets: 3 × 2. */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 7 }}>
+                {TRINKET_SLOTS.map((s) => <GearSlot key={s.key} item={itemsBySlot.get(s.key)} label={s.label} />)}
+              </div>
             </div>
           ) : (
             <div style={{ font: '400 12px var(--font-sans)', color: 'var(--text-50)' }}>No equipment data — re-sync with a key that has the “builds” permission.</div>
