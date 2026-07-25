@@ -300,7 +300,7 @@ export default function PlayerProfilePage() {
               <GroupChips groups={player.affiliations.groups} />
             )}
           </div>
-          <FollowShare account={player.account} />
+          <ShareButton />
           </div>
           {/* Stat tiles bleed past the band's bottom edge; the band's
               overflow:hidden clips them at the separator so the cards are cut
@@ -502,20 +502,11 @@ export default function PlayerProfilePage() {
   );
 }
 
-// --- Follow / Share actions (profile hero, right side) --------------------
+// --- Share action (profile hero, right side) ------------------------------
 
-function FollowShare({ account }: { account: string }) {
+function ShareButton() {
   return (
     <div style={{ display: 'flex', gap: 9, marginLeft: 'auto', alignSelf: 'flex-start' }}>
-      <button
-        type="button"
-        className="u-btn-gold"
-        onClick={() => toast.success(`Following ${account}`)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 15px', borderRadius: 'var(--radius-md)', font: '750 13.5px var(--font-sans)', background: 'var(--gold-grad)', color: 'var(--gold-fg)' }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14m-7-7h14" /></svg>
-        Follow
-      </button>
       <button
         type="button"
         className="u-btn-ghost"

@@ -73,61 +73,79 @@ export default function LogDetailPage() {
     }
   }
 
+  const headerBg = bossBgPath(log.boss);
+
   return (
     <div>
-      {/* Boss banner — full-bleed art under a dark scrim, kill/CM badges, and a
-          meta row; summary tiles sit beneath it (the new design). */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: 14, boxShadow: 'var(--shadow-md)' }}>
-        {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.9 }} />}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8,8,8,.3) 0%, rgba(8,8,8,.86) 100%)' }} />
-        <div style={{ position: 'relative', padding: 'clamp(22px, 3vw, 30px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, font: '500 12.5px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 72%, transparent)' }}>
+      {/* Boss banner — full-bleed band (matches the profile design): boss art
+          under a teal-tinted scrim spanning the viewport, a breadcrumb, the
+          boss identity + result badges, and Share / Claim actions. The summary
+          tiles overlap its bottom edge and are clipped at the separator. */}
+      <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginTop: -32, marginBottom: 22, overflow: 'hidden', borderBottom: '1px solid var(--border)', background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 7%, transparent) 0%, transparent 92%)' }}>
+        {headerBg && (
+          <ArtImg src={headerBg} style={{ opacity: 0.16, maskImage: 'linear-gradient(180deg, #000, transparent 88%)', WebkitMaskImage: 'linear-gradient(180deg, #000, transparent 88%)' }} />
+        )}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1000px 420px at 82% -30%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 60%), radial-gradient(760px 460px at 2% 130%, color-mix(in srgb, var(--color-accent-700) 26%, transparent), transparent 60%)' }} />
+        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '20px 32px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
             <Link to="/" style={{ color: 'inherit' }}>Dashboard</Link>
-            <span style={{ opacity: 0.6 }}>/</span>
+            <span style={{ color: 'var(--text-45)' }}>/</span>
             <Link to="/raids" style={{ color: 'inherit' }}>Encounters</Link>
-            <span style={{ opacity: 0.6 }}>/</span>
-            <span style={{ color: 'var(--on-art)' }}>{log.boss}{log.isCm ? ' CM' : ''}</span>
+            <span style={{ color: 'var(--text-45)' }}>/</span>
+            <span style={{ color: 'var(--text-80)' }}>{log.boss}{log.isCm ? ' CM' : ''}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <h1 style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.5px', color: 'var(--on-art)' }}>{log.boss}</h1>
+                <h1 style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.6px', lineHeight: 1.05 }}>{log.boss}</h1>
                 <span style={{ font: '800 11.5px var(--font-sans)', letterSpacing: '.03em', padding: '3px 10px', borderRadius: 999, background: log.success ? 'var(--good)' : 'var(--bad)', color: '#08130c' }}>
                   {log.success ? 'KILL' : 'WIPE'}
                 </span>
-                {log.isCm && <span style={{ font: '700 11px var(--font-sans)', padding: '3px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,.45)', color: 'var(--on-art)' }}>Challenge Mode</span>}
-                {log.private && <span style={{ font: '700 10.5px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '3px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,.3)', color: 'var(--on-art)' }}>Private</span>}
+                {log.isCm && <span style={{ font: '700 11px var(--font-sans)', padding: '3px 9px', borderRadius: 999, border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)', color: 'var(--gold)', background: 'var(--gold-dim)' }}>Challenge Mode</span>}
+                {log.private && <span style={{ font: '700 10.5px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '3px 9px', borderRadius: 999, border: '1px solid var(--border-soft)', color: 'var(--text-65)' }}>Private</span>}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, font: '500 13px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 80%, transparent)' }}>
-                {log.wing && <span style={{ fontWeight: 700, color: 'var(--on-art)' }}>{log.wing}</span>}
-                <span>{formatDuration(log.durationMs)} duration</span>
-                <span>{log.players.length}-player squad</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', marginTop: 11, font: '500 13px var(--font-sans)', color: 'var(--text-60)' }}>
+                {log.wing && <span style={{ fontWeight: 700, color: 'var(--text-80)' }}>{log.wing}</span>}
+                <span><b style={{ color: 'var(--text-80)' }}>{formatDuration(log.durationMs)}</b> duration</span>
+                <span><b style={{ color: 'var(--text-80)' }}>{log.players.length}</b>-player squad</span>
                 <span>{new Date(log.date).toLocaleString()}</span>
-                <span>{log.uploadedBy ? <>by <b style={{ color: 'var(--on-art)' }}>{log.uploadedBy.username}</b></> : 'uploaded anonymously'}</span>
+                <span>{log.uploadedBy ? <>by <b style={{ color: 'var(--text-80)' }}>{log.uploadedBy.username}</b></> : 'uploaded anonymously'}</span>
                 {log.group && <Link to={`/groups/${log.group.id}`} style={{ color: 'var(--gold)', fontWeight: 600 }}>{log.group.name}</Link>}
               </div>
             </div>
-            {log.canClaim && (
+            <div style={{ display: 'flex', gap: 9, marginLeft: 'auto', alignSelf: 'flex-start' }}>
+              {log.canClaim && (
+                <button
+                  onClick={handleClaim}
+                  disabled={claiming}
+                  className={claiming ? undefined : 'u-chip'}
+                  style={{ font: '650 13.5px var(--font-sans)', padding: '9px 15px', borderRadius: 'var(--radius-md)', background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)', opacity: claiming ? 0.6 : 1 }}
+                >
+                  {claiming ? 'Claiming…' : 'Claim this upload'}
+                </button>
+              )}
               <button
-                onClick={handleClaim}
-                disabled={claiming}
-                className={claiming ? undefined : 'u-chip'}
-                style={{ font: '600 12px var(--font-sans)', padding: '8px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,.1)', color: 'var(--on-art)', border: '1px solid rgba(255,255,255,.35)', opacity: claiming ? 0.6 : 1 }}
+                type="button"
+                className="u-btn-ghost"
+                onClick={() => { navigator.clipboard?.writeText(window.location.href).then(() => toast.success('Log link copied'), () => toast.error('Could not copy link')); }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 15px', borderRadius: 'var(--radius-md)', font: '650 13.5px var(--font-sans)', border: '1px solid var(--border-soft)', color: 'var(--text-80)', background: 'none' }}
               >
-                {claiming ? 'Claiming…' : 'Claim this upload'}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4m4-4v13" /></svg>
+                Share
               </button>
-            )}
+            </div>
+          </div>
+          {/* Summary tiles bleed past the band's bottom edge; the band's
+              overflow:hidden clips them at the separator so the cards are cut
+              off there (the design), rather than floating whole below it. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 13, marginTop: 24, marginBottom: -24 }}>
+            <SummaryTile label="Squad DPS" value={log.squadDps.toLocaleString()} accent />
+            <SummaryTile label="Duration" value={formatDuration(log.durationMs)} />
+            <SummaryTile label="Players" value={log.players.length} />
+            <SummaryTile label="Result" value={<span style={{ color: log.success ? 'var(--good)' : 'var(--bad)' }}>{log.success ? 'Success' : 'Wipe'}</span>} />
+            <SummaryTile label="Deaths" value={totalDeaths} />
           </div>
         </div>
-      </div>
-
-      {/* Summary tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 13, marginBottom: 20 }}>
-        <SummaryTile label="Squad DPS" value={log.squadDps.toLocaleString()} accent />
-        <SummaryTile label="Duration" value={formatDuration(log.durationMs)} />
-        <SummaryTile label="Players" value={log.players.length} />
-        <SummaryTile label="Result" value={<span style={{ color: log.success ? 'var(--good)' : 'var(--bad)' }}>{log.success ? 'Success' : 'Wipe'}</span>} />
-        <SummaryTile label="Deaths" value={totalDeaths} />
       </div>
 
       {log.canManage && (
@@ -139,13 +157,11 @@ export default function LogDetailPage() {
         />
       )}
 
-      {log.dpsChart && <DpsOverTimeChart points={log.dpsChart} durationLabel={formatDuration(log.durationMs)} />}
-
       <div style={{ marginBottom: 14 }}>
         <ParseLegend />
       </div>
 
-      <div style={{ display: 'flex', gap: 24, marginBottom: 20, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+      <div className="u-scroll-x" style={{ display: 'flex', gap: 24, marginBottom: 20, borderBottom: '1px solid var(--border)' }}>
         {TABS.map((t) => {
           const on = tab === t;
           return (
@@ -171,7 +187,7 @@ export default function LogDetailPage() {
         })}
       </div>
 
-      {tab === 'Damage' && <SquadTab log={log} />}
+      {tab === 'Damage' && <SquadTab log={log} durationLabel={formatDuration(log.durationMs)} />}
       {tab === 'Boons' && <BoonsTab players={log.players} />}
       {tab === 'Mechanics' && <MechanicsTab log={log} />}
       {tab === 'Timeline' && <TimelineTab log={log} />}
@@ -181,9 +197,9 @@ export default function LogDetailPage() {
 
 function SummaryTile({ label, value, accent }: { label: string; value: ReactNode; accent?: boolean }) {
   return (
-    <Card style={{ padding: '13px 15px' }}>
-      <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
-      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.4px', marginTop: 4, color: accent ? 'var(--gold)' : 'var(--text)' }}>{value}</div>
+    <Card style={{ padding: '15px 17px 26px' }}>
+      <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
+      <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: accent ? 'var(--gold)' : 'var(--text)' }}>{value}</div>
     </Card>
   );
 }
@@ -375,7 +391,7 @@ function DpsOverTimeChart({ points, durationLabel }: { points: DpsChartPoint[]; 
   );
 }
 
-function SquadTab({ log }: { log: LogDetail }) {
+function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: string }) {
   const subgroups = useMemo(() => {
     const bySubgroup = new Map<number, LogDetailPlayer[]>();
     for (const p of log.players) {
@@ -390,9 +406,14 @@ function SquadTab({ log }: { log: LogDetail }) {
 
   return (
     <div>
-      {/* auto-fit + 300px floor: two columns on desktop, stacked on phones —
-          squad rows overlap their DPS numbers when squeezed below ~300px. */}
-      <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 20 }}>
+      {/* Two-column layout (matches the design): the DPS-over-time chart and the
+          per-subgroup squad breakdown on the left, a boss / phase timeline
+          sidebar on the right — the latter still coming-soon since combat logs
+          don't yet carry boss-health or phase data. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 320px)', gap: 20, alignItems: 'start' }} className="log-damage-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+          {log.dpsChart && <DpsOverTimeChart points={log.dpsChart} durationLabel={durationLabel} />}
+          <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 20 }}>
         {subgroups.map(([sub, players]) => (
           <Card key={sub} style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid var(--border-soft)' }}>
@@ -446,9 +467,56 @@ function SquadTab({ log }: { log: LogDetail }) {
             })}
           </Card>
         ))}
+          </div>
+        </div>
+
+        {/* Right rail — boss encounter context. Health-over-time and per-phase
+            splits aren't in the parsed data yet, so those sit as coming-soon. */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+          <Card style={{ padding: '16px 18px' }}>
+            <div style={{ font: '750 14px var(--font-sans)', marginBottom: 12 }}>Encounter</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <SidebarStat label="Result" value={<span style={{ color: log.success ? 'var(--good)' : 'var(--bad)' }}>{log.success ? 'Success' : 'Wipe'}</span>} />
+              <SidebarStat label="Squad DPS" value={log.squadDps.toLocaleString()} />
+              <SidebarStat label="Duration" value={durationLabel} />
+              <SidebarStat label="Deaths" value={log.players.reduce((s, p) => s + p.deaths, 0)} />
+            </div>
+          </Card>
+          <ComingSoonPanel
+            title="Boss health"
+            body="A health-over-time curve for the boss lands here once the parser surfaces it."
+          />
+          <ComingSoonPanel
+            title="Phase breakdown"
+            body="Per-phase timings and DPS splits are coming once phase data is extracted from logs."
+          />
+        </aside>
       </div>
       <ComparePickerBar selected={picker.selected} onClear={picker.clear} />
     </div>
+  );
+}
+
+function SidebarStat({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-55)' }}>{label}</span>
+      <span style={{ font: '700 14px var(--font-sans)', color: 'var(--text)' }}>{value}</span>
+    </div>
+  );
+}
+
+function ComingSoonPanel({ title, body }: { title: string; body: string }) {
+  return (
+    <Card style={{ padding: '16px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ font: '750 14px var(--font-sans)' }}>{title}</span>
+        <span style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)' }}>
+          Coming soon
+        </span>
+      </div>
+      <div style={{ font: '400 12px/1.6 var(--font-sans)', color: 'var(--text-55)' }}>{body}</div>
+    </Card>
   );
 }
 

@@ -412,6 +412,15 @@ p {
   display: none;
 }
 
+/* Log Damage tab: chart + squad on the left, encounter rail on the right.
+   Collapses to a single column (rail drops below) once the rail can't hold
+   its width. */
+@media (max-width: 900px) {
+  .log-damage-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Clickable rows inside cards (log lists, leaderboards, search hits). */
 .u-row {
   transition: background 0.15s ease;
