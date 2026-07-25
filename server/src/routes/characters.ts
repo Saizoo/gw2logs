@@ -14,8 +14,12 @@ const CHARACTER_SELECT = {
   name: true,
   profession: true,
   race: true,
+  level: true,
   source: true,
   activeTab: true,
+  hidden: true,
+  equipmentTabs: true,
+  buildTabs: true,
   templates: { select: { id: true, tab: true, name: true, spec: true, isActive: true, assignedBuildId: true }, orderBy: { tab: 'asc' as const } },
 };
 
@@ -64,6 +68,19 @@ charactersRouter.delete('/:id', asyncHandler(async (req, res) => {
   }
   await prisma.character.delete({ where: { id: req.params.id } });
   res.json({ ok: true });
+}));
+
+// Owner opt-out: hide a character from the (public) profile display without
+// deleting it. Survives re-sync (see characterSync.ts).
+charactersRouter.patch('/:id/hidden', asyncHandler(async (req, res) => {
+  const character = await prisma.character.findUnique({ where: { id: req.params.id } });
+  if (!character || character.userId !== req.user!.id) {
+    res.status(404).json({ error: 'Character not found' });
+    return;
+  }
+  const hidden = Boolean(req.body?.hidden);
+  await prisma.character.update({ where: { id: character.id }, data: { hidden } });
+  res.json({ ok: true, hidden });
 }));
 
 charactersRouter.put('/:id/templates/:tab', asyncHandler(async (req, res) => {

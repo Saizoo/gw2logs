@@ -14,7 +14,6 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 const DASH_TAB = { label: 'Dashboard', to: '/' };
 const AFTER_TABS: { label: string; to: string }[] = [
   { label: 'Groups', to: '/groups' },
-  { label: 'Characters', to: '/characters' },
   { label: 'Compare', to: '/compare' },
 ];
 

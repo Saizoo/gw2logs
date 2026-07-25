@@ -29,7 +29,11 @@ export interface Gw2BuildTab {
   is_active: boolean;
   build: {
     name?: string;
-    specializations: ({ id: number } | null)[];
+    profession?: string;
+    // Each equipped line: its specialization id + the three chosen trait ids
+    // (nulls for empty minor/major picks on lower builds).
+    specializations: ({ id: number; traits?: (number | null)[] } | null)[];
+    skills?: { heal?: number | null; utilities?: (number | null)[]; elite?: number | null };
   };
 }
 
@@ -37,6 +41,58 @@ export interface Gw2Specialization {
   id: number;
   name: string;
   elite: boolean;
+  icon?: string;
+}
+
+// One saved equipment template. equipment[].slot is the game slot name
+// ("Helm", "Coat", "WeaponA1", …); upgrades/infusions are item ids.
+export interface Gw2EquipmentItem {
+  id: number;
+  slot?: string;
+  upgrades?: number[];
+  infusions?: number[];
+}
+export interface Gw2EquipmentTab {
+  tab: number;
+  name?: string;
+  is_active: boolean;
+  equipment: Gw2EquipmentItem[];
+}
+
+export function fetchCharacterEquipmentTabs(apiKey: string, characterName: string): Promise<Gw2EquipmentTab[]> {
+  return gw2Fetch<Gw2EquipmentTab[]>(`/characters/${encodeURIComponent(characterName)}/equipmenttabs?tabs=all`, apiKey);
+}
+
+// Public catalog endpoints (no auth) — resolve ids to display name + icon. The
+// GW2 /v2 API is CORS-blocked, so this resolution must happen here on the
+// server; the icons themselves are plain images the browser can load directly.
+export interface Gw2Item {
+  id: number;
+  name: string;
+  icon?: string;
+  rarity?: string;
+  type?: string;
+}
+export function fetchItems(ids: number[]): Promise<Gw2Item[]> {
+  return gw2Fetch<Gw2Item[]>(`/items?ids=${ids.join(',')}`);
+}
+
+export interface Gw2Skill {
+  id: number;
+  name: string;
+  icon?: string;
+}
+export function fetchSkills(ids: number[]): Promise<Gw2Skill[]> {
+  return gw2Fetch<Gw2Skill[]>(`/skills?ids=${ids.join(',')}`);
+}
+
+export interface Gw2Trait {
+  id: number;
+  name: string;
+  icon?: string;
+}
+export function fetchTraits(ids: number[]): Promise<Gw2Trait[]> {
+  return gw2Fetch<Gw2Trait[]>(`/traits?ids=${ids.join(',')}`);
 }
 
 async function gw2Fetch<T>(path: string, apiKey?: string): Promise<T> {

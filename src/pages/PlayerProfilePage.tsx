@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { PROFESSIONS, parseTier, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
 import { bossImage } from '../data/catalog';
 import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
+import { ProfileCharacters } from '../components/ProfileCharacters';
 
 // Compact "2h" / "3d ago" for the recent-parses table.
 function timeAgo(iso: string): string {
@@ -35,13 +36,13 @@ function iconParts(iconName: string | null): { profession: string | null; spec: 
 // The profile's body is split into sub-tabs so the page stays short — the
 // header (identity + kill record) is always visible, and the deeper detail
 // lives one tab-click away.
-type ProfileTab = 'overview' | 'encounters' | 'professions' | 'achievements' | 'gear' | 'progression';
+type ProfileTab = 'overview' | 'encounters' | 'professions' | 'characters' | 'achievements' | 'progression';
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'encounters', label: 'Encounters' },
   { id: 'professions', label: 'Professions' },
+  { id: 'characters', label: 'Characters' },
   { id: 'achievements', label: 'Achievements' },
-  { id: 'gear', label: 'Gear' },
   { id: 'progression', label: 'Progression' },
 ];
 
@@ -115,8 +116,11 @@ function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
   );
 }
 
+const TAB_IDS: ProfileTab[] = ['overview', 'encounters', 'professions', 'characters', 'achievements', 'progression'];
+
 export default function PlayerProfilePage() {
   const { name = '' } = useParams();
+  const [searchParams] = useSearchParams();
   const { data, loading, error } = useApiQuery(() => api.player(name), [name]);
   const { user: currentUser } = useCurrentUser();
 
@@ -124,7 +128,8 @@ export default function PlayerProfilePage() {
   // it's held locally, seeded from the server value once the profile loads.
   const [iconOverride, setIconOverride] = useState<string | null | undefined>(undefined);
   const [picking, setPicking] = useState(false);
-  const [tab, setTab] = useState<ProfileTab>('overview');
+  const initialTab = searchParams.get('tab');
+  const [tab, setTab] = useState<ProfileTab>(TAB_IDS.includes(initialTab as ProfileTab) ? (initialTab as ProfileTab) : 'overview');
   const navigate = useNavigate();
 
   // Private profiles resolve to a stub for non-owners; narrow to the full
@@ -315,7 +320,11 @@ export default function PlayerProfilePage() {
       <div className="u-scroll-x" style={{ display: 'flex', alignItems: 'center', gap: 22, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
         {PROFILE_TABS.map((t) => {
           const active = tab === t.id;
-          const count = t.id === 'encounters' ? player.coverage.reduce((s, w) => s + w.total, 0) : t.id === 'professions' ? player.specBreakdown.length : null;
+          const count =
+            t.id === 'encounters' ? player.coverage.reduce((s, w) => s + w.total, 0)
+            : t.id === 'professions' ? player.specBreakdown.length
+            : t.id === 'characters' ? player.characters.length
+            : null;
           return (
             <button
               key={t.id}
@@ -464,11 +473,8 @@ export default function PlayerProfilePage() {
         />
       )}
 
-      {tab === 'gear' && (
-        <PlaceholderPanel
-          title="Gear isn't in combat logs"
-          body="arcdps logs record damage, boons and mechanics — not equipped gear. A build & gear view needs the in-game API, which is on the roadmap."
-        />
+      {tab === 'characters' && (
+        <ProfileCharacters account={player.account} isOwner={isOwner} publicCharacters={player.characters} />
       )}
 
       {tab === 'progression' && <ProgressionTab coverage={player.coverage} />}

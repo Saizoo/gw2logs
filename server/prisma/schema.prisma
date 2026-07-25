@@ -472,10 +472,20 @@ model Character {
   name       String
   profession String
   race       String?
+  level      Int?
   source     String              @default("manual")
   // GW2 character name, stable across syncs when source="gw2".
   extId      String?
   activeTab  Int                 @default(1)
+  // Owner-controlled: excluded from the profile's Characters display when true.
+  // Lets a user sync everything but only surface the characters they want.
+  hidden     Boolean             @default(false)
+  // Display-ready gear/build, resolved (name + icon) at sync time because the
+  // GW2 /v2 API is CORS-blocked from the browser. Shapes documented in
+  // characterSync.ts (ResolvedEquipmentTab / ResolvedBuildTab). Null on
+  // manually-added characters and on rows synced before this existed.
+  equipmentTabs Json?
+  buildTabs     Json?
   createdAt  DateTime            @default(now())
   templates  CharacterTemplate[]
   slots      CompositionSlot[]

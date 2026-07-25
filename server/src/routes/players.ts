@@ -55,6 +55,17 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     }
   }
 
+  // Characters the account owner synced from the GW2 API and chose to surface
+  // (hidden=false). Public per the visibility rule — gear/build are already
+  // resolved to name + icon at sync time.
+  const characters = player.user
+    ? await prisma.character.findMany({
+        where: { userId: player.user.id, source: 'gw2', hidden: false },
+        select: { id: true, name: true, profession: true, race: true, level: true, activeTab: true, equipmentTabs: true, buildTabs: true },
+        orderBy: { name: 'asc' },
+      })
+    : [];
+
   const logPlayers = await prisma.logPlayer.findMany({
     where: { playerId: player.id },
     // Explicit select, not `include: { log: true }` — that used to also
@@ -328,5 +339,6 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
         logId: lp.logId,
         uploadedAt: lp.log.uploadedAt,
       })),
+    characters,
   });
 }));

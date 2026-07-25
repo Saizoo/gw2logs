@@ -10,7 +10,7 @@ import LogDetailPage from './pages/LogDetailPage';
 import LoginPage from './pages/LoginPage';
 import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
-import CharactersPage from './pages/CharactersPage';
+import CharactersRedirect from './pages/CharactersRedirect';
 import EncountersPage from './pages/EncountersPage';
 import StrikesPage from './pages/StrikesPage';
 import FractalsPage from './pages/FractalsPage';
@@ -54,7 +54,7 @@ export default function App() {
         <Route path="/groups" element={<MyGroupsPage />} />
         <Route path="/groups/:id" element={<GroupDetailPage />} />
         <Route path="/groups/:id/:tab" element={<GroupDetailPage />} />
-        <Route path="/characters" element={<CharactersPage />} />
+        <Route path="/characters" element={<CharactersRedirect />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/account" element={<AccountPage />} />

@@ -54,13 +54,6 @@ const TOUR_STEPS: SpotlightStep[] = [
   },
   {
     kind: 'spotlight',
-    target: 'characters',
-    route: '/characters',
-    title: 'Characters',
-    body: 'Sync characters from your GW2 account (or add them manually) and assign a build to each equipment tab — your groups use this to check role coverage.',
-  },
-  {
-    kind: 'spotlight',
     target: 'connect',
     route: '/account',
     title: 'Auto-import logs',

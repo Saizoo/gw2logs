@@ -412,6 +412,13 @@ p {
   display: none;
 }
 
+/* Character hero card: gear grid + build side by side, stacked on narrow cards. */
+@media (max-width: 560px) {
+  .hero-body {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Encounters mega-menu tile: the LEADERBOARDS / LOGS / STATISTICS action row
    is hidden until the tile is hovered or something inside it is focused, so the
    resting state is just boss art + name. */

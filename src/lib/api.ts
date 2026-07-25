@@ -171,6 +171,52 @@ export interface PlayerProfile {
   professionBreakdown: { profession: string; pct: number }[];
   bestParses: { boss: string; isCm: boolean; spec: string; dps: number; pct: number; logId: string }[];
   recent: { boss: string; isCm: boolean; spec: string; dps: number; success: boolean; parsePct: number | null; logId: string; uploadedAt: string }[];
+  // GW2 characters the owner synced and left visible — gear/build pre-resolved
+  // to name + icon server-side (the GW2 /v2 API is CORS-blocked in the browser).
+  characters: ProfileCharacter[];
+}
+
+// A resolved item/skill/trait/spec reference: display name + a directly-loadable
+// icon URL (from render.guildwars2.com), or null when the id couldn't resolve.
+export interface GearRef {
+  name: string;
+  icon: string | null;
+}
+export interface GearItem extends GearRef {
+  slot: string;
+  rarity: string | null;
+  upgrades: GearRef[];
+  infusions: GearRef[];
+}
+export interface CharEquipmentTab {
+  tab: number;
+  name: string | null;
+  isActive: boolean;
+  items: GearItem[];
+}
+export interface CharSpec extends GearRef {
+  id: number;
+  elite: boolean;
+  traits: GearRef[];
+}
+export interface CharBuildTab {
+  tab: number;
+  name: string | null;
+  isActive: boolean;
+  profession: string;
+  spec: string | null;
+  specializations: CharSpec[];
+  skills: { heal: GearRef | null; utilities: GearRef[]; elite: GearRef | null };
+}
+export interface ProfileCharacter {
+  id: string;
+  name: string;
+  profession: string;
+  race: string | null;
+  level: number | null;
+  activeTab: number;
+  equipmentTabs: CharEquipmentTab[] | null;
+  buildTabs: CharBuildTab[] | null;
 }
 
 export interface LogDetailPlayer {
@@ -502,13 +548,9 @@ export interface CharacterTemplateData {
   assignedBuildId: string | null;
 }
 
-export interface CharacterData {
-  id: string;
-  name: string;
-  profession: string;
-  race: string | null;
+export interface CharacterData extends ProfileCharacter {
   source: 'gw2' | 'manual';
-  activeTab: number;
+  hidden: boolean;
   templates: CharacterTemplateData[];
 }
 
@@ -1065,6 +1107,12 @@ export const api = {
       body: JSON.stringify({ assignedBuildId }),
     }),
   syncCharacters: () => apiFetch<{ ok: true; count: number }>('/characters/sync', { method: 'POST' }),
+  setCharacterHidden: (id: string, hidden: boolean) =>
+    apiFetch<{ ok: true; hidden: boolean }>(`/characters/${encodeURIComponent(id)}/hidden`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hidden }),
+    }),
 
   // --- Build catalog ---
   builds: () => apiFetch<Build[]>('/builds'),
