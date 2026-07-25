@@ -190,7 +190,9 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
             borderBottom: '1px solid var(--border-soft)',
             boxShadow: 'var(--shadow-lg)',
             zIndex: 70,
-            maxHeight: '78vh',
+            // Fill the screen below the 60px nav so the full wing grid fits
+            // without scrolling on typical displays.
+            maxHeight: 'calc(100vh - 60px)',
             overflowY: 'auto',
             animation: 'fadeIn 0.16s ease both',
           }}

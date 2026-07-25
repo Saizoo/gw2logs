@@ -36,6 +36,24 @@ function iconParts(iconName: string | null): { profession: string | null; spec: 
 // The profile's body is split into sub-tabs so the page stays short — the
 // header (identity + kill record) is always visible, and the deeper detail
 // lives one tab-click away.
+// Internal rank titles, awarded purely on total boss kills logged. Highest
+// threshold met wins; the tiers ascend so the first match from the top is it.
+const KILL_TITLES: { min: number; title: string }[] = [
+  { min: 10000, title: "Tyria's Finest" },
+  { min: 5000, title: 'Mistwalker Supreme' },
+  { min: 1000, title: 'Dragonbane' },
+  { min: 500, title: 'Legendary Raider' },
+  { min: 250, title: 'Elite Commander' },
+  { min: 100, title: 'Rift Hunter' },
+  { min: 50, title: 'Wingbreaker' },
+  { min: 25, title: 'Mist Explorer' },
+  { min: 10, title: 'Pact Raider' },
+  { min: 1, title: 'Fresh Recruit' },
+];
+function killTitle(kills: number): string {
+  return KILL_TITLES.find((t) => kills >= t.min)?.title ?? 'Fresh Recruit';
+}
+
 type ProfileTab = 'overview' | 'encounters' | 'professions' | 'characters' | 'achievements' | 'progression';
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -219,8 +237,7 @@ export default function PlayerProfilePage() {
   const ringColor = iconProfession ? professionColor(iconProfession) : 'var(--gold)';
   const specLabel = iconSpec ?? mainProfession ?? null;
   const firstGuild = player.affiliations?.groups?.[0] ?? null;
-  const score = player.overallScore;
-  const tierTitle = score == null ? 'Raider' : score >= 95 ? 'Legendary Raider' : score >= 80 ? 'Veteran Raider' : score >= 50 ? 'Seasoned Raider' : 'Raider';
+  const tierTitle = killTitle(player.record.kills);
 
   const bestParse = player.bestParses.length ? Math.max(...player.bestParses.map((b) => b.pct)) : player.overallScore;
   const medianParse = median(player.recent.filter((r) => r.success && r.parsePct != null).map((r) => r.parsePct as number));
@@ -242,12 +259,7 @@ export default function PlayerProfilePage() {
           <ArtImg src={headerBg} style={{ opacity: 0.14, maskImage: 'linear-gradient(180deg, #000, transparent 88%)', WebkitMaskImage: 'linear-gradient(180deg, #000, transparent 88%)' }} />
         )}
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1000px 420px at 82% -30%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 60%), radial-gradient(760px 460px at 2% 130%, color-mix(in srgb, var(--color-accent-700) 26%, transparent), transparent 60%)' }} />
-        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '20px 32px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
-            <Link to="/characters" style={{ color: 'inherit' }}>Characters</Link>
-            <span style={{ color: 'var(--text-45)' }}>/</span>
-            <span style={{ color: 'var(--text-80)' }}>{player.account}</span>
-          </div>
+        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '26px 32px 0' }}>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
