@@ -105,34 +105,50 @@ function StatTile({ label, value, sub, spark, accent }: { label: string; value: 
 }
 
 function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }) {
-  // Open band, not a card: the intro/search sit on the page background (only
-  // the upload box is bordered), matching the design.
+  // Full-bleed band: breaks out of the page's max-width container to span the
+  // viewport, with a soft top-down gradient + teal glow that fades smoothly
+  // and a hairline bottom separator dividing it from the stat tiles — matching
+  // the design. `100vw` + the app's global overflow-x:hidden keeps it safe.
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', padding: 'clamp(16px, 3vw, 26px) 0 22px', marginBottom: 8 }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(720px 300px at 82% -25%, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 60%)' }} />
-      <div style={{ position: 'relative', display: 'flex', gap: 26, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-          <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--text-55)' }}>
-            Guild Wars 2 · combat log platform
-          </div>
-          <div style={{ font: '800 clamp(26px, 4vw, 34px) var(--font-sans)', letterSpacing: '-.6px', marginTop: 6, textWrap: 'balance' }}>{title}</div>
-          <div style={{ font: '500 14px var(--font-sans)', color: 'var(--text-60)', marginTop: 8, maxWidth: '58ch', lineHeight: 1.5 }}>{subtitle}</div>
-          <div style={{ marginTop: 18, maxWidth: 460 }}>
-            <SearchBar width="100%" defaultValue="" />
-          </div>
-        </div>
-        <div style={{ flex: '0 1 250px', minWidth: 210 }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-              <path d="M12 16V4m0 0-4 4m4-4 4 4M5 20h14" />
-            </svg>
-            <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Upload arcdps logs</div>
-            <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
-              Drop <b style={{ color: 'var(--text-80)' }}>.zevtc</b> files — parsed locally, never leave your server.
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        marginLeft: 'calc(50% - 50vw)',
+        marginTop: -32,
+        marginBottom: 24,
+        padding: 'clamp(22px, 3vw, 34px) 0 28px',
+        borderBottom: '1px solid var(--border)',
+        background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 5%, transparent) 0%, transparent 70%)',
+        overflow: 'hidden',
+      }}
+    >
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1100px 460px at 78% -45%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 62%)' }} />
+      <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
+        <div style={{ display: 'flex', gap: 26, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 420px', minWidth: 0 }}>
+            <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--text-55)' }}>
+              Guild Wars 2 · combat log platform
             </div>
-            <GoldButton to="/upload" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
-              Choose files
-            </GoldButton>
+            <div style={{ font: '800 clamp(26px, 4vw, 34px) var(--font-sans)', letterSpacing: '-.6px', marginTop: 6, textWrap: 'balance' }}>{title}</div>
+            <div style={{ font: '500 14px var(--font-sans)', color: 'var(--text-60)', marginTop: 8, maxWidth: '58ch', lineHeight: 1.5 }}>{subtitle}</div>
+            <div style={{ marginTop: 18, maxWidth: 460 }}>
+              <SearchBar width="100%" defaultValue="" />
+            </div>
+          </div>
+          <div style={{ flex: '0 1 250px', minWidth: 210 }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+                <path d="M12 16V4m0 0-4 4m4-4 4 4M5 20h14" />
+              </svg>
+              <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Upload arcdps logs</div>
+              <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
+                Drop <b style={{ color: 'var(--text-80)' }}>.zevtc</b> files — parsed locally, never leave your server.
+              </div>
+              <GoldButton to="/upload" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
+                Choose files
+              </GoldButton>
+            </div>
           </div>
         </div>
       </div>
