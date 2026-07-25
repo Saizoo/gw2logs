@@ -95,6 +95,12 @@ const BOSS_BG: Record<string, string> = {
   'Decima the Stormsinger': 'mountbalrior.jpg',
   'Ura the Steamshrieker': 'mountbalrior.jpg',
   'Kela Seneschal of Waves': 'guardiansglade.jpg',
+  // Event encounters with no art of their own — reuse their wing's backdrop.
+  'Bandit Trio': 'salvationpass.jpg',
+  Escort: 'strongholdofthefaithful.jpg',
+  'Twisted Castle': 'strongholdofthefaithful.jpg',
+  'River of Souls': 'hallofchains.jpg',
+  'Statues of Grenth': 'hallofchains.jpg',
   // Former strikes (now raids in-game; still raid-category here)
   'Legendary Icebrood Construct': 'shiverpeakspass.jpg',
   'The Voice and the Claw': 'voiceofthefallenandclawofthefallen.jpg',

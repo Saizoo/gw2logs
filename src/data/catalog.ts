@@ -62,7 +62,6 @@ export const RAID_CATALOG: CatalogGroup[] = [
   { name: 'Wing 6 — Mythwright Gambit', bosses: ['Conjured Amalgamate', 'Twin Largos', 'Qadim'].map(boss) },
   { name: 'Wing 7 — The Key of Ahdashim', bosses: ['Cardinal Adina', 'Cardinal Sabir', 'Qadim the Peerless'].map(boss) },
   { name: 'Wing 8 — Mount Balrior', bosses: ['Greer the Blightbringer', 'Decima the Stormsinger', 'Ura the Steamshrieker'].map(boss) },
-  { name: "Guardian's Glade", bosses: ['Kela Seneschal of Waves'].map(boss) },
 ];
 
 // Strike missions — surfaced as "Raid Encounters" in the UI, grouped by their
@@ -75,6 +74,7 @@ export const STRIKE_CATALOG: CatalogGroup[] = [
   { name: 'End of Dragons', bosses: ['Mai Trin', 'Ankka', 'Minister Li', 'The Dragonvoid'].map(boss) },
   { name: 'Secrets of the Obscure', bosses: ['Dagda', 'Cerus'].map(boss) },
   { name: "Old Lion's Court", bosses: ['Prototype Vermilion'].map(boss) },
+  { name: 'Visions of Eternity', bosses: ['Kela Seneschal of Waves'].map(boss) },
 ];
 
 const fractalBoss = (name: string): CatalogBoss => ({ name, hasCm: true });
