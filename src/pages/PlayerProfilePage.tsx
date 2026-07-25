@@ -574,7 +574,9 @@ function CoverageTab({ coverage }: { coverage: PlayerProfile['coverage'] }) {
                   <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.86) 8%, rgba(0,0,0,.3) 50%, transparent 80%)' }} />
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
                     {e.killed ? (
-                      e.bestPct != null && <ParseBadge pct={e.bestPct} />
+                      // Solid dark backing so the tier-coloured number reads
+                      // against the boss art (the default 16% tint doesn't).
+                      e.bestPct != null && <ParseBadge pct={e.bestPct} style={{ background: 'rgba(8,10,10,.72)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', borderColor: 'color-mix(in oklab, currentColor 55%, transparent)' }} />
                     ) : (
                       <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,.5)', color: e.attempted ? 'var(--bad)' : 'var(--text-45)', border: '1px solid rgba(255,255,255,.2)' }}>{e.attempted ? 'Wiped' : 'Locked'}</span>
                     )}
