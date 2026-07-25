@@ -14,6 +14,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
 import { bossImage } from '../data/catalog';
 import { ArtImg, GoldButton, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
+import { SearchBar } from '../components/SearchBar';
 import { LoadingState, ErrorState } from '../components/QueryStates';
 
 /* -------------------------------------------------------------------------- */
@@ -100,80 +101,73 @@ function Panel({ children, style }: { children: ReactNode; style?: CSSProperties
   return <div style={{ ...PANEL, ...style }}>{children}</div>;
 }
 
-function HeroStat({ value, label }: { value: ReactNode; label: string }) {
+// A single-series area sparkline for a stat tile (e.g. uploads this week).
+function Sparkline({ data }: { data: number[] }) {
+  const w = 200, h = 30, max = Math.max(...data, 1);
+  const step = w / Math.max(data.length - 1, 1);
+  const pts = data.map((v, i) => [i * step, h - (v / max) * (h - 4) - 2] as const);
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
   return (
-    <div>
-      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)' }}>{value}</div>
-      <div style={{ font: '500 11px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>
-        {label}
-      </div>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} style={{ marginTop: 8, overflow: 'visible', display: 'block' }} aria-hidden preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${w} ${h} L0 ${h} Z`} fill="url(#spkFill)" />
+      <path d={line} fill="none" stroke="var(--color-accent)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      {last && <circle cx={last[0]} cy={last[1]} r={2.4} fill="var(--color-accent)" />}
+    </svg>
   );
 }
 
-// Bottom-aligned cinematic banner over raid art (design's hero treatment).
-// ArtImg hides itself when the asset is missing, so the gradient still reads.
-function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
+// Global/among-stats tile used in the row beneath the welcome band.
+function StatTile({ label, value, sub, spark, accent }: { label: string; value: ReactNode; sub?: ReactNode; spark?: number[]; accent?: boolean }) {
   return (
-    <div
-      style={{
-        position: 'relative',
-        borderRadius: 'var(--radius-md)',
-        overflow: 'hidden',
-        padding: 'clamp(32px, 5vw, 48px) clamp(22px, 4vw, 40px)',
-        marginBottom: 20,
-        minHeight: 300,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        boxShadow: 'var(--shadow-md)',
-        border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
-      }}
-    >
-      {bg && <ArtImg src={bg} style={{ objectPosition: 'center 28%' }} />}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-900) 92%, transparent) 0%, color-mix(in srgb, var(--color-neutral-900) 55%, transparent) 55%, color-mix(in srgb, var(--color-neutral-900) 22%, transparent) 100%)',
-        }}
-      />
-      <div style={{ position: 'relative', color: 'var(--on-art)' }}>
-        <div style={{ font: '700 12px var(--font-sans)', letterSpacing: '2px', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
-          Guild Wars 2
+    <Panel style={{ padding: '15px 17px' }}>
+      <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
+      <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.5px', marginTop: 5, color: accent ? 'var(--gold)' : 'var(--text)' }}>{value}</div>
+      {spark ? <Sparkline data={spark} /> : sub ? <div style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>{sub}</div> : null}
+    </Panel>
+  );
+}
+
+// The design's welcome band: a clean panel with a soft teal glow, an intro,
+// a prominent search, and an upload card on the right. Replaces the old
+// cinematic art hero.
+function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }) {
+  return (
+    <Panel style={{ position: 'relative', overflow: 'hidden', padding: 'clamp(22px, 4vw, 32px)', marginBottom: 16 }}>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(720px 300px at 82% -25%, color-mix(in srgb, var(--color-accent) 15%, transparent), transparent 60%)' }} />
+      <div style={{ position: 'relative', display: 'flex', gap: 26, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 420px', minWidth: 0 }}>
+          <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--text-55)' }}>
+            Guild Wars 2 · combat log platform
+          </div>
+          <div style={{ font: '800 clamp(26px, 4vw, 34px) var(--font-sans)', letterSpacing: '-.6px', marginTop: 6, textWrap: 'balance' }}>{title}</div>
+          <div style={{ font: '500 14px var(--font-sans)', color: 'var(--text-60)', marginTop: 8, maxWidth: '58ch', lineHeight: 1.5 }}>{subtitle}</div>
+          <div style={{ marginTop: 18, maxWidth: 460 }}>
+            <SearchBar width="100%" defaultValue="" />
+          </div>
         </div>
-        <div style={{ font: '800 clamp(30px, 5vw, 42px) var(--font-sans)', letterSpacing: '-1px', lineHeight: 1.05, marginBottom: 10 }}>
-          Combat Analytics
+        <div style={{ flex: '0 1 250px', minWidth: 210 }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+              <path d="M12 16V4m0 0-4 4m4-4 4 4M5 20h14" />
+            </svg>
+            <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Upload arcdps logs</div>
+            <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
+              Drop <b style={{ color: 'var(--text-80)' }}>.zevtc</b> files — parsed locally, never leave your server.
+            </div>
+            <GoldButton to="/upload" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
+              Choose files
+            </GoldButton>
+          </div>
         </div>
-        <div style={{ font: '500 14px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 78%, transparent)', maxWidth: 460, lineHeight: 1.5, marginBottom: 22 }}>
-          Analyze your logs, track your parses, and climb the leaderboards with your guild.
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 26, flexWrap: 'wrap' }}>
-          <GoldButton to="/upload" style={{ padding: '11px 20px', font: '700 13px var(--font-sans)', boxShadow: '0 4px 16px color-mix(in srgb, var(--color-accent) 32%, transparent)' }}>
-            Upload Log
-          </GoldButton>
-          <Link
-            to="/raids"
-            className="u-btn-ghost"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              font: '600 13px var(--font-sans)',
-              padding: '11px 20px',
-              borderRadius: 'var(--radius-md)',
-              background: 'color-mix(in srgb, var(--on-art) 14%, transparent)',
-              backdropFilter: 'blur(6px)',
-              color: 'var(--on-art)',
-              border: '1px solid color-mix(in srgb, var(--on-art) 40%, transparent)',
-            }}
-          >
-            Browse Raids
-          </Link>
-        </div>
-        <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 36px)', flexWrap: 'wrap' }}>{stats}</div>
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -274,16 +268,15 @@ function LoggedOutDashboard() {
 
   return (
     <div>
-      <Hero
-        bg={bossBgPath('Harvest Temple')}
-        stats={
-          <>
-            <HeroStat value={stats ? stats.totalLogs.toLocaleString() : '—'} label="Logs uploaded" />
-            <HeroStat value={stats ? stats.totalPlayers.toLocaleString() : '—'} label="Players tracked" />
-            <HeroStat value={encounterCount ?? '—'} label="Encounters" />
-          </>
-        }
+      <WelcomeBand
+        title="Combat Analytics"
+        subtitle="Analyze your logs, track your parses, and climb the leaderboards with your guild."
       />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 13, marginBottom: 24 }}>
+        <StatTile label="Logs uploaded" value={stats ? stats.totalLogs.toLocaleString() : '—'} sub="all-time" />
+        <StatTile label="Players tracked" value={stats ? stats.totalPlayers.toLocaleString() : '—'} sub="NA &amp; EU" />
+        <StatTile label="Encounters" value={encounterCount ?? '—'} sub="raids · strikes · fractals" accent />
+      </div>
 
       {loading && <LoadingState label="Loading highlights…" />}
       {error && <ErrorState message={error} />}
@@ -362,16 +355,15 @@ function SignedInDashboard() {
 
   return (
     <div>
-      <Hero
-        bg={bossBgPath('Harvest Temple')}
-        stats={
-          <>
-            <HeroStat value={dash.stats.logsThisWeek.toLocaleString()} label="Logs This Week" />
-            <HeroStat value={dash.stats.avgSquadDps.toLocaleString()} label="Avg Squad DPS" />
-            <HeroStat value={`${dash.stats.clearsThisWeek}/${dash.stats.totalThisWeek}`} label="Clears" />
-          </>
-        }
+      <WelcomeBand
+        title={<>Welcome back, <span style={{ color: 'var(--gold)' }}>{dash.displayName}</span></>}
+        subtitle="Pick up where you left off, or dig into this week's leaderboards and your squad's parses."
       />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 13, marginBottom: 24 }}>
+        <StatTile label="Logs this week" value={dash.stats.logsThisWeek.toLocaleString()} spark={dash.weeklyActivity.map((w) => w.count)} accent />
+        <StatTile label="Avg squad DPS" value={dash.stats.avgSquadDps.toLocaleString()} sub="last 7 days" />
+        <StatTile label="Clears" value={`${dash.stats.clearsThisWeek}/${dash.stats.totalThisWeek}`} sub="this week" />
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
         <div>
