@@ -40,9 +40,11 @@ export function NavHeader() {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const afterTabs = [...AFTER_TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
-  // Flat list used only for the mobile panel (menus collapse to plain links there).
-  const mobileTabs = [DASH_TAB, { label: 'Raids', to: '/raids' }, { label: 'Raid Encounters', to: '/strikes' }, { label: 'FOTM', to: '/fractals' }, ...afterTabs];
+  // Admin lives in the user menu now, not the main nav bar.
+  const afterTabs = AFTER_TABS;
+  // Flat list used only for the mobile panel (menus collapse to plain links
+  // there). Admin is appended for admins so it stays reachable on mobile.
+  const mobileTabs = [DASH_TAB, { label: 'Raids', to: '/raids' }, { label: 'Raid Encounters', to: '/strikes' }, { label: 'FOTM', to: '/fractals' }, ...afterTabs, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
 
   const tabStyle = (active: boolean) =>
     ({

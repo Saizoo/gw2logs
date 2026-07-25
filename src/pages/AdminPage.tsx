@@ -473,6 +473,10 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
 
   async function handleSave() {
     setSaveError(null);
+    if (!name.trim()) {
+      setSaveError('Build name is required.');
+      return;
+    }
     setSaving(true);
     try {
       const data = { profession, category, name: name.trim(), weapons: weapons.trim(), url: url.trim() };
@@ -507,8 +511,8 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
         />
       </div>
       <input placeholder="Build name (e.g. Heal Alacrity Tempest)" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-      <input placeholder="Weapons (e.g. Dagger & Warhorn)" value={weapons} onChange={(e) => setWeapons(e.target.value)} style={inputStyle} />
-      <input placeholder="Guide URL (e.g. https://snowcrows.com/builds/raids/...)" value={url} onChange={(e) => setUrl(e.target.value)} style={inputStyle} />
+      <input placeholder="Weapons — optional (e.g. Dagger & Warhorn)" value={weapons} onChange={(e) => setWeapons(e.target.value)} style={inputStyle} />
+      <input placeholder="Guide URL — optional (e.g. https://snowcrows.com/builds/raids/...)" value={url} onChange={(e) => setUrl(e.target.value)} style={inputStyle} />
       {saveError && <div style={{ font: '500 12px var(--font-sans)', color: 'var(--bad)' }}>{saveError}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <GoldButton onClick={handleSave}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Create build'}</GoldButton>
@@ -681,9 +685,11 @@ function HealthTab() {
           </div>
         ))}
         <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-50)', marginTop: 8 }}>
-          High dead-tuple counts reclaim with VACUUM FULL (brief lock) — see the deploy runbook.
+          High dead-tuple counts reclaim with VACUUM — see the console commands below.
         </div>
       </Card>
+
+      <ConsoleCommandsCard />
 
       <Card style={{ padding: '16px 20px' }}>
         <SectionLabel>Upload pipeline</SectionLabel>
@@ -728,6 +734,93 @@ function HealthTab() {
         )}
       </Card>
     </div>
+  );
+}
+
+// Common operational commands run against the deployed stack (docker compose
+// services: `postgres` and `api`; the DB user/name default to `gw2logs`).
+// Grouped so an on-call admin has the routine ops in one place instead of a
+// runbook. Adjust service/user names here if the compose file changes.
+const CONSOLE_COMMANDS: { group: string; items: { cmd: string; desc: string }[] }[] = [
+  {
+    group: 'Database maintenance',
+    items: [
+      { cmd: 'docker compose exec postgres psql -U gw2logs -c "VACUUM (VERBOSE, ANALYZE);"', desc: 'Reclaim dead tuples and refresh planner stats without locking tables. Run this first when dead-tuple counts climb.' },
+      { cmd: 'docker compose exec postgres psql -U gw2logs -c "VACUUM FULL VERBOSE;"', desc: 'Aggressively rewrites tables to return disk to the OS. Takes an exclusive lock — run only during a quiet window when storage is tight.' },
+      { cmd: 'docker compose exec postgres psql -U gw2logs', desc: 'Open an interactive psql shell against the app database for ad-hoc queries.' },
+      { cmd: 'docker compose exec postgres pg_dump -U gw2logs gw2logs | gzip > backup-$(date +%F).sql.gz', desc: 'Take a compressed logical backup of the whole database to the current directory.' },
+    ],
+  },
+  {
+    group: 'Deploy & migrations',
+    items: [
+      { cmd: 'docker compose exec api npm run prisma:migrate', desc: 'Apply pending Prisma migrations to the live database (prisma migrate deploy).' },
+      { cmd: 'docker compose exec api npm run prisma:generate', desc: 'Regenerate the Prisma client after a schema change.' },
+      { cmd: 'docker compose up -d --build', desc: 'Rebuild images and restart any changed services in the background.' },
+      { cmd: 'docker compose restart api', desc: 'Restart just the API container without touching Postgres.' },
+    ],
+  },
+  {
+    group: 'Logs & diagnostics',
+    items: [
+      { cmd: 'docker compose logs -f api', desc: 'Tail the live API logs. Add --tail=200 to start from the last 200 lines.' },
+      { cmd: 'docker compose ps', desc: 'Show the status and health of every service in the stack.' },
+      { cmd: 'docker stats --no-stream', desc: 'One-shot snapshot of per-container CPU, memory, and network usage.' },
+    ],
+  },
+  {
+    group: 'Data backfills',
+    items: [
+      { cmd: 'docker compose exec api npm run backfill:professions:prod', desc: 'Backfill missing profession data on existing logs (compiled prod script).' },
+      { cmd: 'docker compose exec api node dist/scripts/seedBuilds.js', desc: 'Re-seed the raid-planner build catalog from the bundled seed data.' },
+    ],
+  },
+];
+
+function CommandRow({ cmd, desc }: { cmd: string; desc: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(cmd);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      toast.error('Clipboard unavailable — copy the command manually.');
+    }
+  }
+  return (
+    <div style={{ padding: '10px 0', borderBottom: '1px solid var(--border-faint)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <code style={{ flex: 1, font: '500 12px var(--font-mono)', color: 'var(--gold)', wordBreak: 'break-all', lineHeight: 1.5 }}>{cmd}</code>
+        <button
+          className="u-btn-ghost"
+          onClick={copy}
+          style={{ ...ghostBtnStyle, flex: 'none', padding: '3px 10px', font: '600 11px var(--font-sans)', color: copied ? 'var(--good)' : undefined }}
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <div style={{ font: '400 11.5px var(--font-sans)', color: 'var(--text-60)', marginTop: 4 }}>{desc}</div>
+    </div>
+  );
+}
+
+function ConsoleCommandsCard() {
+  return (
+    <Card style={{ padding: '16px 20px' }}>
+      <SectionLabel>Console commands</SectionLabel>
+      <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', margin: '2px 0 10px' }}>
+        Run these from the deploy host, in the directory with docker-compose.yml. Services are <code style={{ font: '600 11px var(--font-mono)', color: 'var(--text-70)' }}>api</code> and <code style={{ font: '600 11px var(--font-mono)', color: 'var(--text-70)' }}>postgres</code>.
+      </div>
+      {CONSOLE_COMMANDS.map((g) => (
+        <div key={g.group} style={{ marginTop: 12 }}>
+          <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-65)', marginBottom: 4 }}>{g.group}</div>
+          {g.items.map((it) => (
+            <CommandRow key={it.cmd} cmd={it.cmd} desc={it.desc} />
+          ))}
+        </div>
+      ))}
+    </Card>
   );
 }
 

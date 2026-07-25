@@ -21,9 +21,12 @@ function validate(body: any): { error: string } | { value: { profession: string;
     return { error: `category must be one of: ${[...CATEGORIES].join(', ')}` };
   }
   if (typeof name !== 'string' || !name.trim()) return { error: 'name is required' };
-  if (typeof weapons !== 'string' || !weapons.trim()) return { error: 'weapons is required' };
-  if (typeof url !== 'string' || !/^https?:\/\//.test(url)) return { error: 'url must be a valid http(s) URL' };
-  return { value: { profession, category, name: name.trim(), weapons: weapons.trim(), url: url.trim() } };
+  // Weapons is optional; accept an empty/absent value.
+  const weaponsStr = typeof weapons === 'string' ? weapons.trim() : '';
+  // URL is optional, but if one is given it must look like an http(s) URL.
+  const urlStr = typeof url === 'string' ? url.trim() : '';
+  if (urlStr && !/^https?:\/\//.test(urlStr)) return { error: 'url must be a valid http(s) URL' };
+  return { value: { profession, category, name: name.trim(), weapons: weaponsStr, url: urlStr } };
 }
 
 // Derives the same path-based id scheme the static catalog and every
