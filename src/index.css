@@ -401,6 +401,17 @@ p {
 /* look.                                                               */
 /* ------------------------------------------------------------------ */
 
+/* Horizontally-scrollable strips (tab bars) that must not show a scrollbar —
+   they scroll on small screens but stay clean on desktop. */
+.u-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.u-scroll-x::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
 /* Clickable rows inside cards (log lists, leaderboards, search hits). */
 .u-row {
   transition: background 0.15s ease;
