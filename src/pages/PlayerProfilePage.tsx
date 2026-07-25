@@ -356,9 +356,12 @@ export default function PlayerProfilePage() {
       </div>
 
       {tab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
             <ProfileRecentParses recent={player.recent} />
+            {player.professionBreakdown.length > 0 && <ProfessionBreakdownChart data={player.professionBreakdown} />}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
           {chart && (
             <Card style={{ padding: '20px 20px 8px' }}>
               <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
@@ -435,8 +438,6 @@ export default function PlayerProfilePage() {
               </div>
             </Card>
           )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <ClearProgressRings coverage={player.coverage} />
             <HeaderRecord record={player.record} />
           </div>
@@ -522,9 +523,14 @@ function ShareButton() {
 
 // --- Recent parses table (Overview headline, matches the design) ----------
 
+const RECENT_PARSES_COLLAPSED = 6;
+
 function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
   const [filter, setFilter] = useState<'all' | 'normal' | 'cm'>('all');
-  const rows = recent.filter((r) => (filter === 'all' ? true : filter === 'cm' ? r.isCm : !r.isCm)).slice(0, 10);
+  const [expanded, setExpanded] = useState(false);
+  const filtered = recent.filter((r) => (filter === 'all' ? true : filter === 'cm' ? r.isCm : !r.isCm));
+  const rows = expanded ? filtered : filtered.slice(0, RECENT_PARSES_COLLAPSED);
+  const canExpand = filtered.length > RECENT_PARSES_COLLAPSED;
   return (
     <Card style={{ overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '15px 17px', borderBottom: '1px solid var(--border)' }}>
@@ -581,6 +587,64 @@ function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
           </table>
         </div>
       )}
+      {canExpand && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="u-row"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: '12px 17px', borderTop: '1px solid var(--border)', background: 'none', cursor: 'pointer', font: '650 12.5px var(--font-sans)', color: 'var(--gold)' }}
+        >
+          {expanded ? 'View less' : `View more (${filtered.length - RECENT_PARSES_COLLAPSED})`}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .15s ease' }}><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+      )}
+    </Card>
+  );
+}
+
+// Profession breakdown donut (Overview) — share of play by profession, drawn
+// as a conic-gradient ring with a labelled legend. pct values are normalised
+// so rounding never leaves a seam or overshoots the ring.
+function ProfessionBreakdownChart({ data }: { data: PlayerProfile['professionBreakdown'] }) {
+  if (data.length === 0) return null;
+  const total = data.reduce((s, d) => s + d.pct, 0) || 1;
+  let acc = 0;
+  const stops = data
+    .map((d) => {
+      const start = (acc / total) * 100;
+      acc += d.pct;
+      const end = (acc / total) * 100;
+      return `${professionColor(d.profession)} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+    })
+    .join(', ');
+  const top = data[0];
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '15px 17px', borderBottom: '1px solid var(--border)', font: '750 15px var(--font-sans)' }}>
+        <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v10l8.5 5" /><circle cx="12" cy="12" r="10" /></svg>
+        </span>
+        Profession breakdown
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 22, padding: 18, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', width: 130, height: 130, flex: 'none', borderRadius: '50%', background: `conic-gradient(${stops})` }}>
+          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', background: 'var(--color-surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+            <div>
+              <div style={{ font: '800 22px var(--font-sans)', color: professionColor(top.profession) }}>{top.pct}%</div>
+              <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{top.profession}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ flex: '1 1 200px', minWidth: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px 16px' }}>
+          {data.map((d) => (
+            <div key={d.profession} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: professionColor(d.profession), flex: 'none' }} />
+              <span style={{ font: '600 12px var(--font-sans)', color: 'var(--text-75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{d.profession}</span>
+              <span style={{ font: '600 11.5px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{d.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </Card>
   );
 }
