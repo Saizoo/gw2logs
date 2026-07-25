@@ -196,7 +196,7 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
             animation: 'fadeIn 0.16s ease both',
           }}
         >
-          <div style={{ maxWidth: 1640, margin: '0 auto', padding: '18px 32px 30px' }}>
+          <div style={{ maxWidth: 2200, margin: '0 auto', padding: '18px 40px 32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
               {/* Category toggle bar */}
               <div style={{ display: 'inline-flex', gap: 3, padding: 4, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
@@ -239,7 +239,10 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
                     <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-65)', whiteSpace: 'nowrap' }}>{group.name}</div>
                     <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 9 }}>
+                  {/* auto-fit (not auto-fill) collapses empty tracks, so each
+                      wing's bosses stretch to fill the whole half-width instead
+                      of leaving trailing gaps. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
                     {group.bosses.map((b) => (
                       <BossTile key={b.name} boss={b} onNavigate={() => setOpen(false)} />
                     ))}
