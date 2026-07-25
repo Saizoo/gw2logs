@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { PROFESSIONS, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
+import { PROFESSIONS, parseTier, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
 import { bossImage } from '../data/catalog';
 import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
 
@@ -359,7 +359,7 @@ export default function PlayerProfilePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
             <ProfileRecentParses recent={player.recent} />
-            {player.professionBreakdown.length > 0 && <ProfessionBreakdownChart data={player.professionBreakdown} />}
+            {player.specPerformance.length > 0 && <ProfessionBreakdownChart rows={player.specPerformance} onViewAll={() => setTab('professions')} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
           {chart && (
@@ -602,48 +602,51 @@ function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
   );
 }
 
-// Profession breakdown donut (Overview) — share of play by profession, drawn
-// as a conic-gradient ring with a labelled legend. pct values are normalised
-// so rounding never leaves a seam or overshoots the ring.
-function ProfessionBreakdownChart({ data }: { data: PlayerProfile['professionBreakdown'] }) {
-  if (data.length === 0) return null;
-  const total = data.reduce((s, d) => s + d.pct, 0) || 1;
-  let acc = 0;
-  const stops = data
-    .map((d) => {
-      const start = (acc / total) * 100;
-      acc += d.pct;
-      const end = (acc / total) * 100;
-      return `${professionColor(d.profession)} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
-    })
-    .join(', ');
-  const top = data[0];
+// Profession breakdown (Overview) — one horizontal bar per spec, ranked by how
+// many fights it was played, with the spec's average parse called out in its
+// parse-tier colour. Bar length is share of the most-played spec.
+function ProfessionBreakdownChart({ rows, onViewAll }: { rows: PlayerProfile['specPerformance']; onViewAll: () => void }) {
+  const top = [...rows].sort((a, b) => b.plays - a.plays).slice(0, 6);
+  if (top.length === 0) return null;
+  const maxPlays = Math.max(...top.map((r) => r.plays), 1);
   return (
-    <Card>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '15px 17px', borderBottom: '1px solid var(--border)', font: '750 15px var(--font-sans)' }}>
-        <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v10l8.5 5" /><circle cx="12" cy="12" r="10" /></svg>
-        </span>
-        Profession breakdown
+    <Card style={{ padding: '15px 17px 6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <div style={{ font: '750 15px var(--font-sans)', display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+          </span>
+          Profession breakdown
+        </div>
+        <button
+          type="button"
+          onClick={onViewAll}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', font: '650 12.5px var(--font-sans)', color: 'var(--gold)' }}
+        >
+          All professions →
+        </button>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 22, padding: 18, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', width: 130, height: 130, flex: 'none', borderRadius: '50%', background: `conic-gradient(${stops})` }}>
-          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', background: 'var(--color-surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-            <div>
-              <div style={{ font: '800 22px var(--font-sans)', color: professionColor(top.profession) }}>{top.pct}%</div>
-              <div style={{ font: '600 10px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{top.profession}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+        {top.map((r) => {
+          const color = professionColor(r.profession);
+          const avgColor = parseTier(r.avgPct).color;
+          return (
+            <div key={r.spec}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <ProfDot color={color} size={8} />
+                  <span style={{ font: '600 13px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.spec}</span>
+                </span>
+                <span style={{ font: '500 12px var(--font-sans)', color: 'var(--text-55)', flex: 'none' }}>
+                  {r.plays.toLocaleString()} fights · <b style={{ font: '700 12px var(--font-mono)', color: avgColor }}>{r.avgPct}</b> avg
+                </span>
+              </div>
+              <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-chip)', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.max((r.plays / maxPlays) * 100, 4)}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${professionColorAlpha(r.profession, 78)}, ${color})` }} />
+              </div>
             </div>
-          </div>
-        </div>
-        <div style={{ flex: '1 1 200px', minWidth: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px 16px' }}>
-          {data.map((d) => (
-            <div key={d.profession} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 3, background: professionColor(d.profession), flex: 'none' }} />
-              <span style={{ font: '600 12px var(--font-sans)', color: 'var(--text-75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{d.profession}</span>
-              <span style={{ font: '600 11.5px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{d.pct}%</span>
-            </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </Card>
   );
