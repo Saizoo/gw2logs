@@ -165,6 +165,10 @@ export interface PlayerProfile {
   affiliations: PlayerAffiliations | null;
   record: { kills: number; wipes: number; total: number; successRate: number };
   roleBreakdown: { role: string; count: number; pct: number }[];
+  // Four-way role split (percentages) for the dashboard's Favorite Roles card.
+  favoriteRoles: { power: number; condi: number; support: number; heal: number };
+  // Oldest→newest parse-percentile points (kills only) for the trend chart.
+  parseHistory: { date: string; pct: number }[];
   specBreakdown: { spec: string; profession: string; count: number; pct: number }[];
   specPerformance: { spec: string; profession: string; plays: number; avgPct: number; bestPct: number; bestLogId: string; bestDps: number; role: string }[];
   coverage: { wing: string; killed: number; total: number; encounters: PlayerCoverageEncounter[] }[];

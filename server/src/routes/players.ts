@@ -188,6 +188,30 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     .map(([role, count]) => ({ role, count, pct: Math.round((count / total) * 100) }))
     .sort((a, b) => b.count - a.count);
 
+  // Four-way "favourite roles" split for the dashboard: plain DPS is further
+  // divided into power vs condition by whichever damage type led that log.
+  let powerN = 0, condiN = 0, supportN = 0, healN = 0;
+  for (const lp of logPlayers) {
+    if (lp.squadRole === 'boon_heal') healN++;
+    else if (lp.squadRole === 'boon_dps') supportN++;
+    else if (lp.powerDps >= lp.condiDps) powerN++;
+    else condiN++;
+  }
+  const favoriteRoles = {
+    power: Math.round((powerN / total) * 100),
+    condi: Math.round((condiN / total) * 100),
+    support: Math.round((supportN / total) * 100),
+    heal: Math.round((healN / total) * 100),
+  };
+
+  // Chronological parse-percentile history (kills only) for the performance
+  // trend chart — oldest→newest, capped so the payload stays small.
+  const parseHistory = logPlayers
+    .filter((lp) => lp.log.success)
+    .map((lp) => ({ date: lp.log.uploadedAt, pct: Math.round(pctByLogPlayerId.get(lp.id) ?? 0) }))
+    .reverse()
+    .slice(-60);
+
   // Elite-spec distribution (finer than the profession breakdown) — the
   // classes this player actually brings, with the profession carried for
   // colouring/icons.
@@ -310,6 +334,8 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
     affiliations,
     record,
     roleBreakdown,
+    favoriteRoles,
+    parseHistory,
     specBreakdown,
     specPerformance,
     coverage,

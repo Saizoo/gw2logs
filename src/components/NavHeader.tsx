@@ -127,15 +127,27 @@ export function NavHeader() {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link
-            to="/account"
-            data-tour="connect"
-            className="nav-connect"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, font: '700 12.5px var(--font-sans)', color: 'var(--gold-fg)', background: 'var(--gold)', whiteSpace: 'nowrap' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            Connect logs
-          </Link>
+          {user?.dpsReportLinked ? (
+            <Link
+              to="/account"
+              data-tour="connect"
+              title="dps.report auto-import is on — manage in settings"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 13px', borderRadius: 999, font: '700 12px var(--font-sans)', color: 'var(--good)', background: 'color-mix(in srgb, var(--good) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)', whiteSpace: 'nowrap' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              Logs connected
+            </Link>
+          ) : (
+            <Link
+              to="/account"
+              data-tour="connect"
+              className="nav-connect"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, font: '700 12.5px var(--font-sans)', color: 'var(--gold-fg)', background: 'var(--gold)', whiteSpace: 'nowrap' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+              Connect logs
+            </Link>
+          )}
           {user && <NotificationBell />}
           {user && (
             <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>

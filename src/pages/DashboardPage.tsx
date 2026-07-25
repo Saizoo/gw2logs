@@ -1,15 +1,17 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   api,
+  type CurrentUser,
   type DashboardSummary,
   type HomeSummary,
   type OverviewEncounter,
   type OverviewWing,
+  type PlayerProfile,
 } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { professionColor } from '../data/gw2-data';
+import { professionColor, professionForSpec, professionIconPath, parseTier } from '../data/gw2-data';
 import { bossImage } from '../data/catalog';
 import { ArtImg, GoldButton, ParseBadge, ProfDot } from '../components/atoms';
 import { SearchBar } from '../components/SearchBar';
@@ -104,7 +106,7 @@ function StatTile({ label, value, sub, spark, accent }: { label: string; value: 
   );
 }
 
-function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }) {
+function WelcomeBand({ title, subtitle, dpsLinked }: { title: ReactNode; subtitle: string; dpsLinked?: boolean }) {
   // Full-bleed band: breaks out of the page's max-width container to span the
   // viewport, with a soft top-down gradient + teal glow that fades smoothly
   // and a hairline bottom separator dividing it from the stat tiles — matching
@@ -137,18 +139,33 @@ function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }
             </div>
           </div>
           <div style={{ flex: '0 1 250px', minWidth: 210 }}>
-            <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-                <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19" />
-              </svg>
-              <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Auto-import your logs</div>
-              <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
-                Link your <b style={{ color: 'var(--text-80)' }}>dps.report</b> token — new uploads import here automatically.
+            {dpsLinked ? (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--good)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Auto-import active</div>
+                <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
+                  Your <b style={{ color: 'var(--text-80)' }}>dps.report</b> logs import automatically, about every 15 minutes.
+                </div>
+                <Link to="/account" style={{ display: 'inline-block', marginTop: 12, font: '650 12.5px var(--font-sans)', color: 'var(--gold)' }}>
+                  Manage in settings →
+                </Link>
               </div>
-              <GoldButton to="/account" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
-                Connect dps.report
-              </GoldButton>
-            </div>
+            ) : (
+              <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+                  <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19" />
+                </svg>
+                <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Auto-import your logs</div>
+                <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
+                  Link your <b style={{ color: 'var(--text-80)' }}>dps.report</b> token — new uploads import here automatically.
+                </div>
+                <GoldButton to="/account" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
+                  Connect dps.report
+                </GoldButton>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -340,14 +357,196 @@ export default function DashboardPage() {
   const { user, loading: userLoading } = useCurrentUser();
   if (userLoading) return <LoadingState label="Loading…" />;
   if (!user) return <LoggedOutDashboard />;
-  return <SignedInDashboard />;
+  return <SignedInDashboard user={user} />;
 }
 
-function SignedInDashboard() {
+// --- Personal dashboard cards (signed-in, account linked) ------------------
+
+function CardHeader({ label }: { label: string }) {
+  return <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 12 }}>{label}</div>;
+}
+function CardLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link to={to} style={{ display: 'block', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', font: '700 11.5px var(--font-sans)', letterSpacing: '.04em', color: 'var(--gold)' }}>
+      {label} →
+    </Link>
+  );
+}
+function FooterStat({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <div style={{ font: '750 15px var(--font-sans)' }}>{value}</div>
+      <div style={{ font: '600 9.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-50)', marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function MyCharacterCard({ profile }: { profile: PlayerProfile }) {
+  const topSpec = profile.specBreakdown[0];
+  const prof = topSpec ? topSpec.profession : professionForSpec(profile.profileIcon ?? 'Guardian');
+  const spec = topSpec?.spec ?? profile.profileIcon ?? prof;
+  const color = professionColor(prof);
+  return (
+    <Panel style={{ padding: '15px 17px' }}>
+      <CardHeader label="My Character" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', flex: 'none', border: `2px solid ${color}`, boxShadow: `0 0 9px ${color}`, background: 'color-mix(in srgb, var(--color-surface) 80%, transparent)', display: 'grid', placeItems: 'center' }}>
+          <img src={professionIconPath(prof, spec !== prof ? spec : null)} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ font: '750 15px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.account}</div>
+          <div style={{ font: '600 11.5px var(--font-sans)', color }}>{spec}</div>
+        </div>
+      </div>
+      <div style={{ font: '800 34px var(--font-sans)', letterSpacing: '-1px', color: 'var(--gold)', marginTop: 12 }}>{profile.overallScore ?? '—'}</div>
+      <div style={{ font: '600 9.5px var(--font-sans)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-50)' }}>Best overall parse</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
+        <FooterStat label="Logs" value={profile.totalLogs.toLocaleString()} />
+        <FooterStat label="Kills" value={profile.record.kills.toLocaleString()} />
+        <FooterStat label="Success" value={`${profile.record.successRate}%`} />
+      </div>
+      <CardLink to={`/players/${encodeURIComponent(profile.account)}`} label="View profile" />
+    </Panel>
+  );
+}
+
+function BestEncounterCard({ profile }: { profile: PlayerProfile }) {
+  const best = profile.bestParses[0];
+  if (!best) {
+    return (
+      <Panel style={{ padding: '15px 17px' }}>
+        <CardHeader label="Best Encounter" />
+        <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 30, textAlign: 'center' }}>No kills logged yet.</div>
+      </Panel>
+    );
+  }
+  const img = bossImage(best.boss);
+  const tier = parseTier(best.pct);
+  return (
+    <Panel style={{ padding: '15px 17px' }}>
+      <CardHeader label="Best Encounter" />
+      <div style={{ position: 'relative', height: 66, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+        {img && <ArtImg src={img} />}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.15))' }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <span style={{ font: '750 15px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{best.boss}{best.isCm ? ' CM' : ''}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginTop: 6 }}>
+        <span style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.8px', color: tier.color }}>{best.pct}</span>
+        <span style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, color: tier.color, background: tier.bg }}>{best.spec}</span>
+      </div>
+      <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 4 }}>{best.dps.toLocaleString()} dps</div>
+      <CardLink to={`/logs/${best.logId}`} label="View encounter" />
+    </Panel>
+  );
+}
+
+const TREND_WINDOWS = [
+  { key: '7D', days: 7 },
+  { key: '30D', days: 30 },
+  { key: '90D', days: 90 },
+] as const;
+
+function PerformanceTrendCard({ history }: { history: PlayerProfile['parseHistory'] }) {
+  const [win, setWin] = useState<(typeof TREND_WINDOWS)[number]['key']>('30D');
+  const days = TREND_WINDOWS.find((w) => w.key === win)!.days;
+  const points = useMemo(() => {
+    const cutoff = Date.now() - days * 86_400_000;
+    const filtered = history.filter((h) => new Date(h.date).getTime() >= cutoff);
+    return (filtered.length >= 2 ? filtered : history).map((h) => h.pct);
+  }, [history, days]);
+
+  const best = points.length ? Math.max(...points) : 0;
+  const median = points.length ? [...points].sort((a, b) => a - b)[Math.floor(points.length / 2)] : 0;
+  const trend = points.length >= 2 ? points[points.length - 1] - points[0] : 0;
+
+  const { line, area } = useMemo(() => {
+    const w = 300, h = 90, pad = 6;
+    if (points.length < 2) return { line: '', area: '' };
+    const step = (w - pad * 2) / (points.length - 1);
+    const pts = points.map((v, i) => [pad + i * step, pad + (1 - v / 100) * (h - pad * 2)] as const);
+    const l = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+    return { line: l, area: `${l} L${pts[pts.length - 1][0].toFixed(1)} ${h - pad} L${pts[0][0].toFixed(1)} ${h - pad} Z` };
+  }, [points]);
+
+  return (
+    <Panel style={{ padding: '15px 17px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+        <CardHeader label="Performance Trend" />
+        <div style={{ display: 'flex', gap: 2, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 2, marginTop: -10 }}>
+          {TREND_WINDOWS.map((w) => {
+            const on = w.key === win;
+            return (
+              <button key={w.key} type="button" onClick={() => setWin(w.key)} style={{ font: '700 10px var(--font-sans)', padding: '4px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', background: on ? 'var(--gold)' : 'transparent', color: on ? 'var(--gold-fg)' : 'var(--text-55)' }}>
+                {w.key}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {line ? (
+        <svg viewBox="0 0 300 90" style={{ width: '100%', height: 'auto', aspectRatio: '300 / 90', display: 'block' }} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#trendFill)" />
+          <path d={line} fill="none" stroke="var(--gold)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+      ) : (
+        <div style={{ height: 90, display: 'grid', placeItems: 'center', font: '500 12px var(--font-sans)', color: 'var(--text-50)' }}>Not enough kills yet.</div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8 }}>
+        <FooterStat label="Trend" value={<span style={{ color: trend >= 0 ? 'var(--good)' : 'var(--bad)' }}>{trend >= 0 ? '+' : ''}{trend}</span>} />
+        <FooterStat label="Best" value={best} />
+        <FooterStat label="Median" value={median} />
+      </div>
+    </Panel>
+  );
+}
+
+const ROLE_STYLE: { key: keyof PlayerProfile['favoriteRoles']; label: string; color: string }[] = [
+  { key: 'power', label: 'Power DPS', color: 'var(--bad)' },
+  { key: 'condi', label: 'Condi DPS', color: 'var(--text-45)' },
+  { key: 'support', label: 'Support', color: 'var(--gold)' },
+  { key: 'heal', label: 'Healer', color: 'var(--good)' },
+];
+
+function FavoriteRolesCard({ roles }: { roles: PlayerProfile['favoriteRoles'] }) {
+  const total = ROLE_STYLE.reduce((s, r) => s + roles[r.key], 0) || 1;
+  return (
+    <Panel style={{ padding: '15px 17px' }}>
+      <CardHeader label="Favorite Roles" />
+      <div style={{ display: 'flex', height: 12, borderRadius: 999, overflow: 'hidden', gap: 2, background: 'var(--bg-chip)' }}>
+        {ROLE_STYLE.map((r) => roles[r.key] > 0 && (
+          <div key={r.key} title={`${r.label} · ${roles[r.key]}%`} style={{ width: `${(roles[r.key] / total) * 100}%`, background: r.color }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 14 }}>
+        {ROLE_STYLE.map((r) => (
+          <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: r.color, flex: 'none' }} />
+            <span style={{ font: '600 12.5px var(--font-sans)', color: 'var(--text-75)', flex: 1 }}>{r.label}</span>
+            <span style={{ font: '700 12.5px var(--font-mono)', color: 'var(--text-70)' }}>{roles[r.key]}%</span>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function SignedInDashboard({ user }: { user: CurrentUser }) {
   const { data: dash, loading, error } = useApiQuery(() => api.dashboard(), []);
   const { data: home } = useApiQuery(() => api.home(), []);
   const { data: stats } = useApiQuery(() => api.stats(), []);
   const { data: overview } = useApiQuery(() => api.encountersOverview(), []);
+  // The four personal cards come from the signed-in user's own profile.
+  const account = user.gw2AccountName;
+  const { data: profileData } = useApiQuery(() => (account ? api.player(account) : Promise.resolve(null)), [account]);
+  const profile = profileData && !('private' in profileData && profileData.private) ? (profileData as PlayerProfile) : null;
   const encounterCount = overview ? flattenEncounters(overview).filter((e) => e.logCount > 0).length : null;
 
   if (loading) return <LoadingState label="Loading dashboard…" />;
@@ -359,13 +558,23 @@ function SignedInDashboard() {
       <WelcomeBand
         title={<>Welcome back, <span style={{ color: 'var(--gold)' }}>{dash.displayName}</span></>}
         subtitle="Pick up where you left off, or dig into this week's leaderboards and your squad's parses."
+        dpsLinked={user.dpsReportLinked}
       />
-      <div style={TILES}>
-        <StatTile label="Logs parsed" value={stats ? stats.totalLogs.toLocaleString() : '—'} sub="all-time" />
-        <StatTile label="Players tracked" value={stats ? stats.totalPlayers.toLocaleString() : '—'} sub="across NA &amp; EU" />
-        <StatTile label="Encounters" value={encounterCount ?? '—'} sub="raids · strikes · fractals" />
-        <StatTile label="Logs this week" value={dash.stats.logsThisWeek.toLocaleString()} spark={dash.weeklyActivity.map((w) => w.count)} accent />
-      </div>
+      {profile ? (
+        <div style={TILES}>
+          <MyCharacterCard profile={profile} />
+          <BestEncounterCard profile={profile} />
+          <PerformanceTrendCard history={profile.parseHistory} />
+          <FavoriteRolesCard roles={profile.favoriteRoles} />
+        </div>
+      ) : (
+        <div style={TILES}>
+          <StatTile label="Logs parsed" value={stats ? stats.totalLogs.toLocaleString() : '—'} sub="all-time" />
+          <StatTile label="Players tracked" value={stats ? stats.totalPlayers.toLocaleString() : '—'} sub="across NA &amp; EU" />
+          <StatTile label="Encounters" value={encounterCount ?? '—'} sub="raids · strikes · fractals" />
+          <StatTile label="Logs this week" value={dash.stats.logsThisWeek.toLocaleString()} spark={dash.weeklyActivity.map((w) => w.count)} accent />
+        </div>
+      )}
 
       <div style={COLS}>
         <div>
