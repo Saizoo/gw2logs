@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Logo } from '../components/atoms';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
@@ -121,23 +120,6 @@ export default function LoginPage() {
             <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord</span>
           </a>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-        </div>
-
-        <Link
-          to="/upload"
-          className="u-btn-ghost"
-          style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 'var(--radius-md)', textAlign: 'center', display: 'block' }}
-        >
-          <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload without an account</span>
-          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>
-            Every player in the log still shows up in search and leaderboards under their GW2 account name
-          </div>
-        </Link>
 
         <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 24, lineHeight: 1.5 }}>
           By continuing you agree to the Terms of Service and Privacy Policy. Account claiming links your ArenaNet

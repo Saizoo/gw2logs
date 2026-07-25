@@ -424,8 +424,8 @@ logsRouter.delete('/:id', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // Assign / reassign / detach a log's group — uploader or admin only. When
-// attaching to a group the caller must be a member of it, same rule as
-// upload-time (see routes/uploads.ts). Pass groupId: null to detach.
+// attaching to a group the caller must be a member of it. Pass groupId: null
+// to detach.
 logsRouter.put('/:id/group', requireAuth, asyncHandler(async (req, res) => {
   const raw = req.body?.groupId;
   const groupId = typeof raw === 'string' && raw ? raw : null;

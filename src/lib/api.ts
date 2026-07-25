@@ -552,13 +552,6 @@ export interface CompareResult {
   rows: CompareRow[];
 }
 
-export interface UploadResult {
-  jobId: string;
-  logId?: string;
-  status: 'success' | 'failed';
-  error?: string;
-}
-
 export interface CurrentUser {
   id: string;
   discordId: string;
@@ -673,7 +666,6 @@ export interface AdminUserDetail {
 
 export interface AdminHealth {
   database: { size: string; tables: { name: string; size: string; deadTuples: number }[] };
-  parseQueue: { active: number; queued: number };
   uploadJobs: Record<string, number>;
   topFailures: { message: string; count: number }[];
   stuckJobs: { id: string; fileName: string; createdAt: string }[];
@@ -810,16 +802,6 @@ export const api = {
     if (p.logIdA && p.logIdB) { q.set('logIdA', p.logIdA); q.set('logIdB', p.logIdB); }
     if (p.fightName) { q.set('fightName', p.fightName); q.set('cm', String(p.isCm ?? false)); }
     return apiFetch<CompareResult>(`/compare?${q}`);
-  },
-  upload: async (file: File, opts: { groupId?: string; private?: boolean } = {}): Promise<UploadResult> => {
-    const form = new FormData();
-    form.append('file', file);
-    if (opts.groupId) form.append('groupId', opts.groupId);
-    if (opts.private) form.append('private', 'true');
-    const res = await fetch('/api/uploads', { method: 'POST', body: form });
-    const body = await res.json();
-    if (!res.ok) throw new ApiError(body.error ?? `Upload failed (${res.status})`, res.status);
-    return body;
   },
   // --- Log management (uploader/admin) ---
   setLogPrivacy: (id: string, isPrivate: boolean) =>

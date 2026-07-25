@@ -28,7 +28,7 @@ export async function persistLog(params: {
           uploadedBy,
           groupId,
           // Only ever private when a signed-in uploader asked for it — an
-          // owner-less private log would be unmanageable (see routes/uploads.ts).
+          // owner-less private log would be unmanageable.
           private: params.private ?? false,
           sourceFileName,
           mechanicsMeta: normalized.mechanicsMeta as any,

@@ -4,7 +4,6 @@ import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import { attachUser, requireAdmin, requireAuth } from './middleware/auth.js';
 import { asyncHandler } from './lib/asyncHandler.js';
-import { uploadsRouter } from './routes/uploads.js';
 import { encountersRouter } from './routes/encounters.js';
 import { playersRouter } from './routes/players.js';
 import { logsRouter } from './routes/logs.js';
@@ -111,7 +110,6 @@ export function createApp() {
     res.json({ totalLogs, totalPlayers });
   }));
 
-  app.use('/api/uploads', uploadsRouter);
   app.use('/api/encounters', encountersRouter);
   app.use('/api/players', playersRouter);
   app.use('/api/logs', logsRouter);

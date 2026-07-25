@@ -678,7 +678,7 @@ function ClearProgressRings({ coverage }: { coverage: PlayerProfile['coverage'] 
 
 // Encounters tab: coverage grid, wing sections with per-boss killed/parse tiles.
 function CoverageTab({ coverage }: { coverage: PlayerProfile['coverage'] }) {
-  if (coverage.length === 0) return <PlaceholderPanel title="No encounters yet" body="Upload a log to start tracking encounter coverage." />;
+  if (coverage.length === 0) return <PlaceholderPanel title="No encounters yet" body="Connect dps.report to import your logs and start tracking encounter coverage." />;
   return (
     <div>
       {coverage.map((w) => (

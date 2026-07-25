@@ -7,7 +7,6 @@ import PlannerPage from './pages/PlannerPage';
 import PlayerProfilePage from './pages/PlayerProfilePage';
 import ComparePage from './pages/ComparePage';
 import LogDetailPage from './pages/LogDetailPage';
-import UploadPage from './pages/UploadPage';
 import LoginPage from './pages/LoginPage';
 import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
@@ -61,7 +60,6 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/upload" element={<UploadPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
       </Route>
 

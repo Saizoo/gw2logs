@@ -61,10 +61,10 @@ const TOUR_STEPS: SpotlightStep[] = [
   },
   {
     kind: 'spotlight',
-    target: 'upload',
-    route: '/upload',
-    title: 'Upload logs',
-    body: 'Drop arcdps .zevtc files here and they’re parsed into full fight reports. Attach them to a group to power its clears and attendance.',
+    target: 'connect',
+    route: '/account',
+    title: 'Auto-import logs',
+    body: 'Link your dps.report token once and every log you upload there imports here automatically — full fight reports, no re-uploading.',
   },
 ];
 
@@ -378,8 +378,8 @@ function FinishStep() {
         ⚔️
       </div>
       <StepTitle eyebrow="All set" title="Go get some kills">
-        Upload a log and watch the dashboard light up. Everything you just saw is one click from the nav bar —
-        and you can replay this tour anytime from your Account page.
+        Connect dps.report and watch the dashboard light up as your logs import. Everything you just saw is one click
+        from the nav bar — and you can replay this tour anytime from your Account page.
       </StepTitle>
     </div>
   );

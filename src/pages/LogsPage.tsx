@@ -121,7 +121,7 @@ export default function LogsPage() {
         <EmptyState>
           {filter === 'mine'
             ? "No logs attributed to you yet — upload one while signed in, or claim one you're a player in from its Fight Report page."
-            : 'No logs match this filter yet. Upload a log to see it here.'}
+            : 'No logs match this filter yet. Connect dps.report to import your logs.'}
         </EmptyState>
       )}
 

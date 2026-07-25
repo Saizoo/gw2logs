@@ -665,7 +665,6 @@ function HealthTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
         <StatCard label="Database size" value={data.database.size} />
-        <StatCard label="Parsing now" value={`${data.parseQueue.active} (+${data.parseQueue.queued} queued)`} />
         <StatCard label="Reminders (7d)" value={data.reminders.sentLast7Days} />
         <StatCard label="Failed jobs" value={data.uploadJobs.failed ?? 0} />
       </div>

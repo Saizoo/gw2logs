@@ -110,7 +110,7 @@ export default function GroupDetailPage() {
       {active === 'week' && isMember && <ThisWeekTab group={group} groupId={id} />}
       {active === 'roster' && <RosterTab group={group} groupId={id} onGroupChanged={refetch} />}
       {active === 'attendance' && <AttendanceTab group={group} groupId={id} />}
-      {active === 'logs' && <LogsTab groupId={id} groupName={group.name} />}
+      {active === 'logs' && <LogsTab groupId={id} />}
     </div>
   );
 }

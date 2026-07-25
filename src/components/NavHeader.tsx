@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { NotificationBell } from './NotificationBell';
-import { UploadIndicator } from './UploadIndicator';
 import { NavCatalogMenu, type EncounterCategory } from './NavCatalogMenu';
 import { RAID_CATALOG, STRIKE_CATALOG, FRACTAL_CATALOG } from '../data/catalog';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -129,7 +128,15 @@ export function NavHeader() {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <UploadIndicator />
+          <Link
+            to="/account"
+            data-tour="connect"
+            className="nav-connect"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, font: '700 12.5px var(--font-sans)', color: 'var(--gold-fg)', background: 'var(--gold)', whiteSpace: 'nowrap' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            Connect logs
+          </Link>
           {user && <NotificationBell />}
           {user && (
             <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>

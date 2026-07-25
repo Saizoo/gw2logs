@@ -139,14 +139,14 @@ function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }
           <div style={{ flex: '0 1 250px', minWidth: 210 }}>
             <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-soft)', borderRadius: 'var(--radius-md)', padding: 16, textAlign: 'center' }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-                <path d="M12 16V4m0 0-4 4m4-4 4 4M5 20h14" />
+                <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19" />
               </svg>
-              <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Upload arcdps logs</div>
+              <div style={{ font: '700 13.5px var(--font-sans)', marginTop: 8 }}>Auto-import your logs</div>
               <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)', marginTop: 6, lineHeight: 1.4 }}>
-                Drop <b style={{ color: 'var(--text-80)' }}>.zevtc</b> files — parsed locally, never leave your server.
+                Link your <b style={{ color: 'var(--text-80)' }}>dps.report</b> token — new uploads import here automatically.
               </div>
-              <GoldButton to="/upload" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
-                Choose files
+              <GoldButton to="/account" style={{ display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 16px' }}>
+                Connect dps.report
               </GoldButton>
             </div>
           </div>
@@ -313,7 +313,7 @@ function FeaturedEncounters() {
 function JumpBackIn({ dash }: { dash: DashboardSummary }) {
   const links = [
     { label: 'My profile', to: dash.gw2AccountName ? `/players/${encodeURIComponent(dash.gw2AccountName)}` : '/account', hint: dash.gw2AccountName ? 'your parses →' : 'link account →' },
-    { label: 'Upload a log', to: '/upload', hint: 'drop .zevtc →' },
+    { label: 'Connect dps.report', to: '/account', hint: 'auto-import →' },
     { label: 'My groups', to: '/groups', hint: 'rosters →' },
   ];
   return (

@@ -8,7 +8,7 @@ import { formatLogDuration } from './shared';
 const LOGS_PAGE_SIZE = 20;
 
 // Logs tab: every log attached to this group, newest first.
-export default function LogsTab({ groupId, groupName }: { groupId: string; groupName: string }) {
+export default function LogsTab({ groupId }: { groupId: string }) {
   const {
     items: groupLogs,
     loading: logsLoading,
@@ -28,8 +28,7 @@ export default function LogsTab({ groupId, groupName }: { groupId: string; group
       {logsLoading && <LoadingState label="Loading logs…" />}
       {!logsLoading && groupLogs?.length === 0 && (
         <EmptyState>
-          No logs attached to this group yet — pick "{groupName}" from the group dropdown on the Upload page next
-          time someone uploads a log.
+          No logs attached to this group yet.
         </EmptyState>
       )}
         {groupLogs && groupLogs.length > 0 && (

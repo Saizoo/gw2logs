@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../../db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
-import { getParseQueueState } from '../../lib/eliteInsights.js';
 import { audit } from '../../lib/audit.js';
 
 export const adminHealthRouter = Router();
@@ -46,7 +45,6 @@ adminHealthRouter.get('/', asyncHandler(async (_req, res) => {
       size: dbSize[0]?.size ?? 'unknown',
       tables: tables.map((t) => ({ name: t.name, size: t.total, deadTuples: Number(t.dead) })),
     },
-    parseQueue: getParseQueueState(),
     uploadJobs: Object.fromEntries(jobCounts.map((c) => [c.status, c._count._all])),
     topFailures: failedGroups.map((f) => ({ message: f.errorMessage ?? '(no message)', count: f._count._all })),
     stuckJobs: stuckJobs.map((j) => ({ id: j.id, fileName: j.fileName, createdAt: j.createdAt })),
