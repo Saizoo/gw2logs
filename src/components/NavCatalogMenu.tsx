@@ -128,14 +128,19 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
 
-  // Lock the page's scroll while the full-screen mega-menu is open — scrolling
-  // the page behind a viewport-height overlay feels broken.
+  // Lock page scroll while the full-screen mega-menu is open. The scroll
+  // container is <html> (its overflow-x:hidden forces overflow-y:auto), so
+  // locking body alone does nothing — lock the root element too.
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
+    const root = document.documentElement;
+    const prevRoot = root.style.overflow;
+    const prevBody = document.body.style.overflow;
+    root.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prev;
+      root.style.overflow = prevRoot;
+      document.body.style.overflow = prevBody;
     };
   }, [open]);
 

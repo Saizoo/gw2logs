@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
@@ -6,6 +6,7 @@ import { NotificationBell } from './NotificationBell';
 import { NavCatalogMenu, type EncounterCategory } from './NavCatalogMenu';
 import { RAID_CATALOG, STRIKE_CATALOG, FRACTAL_CATALOG } from '../data/catalog';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { api, type CurrentUser } from '../lib/api';
 
 // Raids and Fractals are catalog mega-menus (see NavCatalogMenu); the rest are
 // plain tabs. Raid Planner is deliberately not here — it's reached from a
@@ -149,13 +150,11 @@ export function NavHeader() {
             </Link>
           )}
           {user && <NotificationBell />}
-          {user && (
-            <div className="nav-user-text" style={{ textAlign: 'right', lineHeight: 1.2 }}>
-              <div style={{ font: '600 12.5px var(--font-sans)' }}>{user.discordUsername}</div>
-              <div style={{ font: '600 10.5px var(--font-sans)', color: 'var(--gold)' }}>{user.gw2AccountName ?? 'Not linked'}</div>
-            </div>
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <Avatar to="/login" />
           )}
-          <Avatar to={user ? '/account' : '/login'} name={user?.discordUsername} imgSrc={user?.discordAvatar} />
         </div>
       </div>
 
@@ -209,6 +208,97 @@ export function NavHeader() {
               );
             })}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The signed-in user's menu: the identity pill (avatar + name + account)
+// toggles a dropdown with profile / settings / admin links and sign-out.
+function UserMenu({ user }: { user: CurrentUser }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  async function signOut() {
+    try {
+      await api.logout();
+    } finally {
+      window.location.href = '/';
+    }
+  }
+
+  const profileTo = user.gw2AccountName ? `/players/${encodeURIComponent(user.gw2AccountName)}` : '/account';
+  const items: { label: string; to: string; icon: ReactNode }[] = [
+    { label: 'My profile', to: profileTo, icon: <path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /> },
+    { label: 'My settings', to: '/account', icon: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></> },
+    ...(user.isAdmin ? [{ label: 'Admin', to: '/admin', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /> }] : []),
+  ];
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 9px 5px 5px', borderRadius: 999, cursor: 'pointer', background: open ? 'var(--bg-chip)' : 'transparent', border: '1px solid ' + (open ? 'var(--border)' : 'transparent'), transition: 'background .13s ease' }}
+      >
+        <Avatar size={30} name={user.discordUsername} imgSrc={user.discordAvatar} to={null} />
+        <span className="nav-user-text" style={{ textAlign: 'left', lineHeight: 1.15 }}>
+          <span style={{ display: 'block', font: '650 12.5px var(--font-sans)' }}>{user.discordUsername}</span>
+          <span style={{ display: 'block', font: '600 10.5px var(--font-sans)', color: 'var(--gold)' }}>{user.gw2AccountName ?? 'Not linked'}</span>
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ opacity: 0.6, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s ease' }}><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: 210, padding: 6, background: 'color-mix(in srgb, var(--bg-nav) 98%, transparent)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', zIndex: 80 }}
+        >
+          {items.map((it) => (
+            <Link
+              key={it.label}
+              to={it.to}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="u-row"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 'var(--radius-sm)', font: '600 13px var(--font-sans)', color: 'var(--text-80)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-55)', flex: 'none' }}>{it.icon}</svg>
+              {it.label}
+            </Link>
+          ))}
+          <div style={{ height: 1, background: 'var(--border-faint)', margin: '6px 4px' }} />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={signOut}
+            className="u-row"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 11px', borderRadius: 'var(--radius-sm)', font: '600 13px var(--font-sans)', color: 'var(--bad)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+            Sign out
+          </button>
         </div>
       )}
     </div>
