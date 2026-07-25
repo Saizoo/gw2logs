@@ -60,6 +60,28 @@ export const SPEC_TO_PROFESSION: Record<string, string> = {
   Necromancer: 'Necromancer', Reaper: 'Necromancer', Scourge: 'Necromancer', Harbinger: 'Necromancer', Ritualist: 'Necromancer',
 };
 
+// Extended per-player combat stats pulled from the Elite Insights JSON —
+// everything dps.report surfaces on its Offensive / Defensive / Support tabs
+// but we weren't keeping. All best-effort and null-tolerant: a log missing a
+// section just yields zeros for it. Times are in seconds (as EI serializes
+// them); counts are whole numbers.
+export interface PlayerCombatStats {
+  // Offensive
+  bossDps: number; // DPS to the boss target only (cleave onto adds stripped out)
+  critPct: number; // share of critable hits that critted, 0-100
+  // Defensive (mitigation actions)
+  barrier: number; // damage absorbed by barrier
+  blocked: number;
+  evaded: number;
+  dodges: number;
+  invulned: number;
+  // Support (given to allies / taken from enemies)
+  resurrects: number;
+  resurrectTime: number; // seconds spent reviving
+  condiCleanse: number; // conditions cleansed off allies
+  boonStrips: number; // boons ripped off enemies
+}
+
 export interface NormalizedPlayer {
   characterName: string;
   account: string;
@@ -77,6 +99,7 @@ export interface NormalizedPlayer {
   squadRole: SquadRole;
   groupBoons: Record<string, number>;
   healingOutput: number | null;
+  stats: PlayerCombatStats;
 }
 
 export interface NormalizedMechanicEvent {
@@ -216,6 +239,47 @@ function extractHealingPowerScore(player: any): number {
   return typeof score === 'number' ? score : 0;
 }
 
+// Extended offensive/defensive/support stats — see PlayerCombatStats. Read
+// from EI's phase-0 (full-fight) entries: StatsAll[0] (offensive), Defenses[0]
+// (mitigation), Support[0] (revives/cleanses/strips), plus DpsTargets for the
+// boss-only DPS. Every field defaults to 0 so a log missing a section still
+// normalizes cleanly.
+function extractPlayerStats(player: any, bossTargetIndex: number): PlayerCombatStats {
+  const statsAll = (field(player, 'StatsAll') ?? [])[0] ?? {};
+  const defenses = (field(player, 'Defenses') ?? [])[0] ?? {};
+  const support = (field(player, 'Support') ?? [])[0] ?? {};
+
+  // Boss-only DPS: DpsTargets is [targetIndex][phaseIndex]; take the boss
+  // target's full-fight (phase 0) entry. Falls back to 0 when the log has no
+  // resolved boss target or no per-target DPS (some non-boss logs).
+  const dpsTargets = field(player, 'DpsTargets') ?? [];
+  const bossDps = bossTargetIndex >= 0
+    ? Math.round(field((dpsTargets[bossTargetIndex] ?? [])[0], 'Dps') ?? 0)
+    : 0;
+
+  // Crit rate: crits over hits that could crit. EI gives raw counts, not a
+  // percentage — divide here, guarding a zero denominator.
+  const crits = Number(field(statsAll, 'CriticalRate') ?? 0);
+  const critable = Number(field(statsAll, 'CritableDirectDamageCount') ?? 0);
+  const critPct = critable > 0 ? Math.round((crits / critable) * 100) : 0;
+
+  const num = (obj: any, key: string) => Math.round(Number(field(obj, key) ?? 0));
+
+  return {
+    bossDps,
+    critPct,
+    barrier: num(defenses, 'DamageBarrier'),
+    blocked: num(defenses, 'BlockedCount'),
+    evaded: num(defenses, 'EvadedCount'),
+    dodges: num(defenses, 'DodgeCount'),
+    invulned: num(defenses, 'InvulnedCount'),
+    resurrects: num(support, 'Resurrects'),
+    resurrectTime: Math.round(Number(field(support, 'ResurrectTime') ?? 0)),
+    condiCleanse: num(support, 'CondiCleanse'),
+    boonStrips: num(support, 'BoonStrips'),
+  };
+}
+
 // A player generating a meaningful share of their subgroup's alacrity or
 // quickness uptime is that subgroup's boon support for that boon. Noise
 // floor of 15% filters out incidental generation (e.g. a trait proc) from
@@ -344,14 +408,15 @@ const MAX_HEALTH_POINTS = 180;
 // on JsonActor.HealthPercents; phases from JsonLog.Phases (index 0 is the
 // synthetic "Full Fight" wrapper, dropped here); per-phase squad DPS is summed
 // from each player's phase-indexed DpsAll entry.
-function extractEncounterTelemetry(raw: RawEiJson, players: any[]): EncounterTelemetry {
+// The main boss target's index into Targets: among the targets the full-fight
+// phase marks as active (Phases[0].Targets is a list of indices into Targets),
+// the one with the most health. Falls back to the highest-health target
+// overall, then the first — covers logs with an odd or missing phase-0 target
+// list. Shared by telemetry (health curve) and per-player boss-only DPS so
+// both point at the same target. -1 when there are no targets at all.
+function findBossTargetIndex(raw: RawEiJson): number {
   const rawPhases: any[] = field(raw, 'Phases') ?? [];
   const targets: any[] = field(raw, 'Targets') ?? [];
-
-  // Main boss target: among the targets the full-fight phase marks as active
-  // (Phases[0].Targets is a list of indices into Targets), the one with the
-  // most health. Falls back to the highest-health target overall, then the
-  // first target — covers logs with an odd or missing phase-0 target list.
   const fullFight = rawPhases[0];
   const activeIdx: number[] = (field(fullFight, 'Targets') ?? []).filter((i: any) => typeof i === 'number');
   const candidateIdx = activeIdx.length ? activeIdx : targets.map((_, i) => i);
@@ -364,6 +429,12 @@ function extractEncounterTelemetry(raw: RawEiJson, players: any[]): EncounterTel
       bossIdx = i;
     }
   }
+  return bossIdx;
+}
+
+function extractEncounterTelemetry(raw: RawEiJson, players: any[], bossIdx: number): EncounterTelemetry {
+  const rawPhases: any[] = field(raw, 'Phases') ?? [];
+  const targets: any[] = field(raw, 'Targets') ?? [];
   const boss = bossIdx >= 0 ? targets[bossIdx] : undefined;
 
   let health: [number, number][] | null = null;
@@ -428,6 +499,7 @@ function extractEncounterTelemetry(raw: RawEiJson, players: any[]): EncounterTel
 export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
   const players: any[] = field(raw, 'Players') ?? [];
   const { perPlayerCounts, events, meta: mechanicsMeta } = extractMechanics(raw);
+  const bossIdx = findBossTargetIndex(raw);
 
   const normalizedPlayers: NormalizedPlayer[] = players.map((p) => {
     const dps = extractPlayerDps(p);
@@ -451,6 +523,7 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
       squadRole: 'dps' as SquadRole,
       groupBoons: extractGroupBoons(p),
       healingOutput: extractHealingOutput(p),
+      stats: extractPlayerStats(p, bossIdx),
     };
   });
 
@@ -482,6 +555,6 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
     mechanicEvents: events,
     deathEvents: extractDeaths(raw),
     mechanicsMeta,
-    telemetry: extractEncounterTelemetry(raw, players),
+    telemetry: extractEncounterTelemetry(raw, players, bossIdx),
   };
 }

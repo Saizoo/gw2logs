@@ -5,12 +5,13 @@ import { resolveWing } from './bossMeta.js';
 export async function persistLog(params: {
   contentHash: string;
   sourceFileName?: string;
+  permalink?: string;
   uploadedBy?: string;
   groupId?: string;
   private?: boolean;
   normalized: NormalizedLog;
 }) {
-  const { contentHash, sourceFileName, uploadedBy, groupId, normalized } = params;
+  const { contentHash, sourceFileName, permalink, uploadedBy, groupId, normalized } = params;
 
   return prisma.$transaction(
     async (tx) => {
@@ -31,6 +32,7 @@ export async function persistLog(params: {
           // owner-less private log would be unmanageable.
           private: params.private ?? false,
           sourceFileName,
+          permalink,
           mechanicsMeta: normalized.mechanicsMeta as any,
           phaseData: normalized.telemetry as any,
         },
@@ -75,6 +77,7 @@ export async function persistLog(params: {
             squadRole: p.squadRole,
             groupBoons: p.groupBoons as any,
             healingOutput: p.healingOutput,
+            stats: p.stats as any,
           })),
         });
       }

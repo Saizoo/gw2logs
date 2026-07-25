@@ -166,6 +166,11 @@ model Log {
   // group's members can open it. Its parses still count in rankings/benchmarks
   // (see routes/logs.ts, encounters.ts). Only settable by a signed-in uploader.
   private        Boolean         @default(false)
+  // The dps.report permalink this log was imported from (auto-import via a
+  // linked dps.report token). Null for logs that predate dps.report import or
+  // came in another way — the detail page only shows the "View on dps.report"
+  // link when it's set.
+  permalink      String?
   // Set by the uploader at upload time if they're a member of the group —
   // see routes/uploads.ts. Null means "not attached to any group", not
   // "unknown"; a log can only ever belong to one group.
@@ -221,6 +226,12 @@ model LogPlayer {
   // capture included the healing addon. Null, not 0, when unavailable —
   // 0 would wrongly read as "healed for nothing" instead of "unknown".
   healingOutput Int?
+  // Extended combat stats extracted from the Elite Insights JSON at ingest —
+  // offensive (boss-only DPS, crit %), defensive (barrier, blocks, evades,
+  // dodges, invulns), and support (resurrects, condi cleanses, boon strips).
+  // See ingest.ts PlayerCombatStats. Null on logs ingested before this was
+  // captured (their raw JSON is gone) — the detail page falls back gracefully.
+  stats         Json?
 
   @@index([logId])
   @@index([playerId])

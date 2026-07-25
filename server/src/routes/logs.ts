@@ -31,6 +31,18 @@ function bossHealthOf(phaseData: unknown): { totalHealth: number | null; points:
   return { totalHealth: total, points };
 }
 
+// LogPlayer.stats is the PlayerCombatStats blob written at ingest (see
+// ingest.ts), or null on logs parsed before it existed. Read each numeric
+// field back defensively so a missing/partial blob yields zeros rather than
+// undefined leaking into the API response.
+const STATS_KEYS = ['bossDps', 'critPct', 'barrier', 'blocked', 'evaded', 'dodges', 'invulned', 'resurrects', 'resurrectTime', 'condiCleanse', 'boonStrips'] as const;
+function statsOf(stats: unknown): Record<(typeof STATS_KEYS)[number], number> {
+  const src = stats && typeof stats === 'object' ? (stats as Record<string, unknown>) : {};
+  const out = {} as Record<(typeof STATS_KEYS)[number], number>;
+  for (const k of STATS_KEYS) out[k] = typeof src[k] === 'number' ? (src[k] as number) : 0;
+  return out;
+}
+
 function phasesOf(phaseData: unknown): { name: string; startMs: number; endMs: number; breakbar: boolean; squadDps: number }[] {
   if (!phaseData || typeof phaseData !== 'object') return [];
   const pd = phaseData as Record<string, unknown>;
@@ -194,6 +206,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       squadDps: true,
       encounterTime: true,
       private: true,
+      permalink: true,
       mechanicsMeta: true,
       phaseData: true,
       uploadedBy: true,
@@ -216,6 +229,8 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
           boons: true,
           mechanics: true,
           squadRole: true,
+          healingOutput: true,
+          stats: true,
           player: { select: { account: true, userId: true, user: { select: { hideName: true } } } },
         },
       },
@@ -300,6 +315,9 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     uploadedBy: log.uploader ? { username: log.uploader.discordUsername } : null,
     canClaim,
     private: log.private,
+    // The dps.report source this log was auto-imported from, if any — powers
+    // the "View on dps.report" link on the detail page.
+    permalink: log.permalink ?? null,
     // Whether the viewer may toggle privacy / delete / reassign this log.
     canManage: manages,
     group: log.groupId && log.group ? { id: log.groupId, name: log.group.name } : null,
@@ -338,6 +356,11 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       deaths: p.deadCount,
       boons: p.boons,
       mechanics: p.mechanics,
+      // Measured outgoing HPS — only present when the log was captured with the
+      // healing addon; null (not 0) means "unknown", same as the schema.
+      healingOutput: p.healingOutput,
+      // Extended offensive/defensive/support stats — zeros on older logs.
+      stats: statsOf(p.stats),
     };
     }),
     // Timeline/mechanics reference players by character name; mask the ones

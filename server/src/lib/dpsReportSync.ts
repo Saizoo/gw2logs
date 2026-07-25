@@ -63,7 +63,7 @@ export async function importDpsReportForUser(
       try {
         const rawJson = await fetchDpsReportJson(upload.permalink);
         const normalized = normalizeEiJson(rawJson);
-        await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, uploadedBy: userId, normalized });
+        await persistLog({ contentHash, sourceFileName: `dps.report:${upload.id}`, permalink: upload.permalink, uploadedBy: userId, normalized });
         imported++;
       } catch {
         failed++;

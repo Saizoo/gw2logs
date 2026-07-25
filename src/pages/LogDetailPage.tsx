@@ -24,8 +24,8 @@ function PlayerLink({ name, account, style, onClick }: { name: string; account: 
   );
 }
 
-type Tab = 'Damage' | 'Boons' | 'Mechanics' | 'Timeline';
-const TABS: Tab[] = ['Damage', 'Boons', 'Mechanics', 'Timeline'];
+type Tab = 'Damage' | 'Defenses' | 'Support' | 'Boons' | 'Mechanics' | 'Timeline';
+const TABS: Tab[] = ['Damage', 'Defenses', 'Support', 'Boons', 'Mechanics', 'Timeline'];
 
 const BOON_COLUMNS: { key: string; label: string; weight?: number }[] = [
   { key: 'quickness', label: 'Quick' },
@@ -133,6 +133,19 @@ export default function LogDetailPage() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4m4-4v13" /></svg>
                 Share
               </button>
+              {log.permalink && (
+                <a
+                  href={log.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="u-btn-ghost"
+                  title="Open the original log on dps.report"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 15px', borderRadius: 'var(--radius-md)', font: '650 13.5px var(--font-sans)', border: '1px solid var(--border-soft)', color: 'var(--text-80)', background: 'none', textDecoration: 'none' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" /></svg>
+                  dps.report
+                </a>
+              )}
             </div>
           </div>
           {/* Summary tiles bleed past the band's bottom edge; the band's
@@ -188,6 +201,8 @@ export default function LogDetailPage() {
       </div>
 
       {tab === 'Damage' && <SquadTab log={log} durationLabel={formatDuration(log.durationMs)} />}
+      {tab === 'Defenses' && <DefensesTab players={log.players} />}
+      {tab === 'Support' && <SupportTab players={log.players} />}
       {tab === 'Boons' && <BoonsTab players={log.players} />}
       {tab === 'Mechanics' && <MechanicsTab log={log} />}
       {tab === 'Timeline' && <TimelineTab log={log} />}
@@ -506,14 +521,18 @@ const DAMAGE_METRICS: { id: DamageMetric; label: string }[] = [
 ];
 
 // Ranked squad damage — one bar per player, sortable between whole-squad DPS,
-// total damage (DPS × fight duration), and boss-only damage. Boss-only needs
-// per-target numbers we don't extract yet, so that view is coming-soon.
+// total damage (DPS × fight duration), and boss-only DPS (cleave onto adds
+// stripped out, from EI's per-target numbers extracted at ingest).
 function DamageTable({ players, durationMs }: { players: LogDetailPlayer[]; durationMs: number }) {
   const [metric, setMetric] = useState<DamageMetric>('dps');
   const durationSec = durationMs / 1000;
+  // Boss-only DPS is 0 on logs parsed before per-target extraction landed —
+  // hide that toggle rather than show an all-zero table for them.
+  const hasBossDps = players.some((p) => p.stats.bossDps > 0);
 
   const rows = useMemo(() => {
-    const valueOf = (p: LogDetailPlayer) => (metric === 'total' ? Math.round(p.total * durationSec) : p.total);
+    const valueOf = (p: LogDetailPlayer) =>
+      metric === 'total' ? Math.round(p.total * durationSec) : metric === 'boss' ? p.stats.bossDps : p.total;
     const ranked = players.map((p) => ({ p, value: valueOf(p) })).sort((a, b) => b.value - a.value);
     const sum = ranked.reduce((s, r) => s + r.value, 0) || 1;
     const max = ranked[0]?.value || 1;
@@ -530,7 +549,7 @@ function DamageTable({ players, durationMs }: { players: LogDetailPlayer[]; dura
           Damage
         </div>
         <div style={{ display: 'flex', gap: 2, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3 }}>
-          {DAMAGE_METRICS.map((m) => {
+          {DAMAGE_METRICS.filter((m) => m.id !== 'boss' || hasBossDps).map((m) => {
             const on = metric === m.id;
             return (
               <button
@@ -554,16 +573,7 @@ function DamageTable({ players, durationMs }: { players: LogDetailPlayer[]; dura
         </div>
       </div>
 
-      {metric === 'boss' ? (
-        <div style={{ padding: '30px 20px', textAlign: 'center' }}>
-          <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', display: 'inline-block', padding: '3px 9px', borderRadius: 999, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)', marginBottom: 10 }}>
-            Coming soon
-          </div>
-          <div style={{ font: '400 12.5px/1.6 var(--font-sans)', color: 'var(--text-55)', maxWidth: 340, margin: '0 auto' }}>
-            Boss-only damage strips out cleave onto adds — it needs per-target numbers that aren&apos;t extracted from logs yet.
-          </div>
-        </div>
-      ) : (
+      {(
         <div>
           {rows.map((r, i) => {
             const p = r.p;
@@ -779,6 +789,114 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
         Uptime % (Might shown as avg stacks). Darker gold = higher uptime.
       </div>
     </Card>
+  );
+}
+
+interface StatColumn {
+  key: string;
+  label: string;
+  // Null renders as "—" (unknown), e.g. healing on a log without the addon.
+  value: (p: LogDetailPlayer) => number | null;
+  fmt?: (v: number) => string;
+}
+
+// A per-player numeric stat grid — shared by the Defenses and Support tabs.
+// Rows sort by `sortKey` (descending, unknowns last); the leader in each
+// column is highlighted so the standout support/tank reads at a glance.
+function PlayerStatTable({ players, columns, sortKey, note }: { players: LogDetailPlayer[]; columns: StatColumn[]; sortKey: string; note?: string }) {
+  const sortCol = columns.find((c) => c.key === sortKey) ?? columns[0];
+  const sorted = useMemo(
+    () => [...players].sort((a, b) => (sortCol.value(b) ?? -1) - (sortCol.value(a) ?? -1)),
+    [players, sortCol],
+  );
+  const maxByKey = useMemo(
+    () => new Map(columns.map((c) => [c.key, Math.max(0, ...players.map((p) => c.value(p) ?? 0))])),
+    [players, columns],
+  );
+  const gridColumns = `26px minmax(120px, 1fr) 120px repeat(${columns.length}, minmax(70px, 88px))`;
+  return (
+    <Card style={{ padding: '18px 20px' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 'fit-content' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, padding: '0 4px 10px', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            <div>Sub</div>
+            <div>Player</div>
+            <div>Prof</div>
+            {columns.map((c) => (
+              <div key={c.key} style={{ textAlign: 'right' }}>{c.label}</div>
+            ))}
+          </div>
+          {sorted.map((p) => (
+            <div key={p.account ?? p.name} style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: 8, alignItems: 'center', padding: '9px 4px', borderBottom: '1px solid var(--border-faint)' }}>
+              <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-50)' }}>{p.subgroup}</div>
+              <PlayerLink name={p.name} account={p.account} style={{ font: '600 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                <ProfDot color={professionColor(p.profession)} />
+                <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.spec}</div>
+              </div>
+              {columns.map((c) => {
+                const v = c.value(p);
+                const isLeader = v != null && v > 0 && v === maxByKey.get(c.key);
+                return (
+                  <div key={c.key} style={{ textAlign: 'right', font: '700 12.5px var(--font-mono)', color: v == null ? 'var(--text-40)' : isLeader ? 'var(--gold)' : 'var(--text-80)' }}>
+                    {v == null ? '—' : (c.fmt ? c.fmt(v) : v.toLocaleString())}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      {note && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 12 }}>{note}</div>}
+    </Card>
+  );
+}
+
+// Seconds → "1:05" / "48s" for the resurrect-time column.
+function fmtSeconds(s: number): string {
+  if (s <= 0) return '0s';
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// Defensive tab: how much each player mitigated or avoided — damage taken,
+// barrier absorbed, and active mitigation (blocks/evades/dodges/invulns), plus
+// downs and deaths. Straight from Elite Insights' Defenses stats.
+function DefensesTab({ players }: { players: LogDetailPlayer[] }) {
+  const columns: StatColumn[] = [
+    { key: 'damageTaken', label: 'Taken', value: (p) => p.damageTaken, fmt: fmtCompact },
+    { key: 'barrier', label: 'Barrier', value: (p) => p.stats.barrier, fmt: fmtCompact },
+    { key: 'blocked', label: 'Blocks', value: (p) => p.stats.blocked },
+    { key: 'evaded', label: 'Evades', value: (p) => p.stats.evaded },
+    { key: 'dodges', label: 'Dodges', value: (p) => p.stats.dodges },
+    { key: 'invulned', label: 'Invuln', value: (p) => p.stats.invulned },
+    { key: 'downs', label: 'Downs', value: (p) => p.downs },
+    { key: 'deaths', label: 'Deaths', value: (p) => p.deaths },
+  ];
+  return <PlayerStatTable players={players} columns={columns} sortKey="damageTaken" note="Damage taken and barrier absorbed; blocks / evades / dodges / invulns are active mitigation counts. Column leaders in gold." />;
+}
+
+// Support tab: what each player did for the squad — outgoing healing (only when
+// the log was captured with the healing addon), conditions cleansed off allies,
+// boons stripped off enemies, and revives. From EI's Support + healing stats.
+function SupportTab({ players }: { players: LogDetailPlayer[] }) {
+  const anyHealing = players.some((p) => p.healingOutput != null);
+  const columns: StatColumn[] = [
+    { key: 'healingOutput', label: 'HPS', value: (p) => p.healingOutput, fmt: fmtCompact },
+    { key: 'condiCleanse', label: 'Cleanse', value: (p) => p.stats.condiCleanse },
+    { key: 'boonStrips', label: 'Strips', value: (p) => p.stats.boonStrips },
+    { key: 'resurrects', label: 'Revives', value: (p) => p.stats.resurrects },
+    { key: 'resurrectTime', label: 'Rez time', value: (p) => p.stats.resurrectTime, fmt: fmtSeconds },
+  ];
+  return (
+    <PlayerStatTable
+      players={players}
+      columns={columns}
+      sortKey={anyHealing ? 'healingOutput' : 'condiCleanse'}
+      note={anyHealing
+        ? 'HPS is measured outgoing healing (needs the arcdps healing addon); cleanses/strips/revives are counts. Column leaders in gold.'
+        : 'This log was captured without the healing addon, so outgoing HPS is unknown (—). Cleanses, strips and revives still come through.'}
+    />
   );
 }
 

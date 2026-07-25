@@ -244,6 +244,26 @@ export interface LogDetailPlayer {
   deaths: number;
   boons: Record<string, number>;
   mechanics: Record<string, number>;
+  // Measured outgoing HPS — only present when the log was captured with the
+  // healing addon (null means unknown, not zero).
+  healingOutput: number | null;
+  // Extended offensive/defensive/support stats from Elite Insights, all zero on
+  // logs ingested before these were captured. See server ingest PlayerCombatStats.
+  stats: PlayerCombatStats;
+}
+
+export interface PlayerCombatStats {
+  bossDps: number;
+  critPct: number;
+  barrier: number;
+  blocked: number;
+  evaded: number;
+  dodges: number;
+  invulned: number;
+  resurrects: number;
+  resurrectTime: number;
+  condiCleanse: number;
+  boonStrips: number;
 }
 
 export interface DpsChartPoint {
@@ -284,6 +304,8 @@ export interface LogDetail {
   // Whether the viewer may toggle privacy / delete / reassign this log.
   canManage: boolean;
   group: { id: string; name: string } | null;
+  // The dps.report permalink this log was auto-imported from, or null.
+  permalink: string | null;
   players: LogDetailPlayer[];
   // severity is "Sev0".."Sev4" straight from Elite Insights, or null when
   // EI itself didn't set one — never guessed client-side.
