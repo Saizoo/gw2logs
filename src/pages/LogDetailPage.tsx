@@ -2,7 +2,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
-import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot, ResultPill } from '../components/atoms';
+import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';
 import { api, ApiError, type DpsChartPoint, type GroupSummary, type LogDetail, type LogDetailPlayer } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -24,8 +24,8 @@ function PlayerLink({ name, account, style, onClick }: { name: string; account: 
   );
 }
 
-type Tab = 'Squad' | 'Boons' | 'Mechanics' | 'Timeline';
-const TABS: Tab[] = ['Squad', 'Boons', 'Mechanics', 'Timeline'];
+type Tab = 'Damage' | 'Boons' | 'Mechanics' | 'Timeline';
+const TABS: Tab[] = ['Damage', 'Boons', 'Mechanics', 'Timeline'];
 
 const BOON_COLUMNS: { key: string; label: string; weight?: number }[] = [
   { key: 'quickness', label: 'Quick' },
@@ -48,7 +48,7 @@ export default function LogDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { user } = useCurrentUser();
-  const [tab, setTab] = useState<Tab>('Squad');
+  const [tab, setTab] = useState<Tab>('Damage');
   const [reloadNonce, setReloadNonce] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const { data: log, loading, error } = useApiQuery(() => api.log(id), [id, reloadNonce]);
@@ -57,6 +57,8 @@ export default function LogDetailPage() {
   if (loading) return <LoadingState label="Loading log…" />;
   if (error) return <ErrorState message={error} />;
   if (!log) return null;
+
+  const totalDeaths = log.players.reduce((s, p) => s + p.deaths, 0);
 
   async function handleClaim() {
     setClaiming(true);
@@ -73,97 +75,60 @@ export default function LogDetailPage() {
 
   return (
     <div>
-      <Card
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          padding: '36px 32px',
-          marginBottom: 22,
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)',
-          boxShadow: 'var(--shadow-md)',
-          background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))',
-        }}
-      >
-        {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.55 }} />}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(100deg, color-mix(in srgb, var(--color-surface) 92%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 45%, color-mix(in srgb, var(--color-surface) 35%, transparent) 100%), radial-gradient(700px 300px at 15% 0%, oklch(0.4 0.1 55 / 25%), transparent)',
-          }}
-        />
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              {log.wing && (
-                <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.5px', color: 'var(--gold)', textTransform: 'uppercase' }}>
-                  {log.wing}
-                </div>
-              )}
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-50)' }} />
-              <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-60)' }}>{new Date(log.date).toLocaleString()}</div>
-            </div>
-            <div style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.5px' }}>
-              {log.boss}
-              {log.isCm ? ' CM' : ''}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-              <ResultPill success={log.success} size="md" />
-              <Pill>{formatDuration(log.durationMs)}</Pill>
-              {log.private && (
-                <span style={{ font: '700 11px var(--font-sans)', padding: '5px 12px', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-text) 82%, transparent)', color: 'var(--color-surface)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
-                  Private
+      {/* Boss banner — full-bleed art under a dark scrim, kill/CM badges, and a
+          meta row; summary tiles sit beneath it (the new design). */}
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: 14, boxShadow: 'var(--shadow-md)' }}>
+        {bossBgPath(log.boss) && <ArtImg src={bossBgPath(log.boss)!} style={{ opacity: 0.9 }} />}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8,8,8,.3) 0%, rgba(8,8,8,.86) 100%)' }} />
+        <div style={{ position: 'relative', padding: 'clamp(22px, 3vw, 30px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, font: '500 12.5px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 72%, transparent)' }}>
+            <Link to="/" style={{ color: 'inherit' }}>Dashboard</Link>
+            <span style={{ opacity: 0.6 }}>/</span>
+            <Link to="/raids" style={{ color: 'inherit' }}>Encounters</Link>
+            <span style={{ opacity: 0.6 }}>/</span>
+            <span style={{ color: 'var(--on-art)' }}>{log.boss}{log.isCm ? ' CM' : ''}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <h1 style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.5px', color: 'var(--on-art)' }}>{log.boss}</h1>
+                <span style={{ font: '800 11.5px var(--font-sans)', letterSpacing: '.03em', padding: '3px 10px', borderRadius: 999, background: log.success ? 'var(--good)' : 'var(--bad)', color: '#08130c' }}>
+                  {log.success ? 'KILL' : 'WIPE'}
                 </span>
-              )}
+                {log.isCm && <span style={{ font: '700 11px var(--font-sans)', padding: '3px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,.45)', color: 'var(--on-art)' }}>Challenge Mode</span>}
+                {log.private && <span style={{ font: '700 10.5px var(--font-sans)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '3px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,.3)', color: 'var(--on-art)' }}>Private</span>}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, font: '500 13px var(--font-sans)', color: 'color-mix(in srgb, var(--on-art) 80%, transparent)' }}>
+                {log.wing && <span style={{ fontWeight: 700, color: 'var(--on-art)' }}>{log.wing}</span>}
+                <span>{formatDuration(log.durationMs)} duration</span>
+                <span>{log.players.length}-player squad</span>
+                <span>{new Date(log.date).toLocaleString()}</span>
+                <span>{log.uploadedBy ? <>by <b style={{ color: 'var(--on-art)' }}>{log.uploadedBy.username}</b></> : 'uploaded anonymously'}</span>
+                {log.group && <Link to={`/groups/${log.group.id}`} style={{ color: 'var(--gold)', fontWeight: 600 }}>{log.group.name}</Link>}
+              </div>
             </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ font: '800 32px var(--font-sans)', color: 'var(--gold)', letterSpacing: '-.5px' }}>
-              {log.squadDps.toLocaleString()}
-            </div>
-            <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-60)' }}>squad dps</div>
-          </div>
-        </div>
-        <div style={{ position: 'relative', marginTop: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
-            {log.uploadedBy ? (
-              <>
-                Uploaded by <span style={{ color: 'var(--text-80)', fontWeight: 600 }}>{log.uploadedBy.username}</span>
-              </>
-            ) : (
-              'Uploaded anonymously'
-            )}
-            {log.group && (
-              <>
-                {' · '}
-                <Link to={`/groups/${log.group.id}`} style={{ color: 'var(--gold)' }}>
-                  {log.group.name}
-                </Link>
-              </>
+            {log.canClaim && (
+              <button
+                onClick={handleClaim}
+                disabled={claiming}
+                className={claiming ? undefined : 'u-chip'}
+                style={{ font: '600 12px var(--font-sans)', padding: '8px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,.1)', color: 'var(--on-art)', border: '1px solid rgba(255,255,255,.35)', opacity: claiming ? 0.6 : 1 }}
+              >
+                {claiming ? 'Claiming…' : 'Claim this upload'}
+              </button>
             )}
           </div>
-          {log.canClaim && (
-            <button
-              onClick={handleClaim}
-              disabled={claiming}
-              className={claiming ? undefined : 'u-chip'}
-              style={{
-                font: '600 11px var(--font-sans)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--gold-dim)',
-                color: 'var(--gold)',
-                border: '1px solid var(--gold-dim)',
-                opacity: claiming ? 0.6 : 1,
-              }}
-            >
-              {claiming ? 'Claiming…' : 'Claim this upload'}
-            </button>
-          )}
         </div>
-      </Card>
+      </div>
+
+      {/* Summary tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 13, marginBottom: 20 }}>
+        <SummaryTile label="Squad DPS" value={log.squadDps.toLocaleString()} accent />
+        <SummaryTile label="Duration" value={formatDuration(log.durationMs)} />
+        <SummaryTile label="Players" value={log.players.length} />
+        <SummaryTile label="Result" value={<span style={{ color: log.success ? 'var(--good)' : 'var(--bad)' }}>{log.success ? 'Success' : 'Wipe'}</span>} />
+        <SummaryTile label="Deaths" value={totalDeaths} />
+      </div>
 
       {log.canManage && (
         <LogOwnerControls
@@ -180,27 +145,33 @@ export default function LogDetailPage() {
         <ParseLegend />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-        {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={tab === t ? undefined : 'u-chip'}
-            style={{
-              padding: '7px 14px',
-              borderRadius: 'var(--radius-md)',
-              font: '600 12px var(--font-sans)',
-              background: tab === t ? 'var(--gold-grad)' : 'var(--bg-chip)',
-              color: tab === t ? 'var(--gold-fg)' : 'var(--text-65)',
-              border: `1px solid ${tab === t ? 'transparent' : 'var(--border)'}`,
-            }}
-          >
-            {t}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 24, marginBottom: 20, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+        {TABS.map((t) => {
+          const on = tab === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                padding: '12px 2px',
+                marginBottom: -1,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                font: '700 13.5px var(--font-sans)',
+                borderBottom: `2px solid ${on ? 'var(--gold)' : 'transparent'}`,
+                color: on ? 'var(--gold)' : 'var(--text-55)',
+                transition: 'color .15s ease, border-color .15s ease',
+              }}
+            >
+              {t}
+            </button>
+          );
+        })}
       </div>
 
-      {tab === 'Squad' && <SquadTab log={log} />}
+      {tab === 'Damage' && <SquadTab log={log} />}
       {tab === 'Boons' && <BoonsTab players={log.players} />}
       {tab === 'Mechanics' && <MechanicsTab log={log} />}
       {tab === 'Timeline' && <TimelineTab log={log} />}
@@ -208,11 +179,12 @@ export default function LogDetailPage() {
   );
 }
 
-function Pill({ children }: { children: ReactNode }) {
+function SummaryTile({ label, value, accent }: { label: string; value: ReactNode; accent?: boolean }) {
   return (
-    <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
-      {children}
-    </span>
+    <Card style={{ padding: '13px 15px' }}>
+      <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
+      <div style={{ font: '800 22px var(--font-sans)', letterSpacing: '-.4px', marginTop: 4, color: accent ? 'var(--gold)' : 'var(--text)' }}>{value}</div>
+    </Card>
   );
 }
 
