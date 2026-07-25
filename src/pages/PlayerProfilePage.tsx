@@ -246,7 +246,7 @@ export default function PlayerProfilePage() {
           <ArtImg src={headerBg} style={{ opacity: 0.14, maskImage: 'linear-gradient(180deg, #000, transparent 88%)', WebkitMaskImage: 'linear-gradient(180deg, #000, transparent 88%)' }} />
         )}
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1000px 420px at 82% -30%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 60%), radial-gradient(760px 460px at 2% 130%, color-mix(in srgb, var(--color-accent-700) 26%, transparent), transparent 60%)' }} />
-        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '20px 32px 24px' }}>
+        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '20px 32px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
             <Link to="/characters" style={{ color: 'inherit' }}>Characters</Link>
             <span style={{ color: 'var(--text-45)' }}>/</span>
@@ -302,11 +302,12 @@ export default function PlayerProfilePage() {
           </div>
           <FollowShare account={player.account} />
           </div>
-          {/* Stat tiles live inside the band; its bottom separator sits just
-              below them, so the cards read as part of the hero (the design). */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 13, marginTop: 24 }}>
+          {/* Stat tiles bleed past the band's bottom edge; the band's
+              overflow:hidden clips them at the separator so the cards are cut
+              off there (the design), rather than floating whole below it. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 13, marginTop: 24, marginBottom: -24 }}>
             {profileStats.map((s, i) => (
-              <Card key={s.label} style={{ padding: '15px 17px' }}>
+              <Card key={s.label} style={{ padding: '15px 17px 26px' }}>
                 <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{s.label}</div>
                 <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 0 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
               </Card>
