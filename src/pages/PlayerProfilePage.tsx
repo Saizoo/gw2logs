@@ -237,18 +237,22 @@ export default function PlayerProfilePage() {
 
   return (
     <div>
-      {/* Profile hero — circular class-coloured portrait, a graded title tag,
-          the account name + meta, and a row of stat tiles (the new design).
+      {/* Profile hero — full-bleed band (matches the design): a breadcrumb and
+          the portrait + identity + Follow/Share over a teal-tinted gradient
+          that spans the viewport; the stat tiles overlap its bottom edge.
           The portrait doubles as the owner's icon-picker button. */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', marginBottom: 14 }}>
+      <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginTop: -32, overflow: 'hidden', background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 6%, transparent) 0%, transparent 78%)' }}>
         {headerBg && (
-          <>
-            <ArtImg src={headerBg} style={{ opacity: 0.2, maskImage: 'linear-gradient(90deg, transparent, #000 60%)', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 60%)' }} />
-            <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--bg-card) 82%, transparent), transparent 45%)' }} />
-          </>
+          <ArtImg src={headerBg} style={{ opacity: 0.14, maskImage: 'linear-gradient(180deg, #000, transparent 82%)', WebkitMaskImage: 'linear-gradient(180deg, #000, transparent 82%)' }} />
         )}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px 240px at 88% -20%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 60%)' }} />
-        <div style={{ position: 'relative', padding: 'clamp(22px, 3vw, 30px)', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1000px 420px at 82% -30%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 60%), radial-gradient(760px 460px at 2% 130%, color-mix(in srgb, var(--color-accent-700) 26%, transparent), transparent 60%)' }} />
+        <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '20px 32px 58px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, font: '500 12.5px var(--font-sans)', color: 'var(--text-55)' }}>
+            <Link to="/characters" style={{ color: 'inherit' }}>Characters</Link>
+            <span style={{ color: 'var(--text-45)' }}>/</span>
+            <span style={{ color: 'var(--text-80)' }}>{player.account}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => isOwner && setPicking(true)}
@@ -297,11 +301,12 @@ export default function PlayerProfilePage() {
             )}
           </div>
           <FollowShare account={player.account} />
+          </div>
         </div>
       </div>
 
-      {/* Stat tiles under the hero. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 13, marginBottom: 22 }}>
+      {/* Stat tiles — overlap the hero band's bottom edge (the design). */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 13, marginTop: -42, marginBottom: 22 }}>
         {profileStats.map((s, i) => (
           <Card key={s.label} style={{ padding: '15px 17px' }}>
             <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{s.label}</div>
