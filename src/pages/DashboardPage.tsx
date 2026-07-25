@@ -105,9 +105,11 @@ function StatTile({ label, value, sub, spark, accent }: { label: string; value: 
 }
 
 function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }) {
+  // Open band, not a card: the intro/search sit on the page background (only
+  // the upload box is bordered), matching the design.
   return (
-    <Panel style={{ position: 'relative', overflow: 'hidden', padding: 'clamp(22px, 4vw, 32px)', marginBottom: 16 }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(720px 300px at 82% -25%, color-mix(in srgb, var(--color-accent) 15%, transparent), transparent 60%)' }} />
+    <div style={{ position: 'relative', overflow: 'hidden', padding: 'clamp(16px, 3vw, 26px) 0 22px', marginBottom: 8 }}>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(720px 300px at 82% -25%, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 60%)' }} />
       <div style={{ position: 'relative', display: 'flex', gap: 26, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 420px', minWidth: 0 }}>
           <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--text-55)' }}>
@@ -134,7 +136,7 @@ function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }
           </div>
         </div>
       </div>
-    </Panel>
+    </div>
   );
 }
 
