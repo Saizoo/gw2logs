@@ -62,7 +62,7 @@ function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => v
       className="enc-tile"
       style={{
         position: 'relative',
-        height: 84,
+        height: 122,
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         border: '1px solid var(--border)',
@@ -71,25 +71,27 @@ function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => v
       }}
     >
       {img && <ArtImg src={img} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,.2) 100%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.9) 8%, rgba(0,0,0,.35) 52%, rgba(0,0,0,.12) 100%)' }} />
 
-      {/* Hover action row (top-right). */}
-      <div className="enc-actions" style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 7, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+      {/* Hover action stack — centered, vertical so it fits a narrow poster. */}
+      <div className="enc-actions" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(6,8,8,.45)' }}>
         <ActionPill to={`/rankings?${q}`} label="Leaderboards" onNavigate={onNavigate} />
         <ActionPill to={`/reports?${q}`} label="Logs" onNavigate={onNavigate} />
         <ActionPill to={`/statistics?${q}`} label="Statistics" onNavigate={onNavigate} />
       </div>
 
-      {/* Boss name (bottom-left). */}
-      <div style={{ position: 'absolute', left: 14, right: 14, bottom: 11, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ font: '800 16px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)', textShadow: '0 1px 4px rgba(0,0,0,.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {/* CM chip (top-right). */}
+      {boss.hasCm && (
+        <span style={{ position: 'absolute', top: 8, right: 8, font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 26%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)' }}>
+          CM
+        </span>
+      )}
+
+      {/* Boss name (bottom). */}
+      <div style={{ position: 'absolute', left: 11, right: 11, bottom: 9 }}>
+        <span style={{ display: 'block', font: '700 12.5px var(--font-sans)', letterSpacing: '-.2px', color: 'var(--on-art)', textShadow: '0 1px 4px rgba(0,0,0,.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {boss.name}
         </span>
-        {boss.hasCm && (
-          <span style={{ flex: 'none', font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 26%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)' }}>
-            CM
-          </span>
-        )}
       </div>
     </div>
   );
@@ -237,7 +239,7 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
                     <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-65)', whiteSpace: 'nowrap' }}>{group.name}</div>
                     <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 9 }}>
                     {group.bosses.map((b) => (
                       <BossTile key={b.name} boss={b} onNavigate={() => setOpen(false)} />
                     ))}
