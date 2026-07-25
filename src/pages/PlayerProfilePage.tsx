@@ -4,7 +4,23 @@ import { api, type PlayerProfile } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { PROFESSIONS, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
-import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
+import { bossImage } from '../data/catalog';
+import { ArtImg, Card, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
+
+// Compact "2h" / "3d ago" for the recent-parses table.
+function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 60) return 'now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`;
+  return `${Math.floor(days / 30)}mo`;
+}
 import { LoadingState, ErrorState } from '../components/QueryStates';
 import { toast } from '../lib/toast';
 
@@ -312,12 +328,9 @@ export default function PlayerProfilePage() {
       </div>
 
       {tab === 'overview' && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'start' }}>
-            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
-            <HeaderRecord record={player.record} />
-          </div>
-
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+            <ProfileRecentParses recent={player.recent} />
           {chart && (
             <Card style={{ padding: '20px 20px 8px' }}>
               <div style={{ font: '700 13.5px var(--font-sans)', marginBottom: 6 }}>DPS Trend — Last {recentKills.length} Kills</div>
@@ -394,7 +407,12 @@ export default function PlayerProfilePage() {
               </div>
             </Card>
           )}
-        </>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+            <HeaderRecord record={player.record} />
+          </div>
+        </div>
       )}
 
       {tab === 'performance' && (
@@ -469,6 +487,64 @@ export default function PlayerProfilePage() {
         </Card>
       )}
     </div>
+  );
+}
+
+// --- Recent parses table (Overview headline, matches the design) ----------
+
+function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
+  const rows = recent.slice(0, 10);
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 17px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ font: '750 15px var(--font-sans)', display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M7 14l3-3 3 2 4-5" /></svg>
+          </span>
+          Recent parses
+        </div>
+        <span style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{recent.length} logged</span>
+      </div>
+      {rows.length === 0 ? (
+        <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 500, borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Encounter', 'Profession', 'DPS', 'Result', 'When'].map((h, i) => (
+                  <th key={h} style={{ textAlign: i >= 2 ? 'right' : 'left', font: '700 10.5px var(--font-sans)', letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--text-50)', padding: '11px 17px', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const prof = professionForSpec(r.spec);
+                const img = bossImage(r.boss);
+                return (
+                  <tr key={r.logId} className="u-row" style={{ borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--border-faint)' }}>
+                    <td style={{ padding: '10px 17px' }}>
+                      <Link to={`/logs/${r.logId}`} style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+                        <span style={{ position: 'relative', width: 32, height: 32, borderRadius: 7, overflow: 'hidden', flex: 'none', background: 'var(--color-neutral-800)', border: '1px solid var(--border)' }}>{img && <ArtImg src={img} />}</span>
+                        <span style={{ font: '650 13px var(--font-sans)', whiteSpace: 'nowrap' }}>{r.boss}{r.isCm ? ' CM' : ''}</span>
+                      </Link>
+                    </td>
+                    <td style={{ padding: '10px 17px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, font: '500 12.5px var(--font-sans)', color: 'var(--text-70)' }}>
+                        <ProfDot color={professionColor(prof)} size={9} />{r.spec}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 17px', textAlign: 'right', font: '700 13px var(--font-mono)' }}>{r.dps.toLocaleString()}</td>
+                    <td style={{ padding: '10px 17px', textAlign: 'right' }}><ResultPill success={r.success} /></td>
+                    <td style={{ padding: '10px 17px', textAlign: 'right', font: '500 12.5px var(--font-sans)', color: 'var(--text-55)', whiteSpace: 'nowrap' }}>{timeAgo(r.uploadedAt)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
