@@ -304,6 +304,8 @@ playersRouter.get('/:account', asyncHandler(async (req, res) => {
         spec: lp.spec,
         dps: lp.totalDps,
         success: lp.log.success,
+        // Per-kill parse percentile (kills only; wipes have no meaningful parse).
+        parsePct: lp.log.success ? Math.round(pctByLogPlayerId.get(lp.id) ?? 0) : null,
         logId: lp.logId,
         uploadedAt: lp.log.uploadedAt,
       })),

@@ -5,7 +5,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { PROFESSIONS, professionColor, professionColorAlpha, professionForSpec, professionIconPath, specBgPath } from '../data/gw2-data';
 import { bossImage } from '../data/catalog';
-import { ArtImg, Card, ParseBadge, ProfDot, ResultPill } from '../components/atoms';
+import { ArtImg, Card, ParseBadge, ProfDot } from '../components/atoms';
 
 // Compact "2h" / "3d ago" for the recent-parses table.
 function timeAgo(iso: string): string {
@@ -44,12 +44,22 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 // The profile's body is split into sub-tabs so the page stays short — the
 // header (identity + kill record) is always visible, and the deeper detail
 // lives one tab-click away.
-type ProfileTab = 'overview' | 'performance' | 'activity';
+type ProfileTab = 'overview' | 'encounters' | 'professions' | 'achievements' | 'gear' | 'progression';
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
-  { id: 'performance', label: 'Performance' },
-  { id: 'activity', label: 'Activity' },
+  { id: 'encounters', label: 'Encounters' },
+  { id: 'professions', label: 'Professions' },
+  { id: 'achievements', label: 'Achievements' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'progression', label: 'Progression' },
 ];
+
+function median(nums: number[]): number | null {
+  if (nums.length === 0) return null;
+  const s = [...nums].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+}
 
 type RecentKill = PlayerProfile['recent'][number];
 interface TrendPoint {
@@ -216,11 +226,13 @@ export default function PlayerProfilePage() {
   const score = player.overallScore;
   const tierTitle = score == null ? 'Raider' : score >= 95 ? 'Legendary Raider' : score >= 80 ? 'Veteran Raider' : score >= 50 ? 'Seasoned Raider' : 'Raider';
 
+  const bestParse = player.bestParses.length ? Math.max(...player.bestParses.map((b) => b.pct)) : player.overallScore;
+  const medianParse = median(player.recent.filter((r) => r.success && r.parsePct != null).map((r) => r.parsePct as number));
   const profileStats = [
-    { label: 'Total Logs', value: player.totalLogs },
-    { label: 'Overall Score', value: player.overallScore ?? '—' },
-    { label: 'Consistency', value: player.consistencyScore ?? '—' },
-    { label: 'Avg DPS (recent)', value: avgRecentDps ? avgRecentDps.toLocaleString() : '—' },
+    { label: 'Best parse', value: bestParse != null ? `${bestParse}` : '—' },
+    { label: 'Boss kills', value: player.record.kills.toLocaleString() },
+    { label: 'Median parse', value: medianParse != null ? `${medianParse}` : '—' },
+    { label: 'Success rate', value: `${player.record.successRate}%` },
   ];
 
   return (
@@ -262,10 +274,11 @@ export default function PlayerProfilePage() {
               )}
             </div>
             {isOwner && (
-              <span aria-hidden style={{ position: 'absolute', right: 2, bottom: 2, width: 26, height: 26, borderRadius: '50%', background: 'var(--gold)', color: 'var(--gold-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 13px var(--font-sans)', border: '2px solid var(--bg-card)' }}>
+              <span aria-hidden style={{ position: 'absolute', right: 2, top: 2, width: 24, height: 24, borderRadius: '50%', background: 'var(--gold)', color: 'var(--gold-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--font-sans)', border: '2px solid var(--bg-card)' }}>
                 ✎
               </span>
             )}
+            <span style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--color-surface)', border: '1.5px solid var(--gold)', color: 'var(--gold)', font: '800 12px var(--font-sans)', padding: '2px 8px', borderRadius: 999, boxShadow: 'var(--shadow-md)' }}>80</span>
           </button>
 
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
@@ -283,6 +296,7 @@ export default function PlayerProfilePage() {
               <GroupChips groups={player.affiliations.groups} />
             )}
           </div>
+          <FollowShare account={player.account} />
         </div>
       </div>
 
@@ -291,7 +305,7 @@ export default function PlayerProfilePage() {
         {profileStats.map((s, i) => (
           <Card key={s.label} style={{ padding: '15px 17px' }}>
             <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{s.label}</div>
-            <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 1 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
+            <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 0 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
           </Card>
         ))}
       </div>
@@ -300,21 +314,26 @@ export default function PlayerProfilePage() {
         <IconPickerModal current={effectiveIcon ?? null} onPick={chooseIcon} onClose={() => setPicking(false)} />
       )}
 
-      {/* Sub-tab bar — keeps the page short by paging the deeper detail. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24, borderBottom: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)', marginBottom: 20 }}>
+      {/* Sub-tab bar — the design's full profile tab set. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 22, borderBottom: '1px solid var(--border)', marginBottom: 20, overflowX: 'auto' }}>
         {PROFILE_TABS.map((t) => {
           const active = tab === t.id;
+          const count = t.id === 'encounters' ? player.coverage.reduce((s, w) => s + w.total, 0) : t.id === 'professions' ? player.specBreakdown.length : null;
           return (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
                 padding: '12px 2px',
                 marginBottom: -1,
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
                 font: '700 13.5px var(--font-sans)',
                 borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
                 color: active ? 'var(--gold)' : 'var(--text-55)',
@@ -322,6 +341,9 @@ export default function PlayerProfilePage() {
               }}
             >
               {t.label}
+              {count != null && count > 0 && (
+                <span style={{ font: '700 11px var(--font-sans)', padding: '1px 7px', borderRadius: 999, background: 'var(--gold-dim)', color: 'var(--gold)' }}>{count}</span>
+              )}
             </button>
           );
         })}
@@ -409,14 +431,17 @@ export default function PlayerProfilePage() {
           )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+            <ClearProgressRings coverage={player.coverage} />
             <HeaderRecord record={player.record} />
           </div>
         </div>
       )}
 
-      {tab === 'performance' && (
+      {tab === 'professions' && (
         <>
+          <div style={{ marginBottom: 20 }}>
+            <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+          </div>
           {player.specPerformance.length > 0 && <SpecPerformanceTable rows={player.specPerformance} />}
 
           <div style={{ marginBottom: 12 }}>
@@ -450,42 +475,50 @@ export default function PlayerProfilePage() {
         </>
       )}
 
-      {tab === 'activity' && (
-        <Card style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft)', font: '700 13.5px var(--font-sans)' }}>
-            Recent Activity
-          </div>
-          {player.recent.length === 0 && (
-            <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
-          )}
-          {player.recent.map((r, i) => (
-            <Link
-              key={r.logId}
-              to={`/logs/${r.logId}`}
-              className="u-row"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '11px 20px',
-                borderBottom: i === player.recent.length - 1 ? 'none' : '1px solid var(--border-faint)',
-              }}
-            >
-              <img src={professionIconPath(professionForSpec(r.spec), r.spec)} alt={r.spec} style={{ width: 26, height: 26, objectFit: 'contain', flex: 'none' }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ font: '600 13px var(--font-sans)' }}>
-                  {r.boss}
-                  {r.isCm ? ' CM' : ''}
-                </div>
-                <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>
-                  {r.spec} · {new Date(r.uploadedAt).toLocaleString()}
-                </div>
-              </div>
-              <div style={{ font: '700 13px var(--font-mono)', color: 'var(--gold)' }}>{r.dps.toLocaleString()}</div>
-            </Link>
-          ))}
-        </Card>
+      {tab === 'encounters' && <CoverageTab coverage={player.coverage} />}
+
+      {tab === 'achievements' && (
+        <PlaceholderPanel
+          title="Achievements aren't tracked yet"
+          body="Guild Wars 2 combat logs don't carry achievement data. This section lights up once account achievements are wired in through the game API."
+        />
       )}
+
+      {tab === 'gear' && (
+        <PlaceholderPanel
+          title="Gear isn't in combat logs"
+          body="arcdps logs record damage, boons and mechanics — not equipped gear. A build & gear view needs the in-game API, which is on the roadmap."
+        />
+      )}
+
+      {tab === 'progression' && <ProgressionTab coverage={player.coverage} />}
+    </div>
+  );
+}
+
+// --- Follow / Share actions (profile hero, right side) --------------------
+
+function FollowShare({ account }: { account: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 9, marginLeft: 'auto', alignSelf: 'flex-start' }}>
+      <button
+        type="button"
+        className="u-btn-gold"
+        onClick={() => toast.success(`Following ${account}`)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 15px', borderRadius: 'var(--radius-md)', font: '750 13.5px var(--font-sans)', background: 'var(--gold-grad)', color: 'var(--gold-fg)' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14m-7-7h14" /></svg>
+        Follow
+      </button>
+      <button
+        type="button"
+        className="u-btn-ghost"
+        onClick={() => { navigator.clipboard?.writeText(window.location.href).then(() => toast.success('Profile link copied'), () => toast.error('Could not copy link')); }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 15px', borderRadius: 'var(--radius-md)', font: '650 13.5px var(--font-sans)', border: '1px solid var(--border-soft)', color: 'var(--text-80)', background: 'none' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4m4-4v13" /></svg>
+        Share
+      </button>
     </div>
   );
 }
@@ -493,26 +526,31 @@ export default function PlayerProfilePage() {
 // --- Recent parses table (Overview headline, matches the design) ----------
 
 function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
-  const rows = recent.slice(0, 10);
+  const [filter, setFilter] = useState<'all' | 'normal' | 'cm'>('all');
+  const rows = recent.filter((r) => (filter === 'all' ? true : filter === 'cm' ? r.isCm : !r.isCm)).slice(0, 10);
   return (
     <Card style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 17px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '15px 17px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ font: '750 15px var(--font-sans)', display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M7 14l3-3 3 2 4-5" /></svg>
           </span>
           Recent parses
         </div>
-        <span style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{recent.length} logged</span>
+        <div style={{ display: 'flex', gap: 2, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3 }}>
+          {(['all', 'normal', 'cm'] as const).map((f) => (
+            <button key={f} type="button" onClick={() => setFilter(f)} style={{ padding: '5px 12px', borderRadius: 6, font: '650 12px var(--font-sans)', textTransform: f === 'cm' ? 'uppercase' : 'capitalize', background: filter === f ? 'var(--gold-dim)' : 'transparent', color: filter === f ? 'var(--gold)' : 'var(--text-60)' }}>{f}</button>
+          ))}
+        </div>
       </div>
       {rows.length === 0 ? (
-        <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>Nothing uploaded yet.</div>
+        <div style={{ padding: 20, font: '500 13px var(--font-sans)', color: 'var(--text-55)' }}>No parses in this filter.</div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', minWidth: 500, borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                {['Encounter', 'Profession', 'DPS', 'Result', 'When'].map((h, i) => (
+                {['Encounter', 'Profession', 'DPS', 'Parse', 'When'].map((h, i) => (
                   <th key={h} style={{ textAlign: i >= 2 ? 'right' : 'left', font: '700 10.5px var(--font-sans)', letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--text-50)', padding: '11px 17px', borderBottom: '1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
@@ -535,7 +573,9 @@ function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
                       </span>
                     </td>
                     <td style={{ padding: '10px 17px', textAlign: 'right', font: '700 13px var(--font-mono)' }}>{r.dps.toLocaleString()}</td>
-                    <td style={{ padding: '10px 17px', textAlign: 'right' }}><ResultPill success={r.success} /></td>
+                    <td style={{ padding: '10px 17px', textAlign: 'right' }}>
+                      {r.success && r.parsePct != null ? <ParseBadge pct={r.parsePct} /> : <span style={{ font: '700 10px var(--font-sans)', color: 'var(--bad)' }}>WIPE</span>}
+                    </td>
                     <td style={{ padding: '10px 17px', textAlign: 'right', font: '500 12.5px var(--font-sans)', color: 'var(--text-55)', whiteSpace: 'nowrap' }}>{timeAgo(r.uploadedAt)}</td>
                   </tr>
                 );
@@ -547,6 +587,139 @@ function ProfileRecentParses({ recent }: { recent: PlayerProfile['recent'] }) {
     </Card>
   );
 }
+
+// Buckets coverage wings into Raids / Strikes / Fractals for the clear-progress
+// rings (best-effort by wing name; strays land in Strikes, never lost).
+const FRACTAL_WINGS = new Set(['Nightmare', 'Shattered Observatory', 'Sunqua Peak', 'Silent Surf', 'Lonely Tower']);
+function coverageBuckets(coverage: PlayerProfile['coverage']) {
+  const b = { Raids: { k: 0, t: 0 }, Strikes: { k: 0, t: 0 }, Fractals: { k: 0, t: 0 } };
+  for (const w of coverage) {
+    const cat = /wing|glade/i.test(w.wing) ? 'Raids' : FRACTAL_WINGS.has(w.wing) ? 'Fractals' : 'Strikes';
+    b[cat].k += w.killed;
+    b[cat].t += w.total;
+  }
+  return b;
+}
+
+function Ring({ pct, color, label, sub }: { pct: number; color: string; label: string; sub: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ width: 96, height: 96, margin: '0 auto 10px', borderRadius: '50%', background: `conic-gradient(${color} ${pct}%, var(--color-neutral-300) 0)`, display: 'grid', placeItems: 'center', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', background: 'var(--color-surface)', border: '1px solid var(--border)' }} />
+        <b style={{ position: 'relative', font: '800 20px var(--font-sans)' }}>{pct}<small style={{ font: '600 11px var(--font-sans)', color: 'var(--text-55)' }}>%</small></b>
+      </div>
+      <div style={{ font: '650 12.5px var(--font-sans)' }}>{label}</div>
+      <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>{sub}</div>
+    </div>
+  );
+}
+
+function ClearProgressRings({ coverage }: { coverage: PlayerProfile['coverage'] }) {
+  const b = coverageBuckets(coverage);
+  const pct = (k: number, t: number) => (t ? Math.round((k / t) * 100) : 0);
+  const cards: { label: string; color: string; k: number; t: number }[] = [
+    { label: 'Raids', color: 'var(--parse-99)', k: b.Raids.k, t: b.Raids.t },
+    { label: 'Strikes', color: 'var(--gold)', k: b.Strikes.k, t: b.Strikes.t },
+    { label: 'Fractals', color: 'var(--blue)', k: b.Fractals.k, t: b.Fractals.t },
+  ].filter((c) => c.t > 0);
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '15px 17px', borderBottom: '1px solid var(--border)', font: '750 15px var(--font-sans)' }}>
+        <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        </span>
+        Clear progress
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, padding: 18 }}>
+        {cards.map((c) => (
+          <Ring key={c.label} pct={pct(c.k, c.t)} color={c.color} label={c.label} sub={`${c.k} / ${c.t} cleared`} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// Encounters tab: coverage grid, wing sections with per-boss killed/parse tiles.
+function CoverageTab({ coverage }: { coverage: PlayerProfile['coverage'] }) {
+  if (coverage.length === 0) return <PlaceholderPanel title="No encounters yet" body="Upload a log to start tracking encounter coverage." />;
+  return (
+    <div>
+      {coverage.map((w) => (
+        <section key={w.wing} style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+            <h2 style={{ font: '700 12px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>{w.wing}</h2>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
+            <span style={{ font: '650 12px var(--font-sans)', color: w.killed === w.total ? 'var(--good)' : 'var(--text-55)' }}>{w.killed} / {w.total} cleared</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
+            {w.encounters.map((e) => {
+              const img = bossImage(e.boss);
+              return (
+                <div key={e.boss} style={{ position: 'relative', height: 84, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--color-neutral-800)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 11, opacity: e.attempted ? 1 : 0.5 }}>
+                  {img && <ArtImg src={img} style={{ opacity: e.killed ? 1 : 0.5, filter: e.killed ? 'none' : 'grayscale(0.6)' }} />}
+                  <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.86) 8%, rgba(0,0,0,.3) 50%, transparent 80%)' }} />
+                  <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
+                    {e.killed ? (
+                      e.bestPct != null && <ParseBadge pct={e.bestPct} />
+                    ) : (
+                      <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,.5)', color: e.attempted ? 'var(--bad)' : 'var(--text-45)', border: '1px solid rgba(255,255,255,.2)' }}>{e.attempted ? 'Wiped' : 'Locked'}</span>
+                    )}
+                  </div>
+                  <div style={{ position: 'relative', font: '700 13px var(--font-sans)', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.boss}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+// Honest empty-state panel for data GW2 combat logs don't carry (gear,
+// achievements) — matches the design's card, says why it's blank.
+function PlaceholderPanel({ title, body }: { title: string; body: string }) {
+  return (
+    <Card style={{ padding: '44px 32px', textAlign: 'center' }}>
+      <div style={{ width: 46, height: 46, margin: '0 auto 14px', borderRadius: 12, display: 'grid', placeItems: 'center', background: 'var(--gold-dim)', color: 'var(--gold)' }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></svg>
+      </div>
+      <div style={{ font: '800 17px var(--font-sans)', marginBottom: 6 }}>{title}</div>
+      <div style={{ font: '500 13px var(--font-sans)', color: 'var(--text-60)', maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>{body}</div>
+    </Card>
+  );
+}
+
+// Progression tab: the clear-progress rings large, plus a per-wing bar list.
+function ProgressionTab({ coverage }: { coverage: PlayerProfile['coverage'] }) {
+  if (coverage.length === 0) return <PlaceholderPanel title="No progression yet" body="Clear some encounters to build a progression record." />;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 20, alignItems: 'start' }}>
+      <ClearProgressRings coverage={coverage} />
+      <Card>
+        <div style={{ padding: '15px 17px', borderBottom: '1px solid var(--border)', font: '750 15px var(--font-sans)' }}>Wing progress</div>
+        <div style={{ padding: '16px 17px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {coverage.map((w) => {
+            const pct = w.total ? Math.round((w.killed / w.total) * 100) : 0;
+            return (
+              <div key={w.wing}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, font: '600 12.5px var(--font-sans)' }}>
+                  <span>{w.wing}</span>
+                  <span style={{ color: 'var(--text-55)' }}>{w.killed}/{w.total}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, background: 'var(--color-neutral-300)', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: pct === 100 ? 'var(--good)' : 'var(--gold-grad)' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// --- Group affiliations (embedded, bottom-left of the summary card) -------
 
 // --- Group affiliations (embedded, bottom-left of the summary card) -------
 
