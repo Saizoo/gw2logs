@@ -101,7 +101,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
   if (loading) {
     return (
       <Card style={{ padding: '18px 22px' }}>
-        <div className="u-skeleton" style={{ height: 14, width: 220, borderRadius: 0 }} />
+        <div className="u-skeleton" style={{ height: 14, width: 220, borderRadius: 'var(--radius-md)' }} />
       </Card>
     );
   }
@@ -139,7 +139,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Raid Plan / Fractal Plan sub-tabs. */}
-      <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 0, background: 'var(--color-surface)', border: '1px solid var(--border)', alignSelf: 'flex-start' }}>
+      <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--border)', alignSelf: 'flex-start' }}>
         {SUB_TABS.map((t) => {
           const active = planTab === t.id;
           return (
@@ -148,7 +148,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
               onClick={() => { setPlanTab(t.id); setEditing(false); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
-                padding: '7px 16px', borderRadius: 0, border: 'none', cursor: 'pointer',
+                padding: '7px 16px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
                 font: '700 12.5px var(--font-sans)',
                 background: active ? 'var(--gold-grad)' : 'transparent',
                 color: active ? 'var(--gold-fg)' : 'var(--text-60)',
@@ -156,7 +156,7 @@ export default function ThisWeekTab({ group, groupId }: { group: GroupDetail; gr
             >
               {t.label}
               {t.count > 0 && (
-                <span style={{ font: '800 10px var(--font-sans)', padding: '1px 6px', borderRadius: 0, background: active ? 'var(--gold-fg)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)', color: active ? 'var(--gold)' : 'var(--text-60)' }}>
+                <span style={{ font: '800 10px var(--font-sans)', padding: '1px 6px', borderRadius: 'var(--radius-md)', background: active ? 'var(--gold-fg)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)', color: active ? 'var(--gold)' : 'var(--text-60)' }}>
                   {t.count}
                 </span>
               )}
@@ -223,7 +223,7 @@ function DayCard({ day, items, weekStart, isTonight }: { day: string | null; ite
           <div style={{ font: '500 11.5px var(--font-sans)', color: 'var(--text-55)' }}>{dayDateLabel(weekStart, day)}</div>
         )}
         {isTonight && (
-          <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)', padding: '3px 9px', borderRadius: 0 }}>
+          <span style={{ font: '700 10px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)', padding: '3px 9px', borderRadius: 'var(--radius-md)' }}>
             Tonight
           </span>
         )}
@@ -329,7 +329,7 @@ function CompositionRoster({ composition, isParty }: { composition: WeekPlanComp
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 14 }}>
         {subgroups.map(([subgroup, slots]) => (
-          <div key={subgroup} style={{ border: '1px solid var(--border-faint)', borderRadius: 0, overflow: 'hidden' }}>
+          <div key={subgroup} style={{ border: '1px solid var(--border-faint)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <div style={{ padding: '8px 14px', background: 'color-mix(in srgb, var(--color-text) 4%, transparent)', font: '700 10.5px var(--font-sans)', color: 'var(--text-55)', letterSpacing: '.4px', textTransform: 'uppercase' }}>
               {isParty ? 'Party' : `Subgroup ${subgroup}`}
             </div>
@@ -348,7 +348,7 @@ function CompositionRoster({ composition, isParty }: { composition: WeekPlanComp
                   alt=""
                   width={22}
                   height={22}
-                  style={{ position: 'relative', borderRadius: 0, flexShrink: 0 }}
+                  style={{ position: 'relative', borderRadius: 'var(--radius-md)', flexShrink: 0 }}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <div style={{ position: 'relative', minWidth: 0 }}>
@@ -573,7 +573,7 @@ function PlanEditor({
               title={raidDays.includes(day) ? 'One of your scheduled raid days' : undefined}
               style={{
                 padding: '7px 14px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 font: '600 12px var(--font-sans)',
                 background: 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                 color: usedDays.has(day) ? 'var(--text-35)' : raidDays.includes(day) ? 'var(--gold)' : 'var(--text-70)',
@@ -592,7 +592,7 @@ function PlanEditor({
             disabled={usedDays.has('any')}
             style={{
               padding: '7px 14px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '600 12px var(--font-sans)',
               background: 'color-mix(in srgb, var(--color-text) 6%, transparent)',
               color: usedDays.has('any') ? 'var(--text-35)' : 'var(--text-70)',

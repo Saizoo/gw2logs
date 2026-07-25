@@ -52,7 +52,7 @@ export function UploadIndicator() {
           alignItems: 'center',
           gap: 7,
           padding: '9px 16px 9px 11px',
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           font: '700 12.5px var(--font-sans)',
           whiteSpace: 'nowrap',
           background: 'var(--gold-grad)',
@@ -77,7 +77,7 @@ export function UploadIndicator() {
             zIndex: 80,
             background: 'var(--color-surface)',
             border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             boxShadow: '0 22px 50px -16px rgba(0,0,0,.7)',
             overflow: 'hidden',
             animation: 'fadeIn .16s ease both',
@@ -139,7 +139,7 @@ export function UploadIndicator() {
                       {it.groupName && it.status !== 'failed' ? ` · ${it.groupName}` : ''}
                     </span>
                   </span>
-                  <span style={{ font: '700 9.5px var(--font-sans)', padding: '2px 8px', borderRadius: 0, color: '#14120f', background: meta.color, flex: 'none' }}>
+                  <span style={{ font: '700 9.5px var(--font-sans)', padding: '2px 8px', borderRadius: 'var(--radius-md)', color: '#14120f', background: meta.color, flex: 'none' }}>
                     {meta.label}
                   </span>
                 </div>

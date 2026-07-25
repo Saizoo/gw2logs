@@ -70,13 +70,13 @@ export default function SearchResultsPage() {
                   borderBottom: i === results.bosses.length - 1 ? 'none' : '1px solid var(--border-faint)',
                 }}
               >
-                <div style={{ width: 32, height: 32, borderRadius: 0, background: 'var(--gold-dim)', flex: 'none' }} />
+                <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--gold-dim)', flex: 'none' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ font: '600 13px var(--font-sans)', color: 'var(--text)' }}>{b.fightName}</div>
                   <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{b.wing ?? `${b.logCount} logs`}</div>
                 </div>
                 {b.isCm && (
-                  <span style={{ font: '600 10px var(--font-sans)', padding: '2px 8px', background: 'var(--gold-dim)', color: 'var(--gold)', borderRadius: 0 }}>
+                  <span style={{ font: '600 10px var(--font-sans)', padding: '2px 8px', background: 'var(--gold-dim)', color: 'var(--gold)', borderRadius: 'var(--radius-md)' }}>
                     CM
                   </span>
                 )}

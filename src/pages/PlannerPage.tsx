@@ -156,7 +156,7 @@ export default function PlannerPage() {
       {/* --- encounter browser --- */}
       <Card style={{ padding: '16px 18px', marginBottom: 20 }}>
         {/* Raid vs Fractal — the top-level catalog switch. */}
-        <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 0, background: 'var(--color-surface)', border: '1px solid var(--border)', marginBottom: 16 }}>
+        <div style={{ display: 'inline-flex', gap: 4, padding: 4, borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--border)', marginBottom: 16 }}>
           {(['raid', 'fractal'] as const).map((cat) => {
             const active = category === cat;
             return (
@@ -165,7 +165,7 @@ export default function PlannerPage() {
                 onClick={() => selectCategory(cat)}
                 style={{
                   padding: '6px 16px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   border: 'none',
                   cursor: 'pointer',
                   font: '700 12px var(--font-sans)',
@@ -259,7 +259,7 @@ export default function PlannerPage() {
                 font: '700 10.5px var(--font-sans)',
                 letterSpacing: '.4px',
                 padding: '4px 10px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 background: 'var(--bg-chip)',
                 color: 'var(--text-85)',
                 border: '1px solid var(--border)',
@@ -274,7 +274,7 @@ export default function PlannerPage() {
                 font: '700 10.5px var(--font-sans)',
                 letterSpacing: '.4px',
                 padding: '4px 10px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 background: 'var(--good-dim)',
                 color: 'var(--good)',
                 border: '1px solid var(--good)',
@@ -410,7 +410,7 @@ export default function PlannerPage() {
                           letterSpacing: '.3px',
                           textTransform: 'uppercase',
                           padding: '3px 8px',
-                          borderRadius: 0,
+                          borderRadius: 'var(--radius-md)',
                           background: ok ? 'var(--good-dim)' : 'var(--bg-chip)',
                           color: ok ? 'var(--good)' : 'var(--text-50)',
                           opacity: ok || b.core ? 1 : 0.6,
@@ -616,7 +616,7 @@ function SlotRow({
                   key={t.id}
                   onClick={() => handlePickCharacter(c, t)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 0,
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--radius-md)',
                     background: 'var(--bg-chip)', border: '1px solid var(--border)', textAlign: 'left',
                   }}
                 >
@@ -648,7 +648,7 @@ function SlotRow({
     return (
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${professionColor(slot.profession)} 0%, transparent 55%)`, opacity: 0.16 }} />
-        <img src={professionIconPath(slot.profession, slot.spec)} alt={slot.spec ?? slot.profession} style={{ position: 'relative', width: 34, height: 34, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 3, flex: 'none' }} />
+        <img src={professionIconPath(slot.profession, slot.spec)} alt={slot.spec ?? slot.profession} style={{ position: 'relative', width: 34, height: 34, objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', padding: 3, flex: 'none' }} />
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(slot.profession) }}>
             <ProfDot color={professionColor(slot.profession)} size={6} />
@@ -660,7 +660,7 @@ function SlotRow({
           {slot.buildDetails && <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>{slot.buildDetails}</div>}
         </div>
         {canEdit && (
-          <button onClick={() => setEditing(true)} className="u-chip" style={{ position: 'relative', font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-85)', border: '1px solid var(--border)', flex: 'none' }}>
+          <button onClick={() => setEditing(true)} className="u-chip" style={{ position: 'relative', font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--text-85)', border: '1px solid var(--border)', flex: 'none' }}>
             CHANGE
           </button>
         )}
@@ -670,13 +670,13 @@ function SlotRow({
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: '1px solid var(--border-faint)' }}>
-      <div style={{ width: 34, height: 34, borderRadius: 0, border: '1.5px dashed var(--border)', flex: 'none' }} />
+      <div style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border)', flex: 'none' }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--text-50)' }}>Empty Slot</div>
         <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)' }}>Choose a build or character</div>
       </div>
       {canEdit && (
-        <button onClick={() => setEditing(true)} className="u-chip" style={{ font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 0, background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid var(--gold-dim)', flex: 'none' }}>
+        <button onClick={() => setEditing(true)} className="u-chip" style={{ font: '700 11px var(--font-sans)', padding: '6px 13px', borderRadius: 'var(--radius-md)', background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid var(--gold-dim)', flex: 'none' }}>
           PICK
         </button>
       )}
@@ -687,7 +687,7 @@ function SlotRow({
 function pillStyle(active: boolean) {
   return {
     padding: '7px 14px',
-    borderRadius: 0,
+    borderRadius: 'var(--radius-md)',
     font: '600 12px var(--font-sans)',
     background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
     color: active ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -701,14 +701,14 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const ghostBtnStyle = {
   font: '600 12px var(--font-sans)',
   padding: '9px 14px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',

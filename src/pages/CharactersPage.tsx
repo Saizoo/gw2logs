@@ -101,7 +101,7 @@ export default function CharactersPage() {
                 font: '700 13.5px var(--font-sans)',
                 borderBottom: `2px solid ${active ? 'var(--text)' : 'transparent'}`,
                 color: active ? 'var(--text)' : 'var(--text-55)',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 transition: 'color .15s ease, border-color .15s ease',
               }}
             >
@@ -121,7 +121,7 @@ export default function CharactersPage() {
               gap: 7,
               font: '700 12.5px var(--font-sans)',
               padding: '9px 16px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               background: 'var(--text)',
               color: 'var(--color-surface)',
             }}
@@ -140,7 +140,7 @@ export default function CharactersPage() {
               gap: 7,
               font: '700 12.5px var(--font-sans)',
               padding: '9px 16px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               background: 'var(--bad-dim)',
               color: 'var(--bad)',
               border: '1px solid color-mix(in oklab, var(--bad) 30%, transparent)',
@@ -273,13 +273,13 @@ function CharacterRow({
         flexWrap: 'wrap',
         gap: 16,
         padding: '14px 20px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         border: '1px solid color-mix(in srgb, var(--color-text) 9%, transparent)',
         boxShadow: '0 10px 26px -18px rgba(0,0,0,.6)',
       }}
     >
       {/* Spec banner art under a profession-color wash */}
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 0, overflow: 'hidden' }} aria-hidden>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-md)', overflow: 'hidden' }} aria-hidden>
         <ArtImg src={specBgPath(character.profession, spec)} style={{ opacity: 0.5 }} />
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 55%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 45%, color-mix(in srgb, var(--color-surface) 96%, transparent) 70%)` }} />
         <div style={{ position: 'absolute', inset: 0, background: 'color-mix(in srgb, var(--color-surface) 45%, transparent)' }} />
@@ -381,7 +381,7 @@ function CharacterRow({
                 alignItems: 'center',
                 gap: 10,
                 padding: '8px 14px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 background: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--color-text) 12%, transparent)',
               }}
@@ -390,7 +390,7 @@ function CharacterRow({
                 style={{
                   width: 20,
                   height: 20,
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   background: color,
                   color: 'var(--color-surface)',
                   font: '800 11px var(--font-sans)',
@@ -434,7 +434,7 @@ function CharacterRow({
             onClick={onDelete}
             title={`Delete ${character.name}`}
             className="u-btn-ghost"
-            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--bad)', padding: '8px 12px', borderRadius: 0, border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)', whiteSpace: 'nowrap' }}
+            style={{ font: '600 11.5px var(--font-sans)', color: 'var(--bad)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)', whiteSpace: 'nowrap' }}
           >
             Delete
           </button>
@@ -450,7 +450,7 @@ const pillBtnStyle = {
   gap: 7,
   font: '600 12.5px var(--font-sans)',
   padding: '9px 16px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
   color: 'var(--text-85)',
   border: '1px solid color-mix(in srgb, var(--color-text) 12%, transparent)',
@@ -459,7 +459,7 @@ const pillBtnStyle = {
 const assignBtnStyle = {
   font: '700 12px var(--font-sans)',
   padding: '9px 16px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'color-mix(in srgb, var(--color-text) 11%, transparent)',
   color: 'var(--text-92)',
   border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)',
@@ -472,6 +472,6 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   fontFamily: 'var(--font-sans)',
 } as const;

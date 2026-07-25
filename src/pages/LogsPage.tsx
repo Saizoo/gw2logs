@@ -79,7 +79,7 @@ export default function LogsPage() {
               alignItems: 'center',
               gap: 7,
               padding: '7px 14px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '700 12px var(--font-sans)',
               background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: 'var(--gold)',
@@ -98,7 +98,7 @@ export default function LogsPage() {
               className={active ? undefined : 'u-chip'}
               style={{
                 padding: '7px 14px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 font: '600 12px var(--font-sans)',
                 background: active ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'color-mix(in srgb, var(--color-text) 7%, transparent)',
                 color: active ? 'var(--gold)' : 'var(--text-65)',

@@ -211,7 +211,7 @@ function BoxPlot({ rows }: { rows: SpecDistribution[] }) {
           style={{
             width: 244,
             padding: '12px 14px',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             background: 'color-mix(in srgb, var(--color-surface) 97%, transparent)',
             border: '1px solid var(--border)',
             boxShadow: '0 18px 44px -14px rgba(0,0,0,.7)',

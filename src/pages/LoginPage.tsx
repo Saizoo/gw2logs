@@ -114,10 +114,10 @@ export default function LoginPage() {
             className="u-btn-gold"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
-              background: '#5865F2', borderRadius: 0,
+              background: '#5865F2', borderRadius: 'var(--radius-md)',
             }}
           >
-            <div style={{ width: 18, height: 18, borderRadius: 0, background: 'rgba(255,255,255,.9)' }} />
+            <div style={{ width: 18, height: 18, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,.9)' }} />
             <span style={{ font: '700 13px var(--font-sans)', color: '#fff' }}>Continue with Discord</span>
           </a>
         </div>
@@ -131,7 +131,7 @@ export default function LoginPage() {
         <Link
           to="/upload"
           className="u-btn-ghost"
-          style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 0, textAlign: 'center', display: 'block' }}
+          style={{ padding: '12px 16px', border: '1px solid var(--gold-dim)', borderRadius: 'var(--radius-md)', textAlign: 'center', display: 'block' }}
         >
           <span style={{ font: '700 13px var(--font-sans)', color: 'var(--gold)' }}>Upload without an account</span>
           <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)', marginTop: 3 }}>

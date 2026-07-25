@@ -31,7 +31,7 @@ export function SearchBar({ width = '100%', defaultValue = '' }: { width?: numbe
           width: '100%',
           background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)',
           border: '1px solid var(--border)',
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           padding: '9px 14px 9px 38px',
           color: 'var(--text)',
           fontSize: 13,

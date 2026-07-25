@@ -23,7 +23,7 @@ import { LoadingState, ErrorState } from '../components/QueryStates';
 const PANEL: CSSProperties = {
   background: 'var(--color-surface)',
   border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   boxShadow: '0 1px 0 color-mix(in srgb, var(--color-text) 8%, transparent) inset, 0 14px 34px -18px rgba(0,0,0,.55)',
 };
 const CARD_LABEL: CSSProperties = {
@@ -118,7 +118,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
     <div
       style={{
         position: 'relative',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         padding: 'clamp(32px, 5vw, 48px) clamp(22px, 4vw, 40px)',
         marginBottom: 20,
@@ -161,7 +161,7 @@ function Hero({ stats, bg }: { stats: ReactNode; bg?: string | null }) {
               alignItems: 'center',
               font: '600 13px var(--font-sans)',
               padding: '11px 20px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               background: 'color-mix(in srgb, var(--on-art) 14%, transparent)',
               backdropFilter: 'blur(6px)',
               color: 'var(--on-art)',
@@ -190,7 +190,7 @@ function EncounterTile({ enc }: { enc: OverviewEncounter }) {
       className="u-card-link"
       style={{
         position: 'relative',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         height: 132,
         display: 'flex',
@@ -326,7 +326,7 @@ function LoggedOutDashboard() {
                       className="u-row"
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: i === home.recentLogs.length - 1 ? 'none' : '1px solid var(--border-faint)' }}
                     >
-                      <div style={{ position: 'relative', width: 38, height: 38, borderRadius: 0, overflow: 'hidden', flex: 'none', background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-neutral-200))' }}>
+                      <div style={{ position: 'relative', width: 38, height: 38, borderRadius: 'var(--radius-md)', overflow: 'hidden', flex: 'none', background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-neutral-200))' }}>
                         {bg && <ArtImg src={bg} style={{ opacity: 0.75 }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -424,8 +424,8 @@ function MyCharacterCard({ profile, displayName, linked }: { profile: PlayerProf
     <Panel style={{ padding: 18 }}>
       <div style={{ ...CARD_LABEL, marginBottom: 12 }}>My Character</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 0, padding: 2, background: `linear-gradient(135deg, ${color}, var(--color-surface))`, flex: 'none' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: 0, background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)', padding: 2, background: `linear-gradient(135deg, ${color}, var(--color-surface))`, flex: 'none' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {main ? (
               <img src={professionIconPath(main)} alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
             ) : (
@@ -550,7 +550,7 @@ function LogsByRoleCard({ profile, recentLogs }: { profile: PlayerProfile | null
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
             {segments.slice(0, 4).map((s) => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, font: '500 11px var(--font-sans)', color: 'var(--text-70)' }}>
-                <div style={{ width: 7, height: 7, borderRadius: 0, background: s.color, flex: 'none' }} />
+                <div style={{ width: 7, height: 7, borderRadius: 'var(--radius-md)', background: s.color, flex: 'none' }} />
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
                 <span style={{ color: 'var(--text-50)' }}>{Math.round((s.value / total) * 100)}%</span>
               </div>
@@ -586,7 +586,7 @@ function RecentUploadsCard({ logs }: { logs: DashboardSummary['recentLogs'] }) {
             className="u-row"
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i === logs.length - 1 ? 'none' : '1px solid color-mix(in srgb, var(--color-text) 6%, transparent)' }}
           >
-            <img src={professionIconPath(log.profession)} alt="" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 2, flex: 'none' }} />
+            <img src={professionIconPath(log.profession)} alt="" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', padding: 2, flex: 'none' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ font: '600 12px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.boss}{log.isCm ? ' CM' : ''}</div>
               <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)' }}>{log.wing ?? 'Other'} · {timeAgo(log.uploadedAt)}</div>
@@ -680,7 +680,7 @@ function MySquad({ logId }: { logId: string }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
         {subgroups.map(([sg, players]) => (
-          <Panel key={sg} style={{ borderRadius: 0, overflow: 'hidden' }}>
+          <Panel key={sg} style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', font: '700 11.5px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-60)', borderBottom: '1px solid color-mix(in srgb, var(--color-text) 8%, transparent)' }}>
               Subgroup {sg}
             </div>
@@ -693,7 +693,7 @@ function MySquad({ logId }: { logId: string }) {
                   <ArtImg src={specBg} style={{ opacity: 0.32 }} />
                   <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 88%, transparent) 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 55%, color-mix(in srgb, var(--color-surface) 88%, transparent) 100%)' }} />
                   <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${color} 0%, transparent ${barWidth})`, opacity: 0.16 }} />
-                  <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 3, flex: 'none' }} />
+                  <img src={professionIconPath(p.profession, p.spec)} alt="" style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', padding: 3, flex: 'none' }} />
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                     <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color }}>{playerRoleLabel(p.squadRole, p.role)} · {p.spec || p.profession}</div>
                     <div style={{ font: '600 13px var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.account ?? p.name}</div>

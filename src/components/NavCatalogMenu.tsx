@@ -147,12 +147,12 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
           display: 'flex',
           alignItems: 'center',
           gap: 5,
-          padding: '7px 12px',
-          font: '700 12.5px var(--font-sans)',
-          letterSpacing: '.04em',
-          textTransform: 'uppercase',
+          padding: '8px 12px',
+          font: '600 14px var(--font-sans)',
+          letterSpacing: 'normal',
+          textTransform: 'none',
           whiteSpace: 'nowrap',
-          color: active ? 'var(--gold)' : 'var(--text-65)',
+          color: active ? 'var(--gold)' : 'var(--text-70)',
         }}
       >
         {label}

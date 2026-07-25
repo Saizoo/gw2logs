@@ -81,7 +81,7 @@ export function Logo() {
         style={{
           width: 32,
           height: 32,
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           flex: 'none',
         }}
       />
@@ -109,7 +109,7 @@ export function Avatar({
   const style: CSSProperties = {
     width: size,
     height: size,
-    borderRadius: 0,
+    borderRadius: 'var(--radius-md)',
     background: 'var(--bg-chip)',
     border: '1px solid var(--border)',
     flex: 'none',
@@ -179,7 +179,7 @@ export function ParseBadge({ pct, style }: { pct: number; style?: CSSProperties 
         minWidth: 26,
         height: 20,
         padding: '0 6px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         font: '800 11px var(--font-mono)',
         color: tier.color,
         background: tier.bg,
@@ -225,7 +225,7 @@ export function SquadRoleBadge({ squadRole, style }: { squadRole: string; style?
         alignItems: 'center',
         height: 18,
         padding: '0 6px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         font: '700 9.5px var(--font-sans)',
         letterSpacing: '.3px',
         textTransform: 'uppercase',
@@ -249,7 +249,7 @@ export function LoadMoreButton({ onClick, loading }: { onClick: () => void; load
         display: 'block',
         margin: '16px auto 0',
         padding: '9px 20px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         font: '600 12.5px var(--font-sans)',
         background: 'var(--bg-chip)',
         color: 'var(--text-80)',
@@ -276,7 +276,7 @@ export function CountBadge({ count, style }: { count: number; style?: CSSPropert
         minWidth: 16,
         height: 16,
         padding: '0 4px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         font: '800 10px var(--font-mono)',
         color: 'var(--gold-fg)',
         background: 'var(--gold-grad)',
@@ -301,7 +301,7 @@ export function ResultPill({ success, size = 'sm' }: { success: boolean; size?: 
         lineHeight: 1,
         letterSpacing: '.4px',
         padding: md ? '5px 12px' : '3px 7px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         background: success ? 'var(--good-dim)' : 'var(--bad-dim)',
         color: success ? 'var(--good)' : 'var(--bad)',
         border: `1px solid color-mix(in oklab, ${success ? 'var(--good)' : 'var(--bad)'} 30%, transparent)`,
@@ -319,7 +319,7 @@ export function Card({ children, style, className }: { children: ReactNode; styl
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         ...style,
       }}
     >
@@ -395,7 +395,7 @@ export function Badge({ children, tone = 'gold' }: { children: ReactNode; tone?:
         padding: '2px 8px',
         background: bg,
         color,
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
       }}
     >
       {children}
@@ -425,7 +425,7 @@ export function GoldButton({
     display: 'inline-block',
     font: '700 12.5px var(--font-sans)',
     padding: '9px 16px',
-    borderRadius: 0,
+    borderRadius: 'var(--radius-md)',
     background: 'var(--gold-grad)',
     color: 'var(--gold-fg)',
     opacity: disabled ? 0.45 : 1,

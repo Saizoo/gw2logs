@@ -1,40 +1,42 @@
 :root {
-  /* ── Modernist design system — source tokens ──────────────────────────
-     Flat, architectural, near-mono red on a light ground; Archivo type,
-     zero corner radius, strong 2px rules. The app's own variable names
-     below are re-pointed onto these so every existing var(--…) reference
-     flips to the Modernist look. */
-  --color-bg: #f3f2f2;
-  --color-surface: #eae9e9;
-  --color-text: #201e1d;
-  --color-accent: #ec3013;
-  --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
+  /* ── Tomestone-inspired design system — source tokens ─────────────────
+     Teal accent on a clean neutral ground (flat near-black #141414 in the
+     dark theme); Inter type, rounded corners, light hairline rules. The
+     app's own variable names below are re-pointed onto these so every
+     existing var(--…) reference adopts the new look. */
+  --color-bg: #f1f1f0;
+  --color-surface: #ffffff;
+  --color-text: #17201f;
+  --color-accent: #178a87; /* teal, deepened so it reads on the light ground */
+  --color-divider: color-mix(in srgb, #17201f 16%, transparent);
 
-  --color-neutral-100: #f8f4f4;
-  --color-neutral-200: #eae7e7;
-  --color-neutral-300: #d7d3d3;
-  --color-neutral-400: #bab6b6;
-  --color-neutral-500: #9b9797;
-  --color-neutral-600: #7d7979;
-  --color-neutral-700: #605d5d;
-  --color-neutral-800: #444141;
-  --color-neutral-900: #2d2b2b;
+  --color-neutral-100: #f7f7f6;
+  --color-neutral-200: #ececeb;
+  --color-neutral-300: #dcdcdb;
+  --color-neutral-400: #c2c3c2;
+  --color-neutral-500: #9a9c9b;
+  --color-neutral-600: #74777a;
+  --color-neutral-700: #565a5b;
+  --color-neutral-800: #393c3d;
+  --color-neutral-900: #242829;
 
-  --color-accent-100: #fff2ef;
-  --color-accent-200: #ffe0d9;
-  --color-accent-300: #ffc4b8;
-  --color-accent-400: #ff9783;
-  --color-accent-500: #ff563c;
-  --color-accent-600: #dd2b0f;
-  --color-accent-700: #ae1800;
-  --color-accent-800: #7c1405;
-  --color-accent-900: #4d170e;
+  --color-accent-100: #e6f7f4;
+  --color-accent-200: #c2ece6;
+  --color-accent-300: #93ddd4;
+  --color-accent-400: #57c6bd;
+  --color-accent-500: #2fb0a9;
+  --color-accent-600: #178a87;
+  --color-accent-700: #176e6d;
+  --color-accent-800: #175858;
+  --color-accent-900: #123f3f;
 
-  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
-  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
-  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #17201f 12%, transparent);
+  --shadow-md: 0 6px 20px color-mix(in srgb, #17201f 12%, transparent);
+  --shadow-lg: 0 16px 40px color-mix(in srgb, #17201f 16%, transparent);
 
-  --radius-md: 0px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 
   /* ── App aliases mapped onto Modernist ──────────────────────────────── */
   --bg: var(--color-bg);
@@ -106,8 +108,8 @@
   --parse-0: color-mix(in srgb, var(--color-text) 52%, transparent);
   --parse-0-bg: color-mix(in srgb, var(--color-text) 8%, transparent);
 
-  --font-sans: 'Archivo', system-ui, sans-serif;
-  --font-mono: 'Archivo', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Inter', system-ui, sans-serif;
 
   color-scheme: light;
 }
@@ -119,16 +121,16 @@
    data-theme="dark" on <html> (set from localStorage / system preference —
    see src/lib/theme.ts and the no-flash script in index.html). */
 :root[data-theme='dark'] {
-  --color-bg: #171514;
-  --color-surface: #211f1e;
-  --color-text: #f3f2f2;
-  --color-accent: #ff5a3c; /* brighter accent step for a dark ground */
-  --color-divider: color-mix(in srgb, #f3f2f2 24%, transparent);
+  --color-bg: #141414;
+  --color-surface: #1d1d1d;
+  --color-text: #e5e5e5;
+  --color-accent: #39c8bf; /* brighter teal step for a dark ground */
+  --color-divider: color-mix(in srgb, #e5e5e5 14%, transparent);
 
   /* Elevation reads as ambient darkness on a dark ground. */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.62);
 
   /* Status + parse tiers brighten so they read on the dark ground. */
   --good: oklch(0.72 0.13 145);
@@ -433,7 +435,7 @@ select.u-select {
   color: var(--text);
   border-radius: 8px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ec3013' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2320aca6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 11px center !important;
   background-size: 10px 6px !important;
@@ -529,7 +531,7 @@ select.u-select optgroup {
 
 /* Loading skeletons (see QueryStates.tsx). */
 .u-skeleton {
-  border-radius: 0;
+  border-radius: var(--radius-md);
   background: linear-gradient(
     100deg,
     color-mix(in srgb, var(--color-text) 6%, transparent) 40%,

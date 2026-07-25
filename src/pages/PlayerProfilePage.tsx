@@ -66,7 +66,7 @@ function DpsTrendTooltip({ pt, avg }: { pt: TrendPoint; avg: number | null }) {
         width: 210,
         background: 'color-mix(in srgb, var(--color-surface) 98%, transparent)',
         border: '1px solid color-mix(in srgb, var(--color-text) 18%, transparent)',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         boxShadow: '0 18px 40px -14px rgba(0,0,0,.7)',
         padding: '11px 13px',
         animation: 'fadeIn .12s ease both',
@@ -231,7 +231,7 @@ export default function PlayerProfilePage() {
             style={{
               width: 84,
               height: 84,
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               background: iconProfession
                 ? `linear-gradient(135deg, ${professionColorAlpha(iconProfession, 50)}, var(--color-neutral-200))`
                 : 'var(--color-surface)',
@@ -506,7 +506,7 @@ function GroupChips({ groups }: { groups: NonNullable<PlayerProfile['affiliation
             alignItems: 'center',
             gap: 6,
             padding: '5px 11px',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             font: '600 11.5px var(--font-sans)',
             background: g.isGuildGroup ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'color-mix(in srgb, var(--color-text) 7%, transparent)',
             color: 'var(--text-80)',
@@ -562,8 +562,8 @@ function IdentityPanel({
                   <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{s.pct}%</span>
                 </div>
                 {/* Share-of-play bar, coloured by profession. */}
-                <div style={{ height: 6, borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
-                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 0, background: color }} />
+                <div style={{ height: 6, borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
+                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 'var(--radius-md)', background: color }} />
                 </div>
               </div>
             </div>
@@ -575,7 +575,7 @@ function IdentityPanel({
         Role split
       </div>
       {/* Single stacked bar of the three squad roles + a labelled legend. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 0, overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
         {roleBreakdown.map((r) => (
           <div key={r.role} title={`${ROLE_META[r.role]?.label ?? r.role} · ${r.pct}%`} style={{ width: `${r.pct}%`, background: ROLE_META[r.role]?.color ?? 'var(--text-40)' }} />
         ))}
@@ -583,7 +583,7 @@ function IdentityPanel({
       <div style={{ display: 'flex', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
         {roleBreakdown.map((r) => (
           <div key={r.role} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 9, height: 9, borderRadius: 0, background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
+            <span style={{ width: 9, height: 9, borderRadius: 'var(--radius-md)', background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
             <span style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-75)' }}>{ROLE_META[r.role]?.label ?? r.role}</span>
             <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-50)' }}>{r.pct}%</span>
           </div>
@@ -602,7 +602,7 @@ function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
       style={{
         minWidth: 220,
         padding: '16px 18px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         background: 'color-mix(in srgb, var(--color-surface) 55%, transparent)',
         border: '1px solid var(--border)',
         backdropFilter: 'blur(4px)',
@@ -620,7 +620,7 @@ function HeaderRecord({ record }: { record: PlayerProfile['record'] }) {
       </div>
 
       {/* Kills-vs-wipes ratio bar. */}
-      <div style={{ display: 'flex', height: 10, borderRadius: 0, overflow: 'hidden', background: 'var(--bad-dim)' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--bad-dim)' }}>
         <div style={{ width: `${killPct}%`, background: 'var(--good)' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
@@ -675,7 +675,7 @@ function IconPickerModal({
             type="button"
             onClick={() => onPick(null)}
             className="u-btn-ghost"
-            style={{ marginLeft: 'auto', font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', background: 'none', border: '1px solid var(--border)', borderRadius: 0, padding: '6px 11px', cursor: 'pointer' }}
+            style={{ marginLeft: 'auto', font: '600 11.5px var(--font-sans)', color: 'var(--text-60)', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 11px', cursor: 'pointer' }}
           >
             Reset to default
           </button>
@@ -712,7 +712,7 @@ function IconPickerModal({
                         gap: 5,
                         width: 78,
                         padding: '9px 6px',
-                        borderRadius: 0,
+                        borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
                         background: isSel ? professionColorAlpha(profession, 18) : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
                         border: `1px solid ${isSel ? professionColor(profession) : 'var(--border-faint)'}`,

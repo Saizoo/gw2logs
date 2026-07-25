@@ -79,7 +79,7 @@ export default function LogDetailPage() {
           overflow: 'hidden',
           padding: '36px 32px',
           marginBottom: 22,
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           border: '1px solid color-mix(in srgb, var(--color-text) 14%, transparent)',
           boxShadow: 'var(--shadow-md)',
           background: 'linear-gradient(135deg, var(--color-neutral-300), var(--color-surface))',
@@ -113,7 +113,7 @@ export default function LogDetailPage() {
               <ResultPill success={log.success} size="md" />
               <Pill>{formatDuration(log.durationMs)}</Pill>
               {log.private && (
-                <span style={{ font: '700 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 82%, transparent)', color: 'var(--color-surface)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
+                <span style={{ font: '700 11px var(--font-sans)', padding: '5px 12px', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-text) 82%, transparent)', color: 'var(--color-surface)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
                   Private
                 </span>
               )}
@@ -152,7 +152,7 @@ export default function LogDetailPage() {
               style={{
                 font: '600 11px var(--font-sans)',
                 padding: '4px 10px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 background: 'var(--gold-dim)',
                 color: 'var(--gold)',
                 border: '1px solid var(--gold-dim)',
@@ -188,7 +188,7 @@ export default function LogDetailPage() {
             className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '600 12px var(--font-sans)',
               background: tab === t ? 'var(--gold-grad)' : 'var(--bg-chip)',
               color: tab === t ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -210,7 +210,7 @@ export default function LogDetailPage() {
 
 function Pill({ children }: { children: ReactNode }) {
   return (
-    <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
+    <span style={{ font: '600 11px var(--font-sans)', padding: '5px 12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--text-80)', border: '1px solid var(--border)' }}>
       {children}
     </span>
   );
@@ -296,7 +296,7 @@ function LogOwnerControls({
             position: 'relative',
             width: 46,
             height: 25,
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             flexShrink: 0,
             marginTop: 2,
             background: log.private ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
@@ -336,7 +336,7 @@ function LogOwnerControls({
           style={{
             font: '700 12px var(--font-sans)',
             padding: '9px 16px',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             background: 'var(--bad-dim)',
             color: 'var(--bad)',
             border: '1px solid color-mix(in srgb, var(--bad) 40%, transparent)',
@@ -446,7 +446,7 @@ function SquadTab({ log }: { log: LogDetail }) {
                   <img
                     src={professionIconPath(p.profession, p.spec)}
                     alt={p.spec}
-                    style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 0, background: 'var(--color-surface)', padding: 3, flex: 'none' }}
+                    style={{ position: 'relative', width: 32, height: 32, objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', padding: 3, flex: 'none' }}
                   />
                   <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: '700 9.5px var(--font-sans)', letterSpacing: '.4px', textTransform: 'uppercase', color: professionColor(p.profession) }}>
@@ -509,7 +509,7 @@ function BoonsTab({ players }: { players: LogDetailPlayer[] }) {
                 const raw = p.boons[c.key] ?? 0;
                 const heatValue = c.weight ? Math.min(raw * c.weight, 100) : raw;
                 return (
-                  <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 0, background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
+                  <div key={c.key} style={{ textAlign: 'center', padding: '4px 0', borderRadius: 'var(--radius-md)', background: heat(heatValue), font: '700 12px var(--font-mono)', color: '#14120f' }}>
                     {raw}
                   </div>
                 );
@@ -729,9 +729,9 @@ function TimelineTab({ log }: { log: LogDetail }) {
             r.kind === 'death' ? (
               <div
                 key={i}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)', background: 'var(--bad-dim)', borderRadius: 0 }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 8px', borderBottom: '1px solid var(--border-faint)', background: 'var(--bad-dim)', borderRadius: 'var(--radius-md)' }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: 0, transform: 'rotate(45deg)', background: eventDotColor('bad'), marginTop: 6, flex: 'none' }} />
+                <div style={{ width: 8, height: 8, borderRadius: 'var(--radius-md)', transform: 'rotate(45deg)', background: eventDotColor('bad'), marginTop: 6, flex: 'none' }} />
                 <div>
                   <div style={{ font: '600 12px var(--font-mono)', color: 'var(--text-55)' }}>{formatDuration(r.timeMs)}</div>
                   <div style={{ font: '700 13px var(--font-sans)', color: 'var(--bad)' }}>
@@ -783,7 +783,7 @@ function TimelineScrubber({ log }: { log: LogDetail }) {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: severityColor('Sev4'), display: 'inline-block' }} /> mechanic (severity)
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 0, transform: 'rotate(45deg)', background: eventDotColor('bad'), display: 'inline-block' }} /> death
+            <span style={{ width: 7, height: 7, borderRadius: 'var(--radius-md)', transform: 'rotate(45deg)', background: eventDotColor('bad'), display: 'inline-block' }} /> death
           </span>
         </div>
       </div>

@@ -38,7 +38,7 @@ export default function AdminPage() {
             className={tab === t ? undefined : 'u-chip'}
             style={{
               padding: '7px 14px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '600 12px var(--font-sans)',
               background: tab === t ? 'var(--gold-grad)' : 'var(--bg-chip)',
               color: tab === t ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -525,7 +525,7 @@ function BuildForm({ initial, onCancel, onSaved }: { initial: AdminBuild | null;
 function pillStyle(active: boolean) {
   return {
     padding: '6px 12px',
-    borderRadius: 0,
+    borderRadius: 'var(--radius-md)',
     font: '600 11.5px var(--font-sans)',
     background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
     color: active ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -539,14 +539,14 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const ghostBtnStyle = {
   font: '600 12px var(--font-sans)',
   padding: '8px 14px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
@@ -587,7 +587,7 @@ function UserDetailPanel({ userId, isSelf, onChanged }: { userId: string; isSelf
       {data.groups.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
           {data.groups.map((g) => (
-            <span key={g.id} style={{ font: '600 10.5px var(--font-sans)', padding: '3px 9px', borderRadius: 0, background: 'var(--bg-chip)', border: '1px solid var(--border)', color: 'var(--text-70)' }}>
+            <span key={g.id} style={{ font: '600 10.5px var(--font-sans)', padding: '3px 9px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', border: '1px solid var(--border)', color: 'var(--text-70)' }}>
               {g.isGuild ? '⚜ ' : ''}{g.name} · {g.role}
             </span>
           ))}
@@ -887,7 +887,7 @@ function AnnouncementsTab() {
     color: 'var(--text)',
     font: '400 12.5px var(--font-sans)',
     padding: '9px 12px',
-    borderRadius: 0,
+    borderRadius: 'var(--radius-md)',
   } as const;
 
   return (
@@ -938,11 +938,11 @@ function AnnouncementsTab() {
                 {' · '}by {a.createdBy}
               </span>
               {!a.expired && (
-                <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }} onClick={() => run(() => api.adminExpireAnnouncement(a.id), 'Announcement expired')}>
+                <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }} onClick={() => run(() => api.adminExpireAnnouncement(a.id), 'Announcement expired')}>
                   Expire now
                 </button>
               )}
-              <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--bad)', border: '1px solid var(--border)' }} onClick={() => { if (confirm('Delete this announcement?')) run(() => api.adminDeleteAnnouncement(a.id), 'Announcement deleted'); }}>
+              <button className="u-btn-ghost" style={{ font: '600 11px var(--font-sans)', padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--bad)', border: '1px solid var(--border)' }} onClick={() => { if (confirm('Delete this announcement?')) run(() => api.adminDeleteAnnouncement(a.id), 'Announcement deleted'); }}>
                 Delete
               </button>
             </div>
@@ -1034,7 +1034,7 @@ function SwitchRow({ title, description, on, onToggle }: { title: string; descri
           position: 'relative',
           width: 46,
           height: 25,
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           flexShrink: 0,
           background: on ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
           border: '1px solid ' + (on ? 'transparent' : 'var(--border)'),

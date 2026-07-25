@@ -115,7 +115,7 @@ export default function PrivacyPage() {
 
 const lead = { font: '400 15px/1.7 var(--font-sans)', color: 'var(--text-80)', margin: '0 0 8px' } as const;
 const para = { font: '400 13.5px/1.7 var(--font-sans)', color: 'var(--text-70)', margin: '0 0 10px' } as const;
-const code = { font: '600 12px var(--font-mono)', background: 'var(--bg-chip)', padding: '1px 5px', borderRadius: 0 } as const;
+const code = { font: '600 12px var(--font-mono)', background: 'var(--bg-chip)', padding: '1px 5px', borderRadius: 'var(--radius-md)' } as const;
 const link = { color: 'var(--gold)', fontWeight: 600 } as const;
 
 function Section({ title, children }: { title: string; children: ReactNode }) {

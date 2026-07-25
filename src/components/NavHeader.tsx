@@ -42,14 +42,14 @@ export function NavHeader() {
       display: 'flex',
       alignItems: 'center',
       gap: 6,
-      padding: '7px 12px',
-      borderRadius: 0,
-      font: '700 12.5px var(--font-sans)',
-      letterSpacing: '.04em',
-      textTransform: 'uppercase',
+      padding: '8px 12px',
+      borderRadius: 'var(--radius-md)',
+      font: '600 14px var(--font-sans)',
+      letterSpacing: 'normal',
+      textTransform: 'none',
       whiteSpace: 'nowrap',
       background: 'transparent',
-      color: active ? 'var(--gold)' : 'var(--text-65)',
+      color: active ? 'var(--gold)' : 'var(--text-70)',
     }) as const;
 
   return (
@@ -62,9 +62,8 @@ export function NavHeader() {
           gap: 20,
           padding: '0 24px',
           height: 60,
-          borderRadius: 0,
           background: 'var(--bg-nav)',
-          borderBottom: '2px solid var(--border)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <Logo />
@@ -81,7 +80,7 @@ export function NavHeader() {
             gap: 4,
             width: 34,
             height: 34,
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             background: 'var(--bg-chip)',
             border: '1px solid var(--border)',
             flex: 'none',
@@ -91,9 +90,9 @@ export function NavHeader() {
             <span style={{ font: '700 15px var(--font-sans)', color: 'var(--text-80)', lineHeight: '1' }}>×</span>
           ) : (
             <>
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
-              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 0 }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 'var(--radius-md)' }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 'var(--radius-md)' }} />
+              <span style={{ display: 'block', width: 16, height: 2, margin: '0 auto', background: 'var(--text-70)', borderRadius: 'var(--radius-md)' }} />
             </>
           )}
         </button>
@@ -143,9 +142,9 @@ export function NavHeader() {
             left: 0,
             right: 0,
             padding: 16,
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             background: 'var(--color-surface)',
-            borderBottom: '2px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
             boxShadow: 'var(--shadow-md)',
             animation: 'fadeIn 0.18s ease both',
             zIndex: 60,
@@ -169,10 +168,10 @@ export function NavHeader() {
                     alignItems: 'center',
                     gap: 8,
                     padding: '11px 14px',
-                    borderRadius: 0,
-                    font: '700 13px var(--font-sans)',
-                    letterSpacing: '.04em',
-                    textTransform: 'uppercase',
+                    borderRadius: 'var(--radius-md)',
+                    font: '650 14px var(--font-sans)',
+                    letterSpacing: 'normal',
+                    textTransform: 'none',
                     background: active ? 'var(--gold)' : 'var(--bg-chip)',
                     color: active ? 'var(--gold-fg)' : 'var(--text-70)',
                   }}

@@ -71,7 +71,7 @@ export function AnnouncementBanner() {
               alignItems: 'center',
               gap: 10,
               padding: '10px 16px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               background: s.bg,
               border: `1px solid ${s.border}`,
             }}
@@ -87,7 +87,7 @@ export function AnnouncementBanner() {
               onClick={() => dismiss(a.id)}
               aria-label="Dismiss announcement"
               className="u-btn-ghost"
-              style={{ marginLeft: 'auto', flexShrink: 0, font: '600 12px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', padding: '2px 6px', borderRadius: 0, cursor: 'pointer' }}
+              style={{ marginLeft: 'auto', flexShrink: 0, font: '600 12px var(--font-sans)', color: 'var(--text-55)', background: 'none', border: 'none', padding: '2px 6px', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
             >
               ✕
             </button>

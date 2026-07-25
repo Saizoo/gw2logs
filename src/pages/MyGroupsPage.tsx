@@ -128,7 +128,7 @@ export default function MyGroupsPage() {
                 <button
                   onClick={() => declineInvite(inv.id)}
                   className="u-btn-ghost"
-                  style={{ font: '600 12px var(--font-sans)', padding: '9px 14px', borderRadius: 0, background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }}
+                  style={{ font: '600 12px var(--font-sans)', padding: '9px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-chip)', color: 'var(--text-70)', border: '1px solid var(--border)' }}
                 >
                   Decline
                 </button>
@@ -200,7 +200,7 @@ export default function MyGroupsPage() {
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '5px 11px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   font: '600 11.5px var(--font-sans)',
                   background: active ? 'var(--gold-dim)' : 'var(--bg-chip)',
                   color: active ? 'var(--gold)' : 'var(--text-65)',
@@ -236,14 +236,14 @@ const inputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '8px 12px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const ghostBtnStyle = {
   font: '600 12px var(--font-sans)',
   padding: '8px 14px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
@@ -260,7 +260,7 @@ export function GuildBadge({ tag }: { tag: string }) {
         letterSpacing: '.6px',
         textTransform: 'uppercase',
         padding: '2px 7px',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         color: 'var(--gold)',
         background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
         border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',

@@ -58,7 +58,7 @@ export function MemberClassRoleCard({ account }: { account: string }) {
         padding: '14px 15px',
         background: 'var(--color-surface)',
         border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-md)',
         boxShadow: '0 20px 46px -16px rgba(0,0,0,.7)',
       }}
     >
@@ -109,8 +109,8 @@ function ClassRoleBody({ profile }: { profile: PlayerProfile }) {
                   <span style={{ font: '600 11px var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.spec}</span>
                   <span style={{ font: '600 10px var(--font-mono)', color: 'var(--text-50)', flex: 'none' }}>{s.pct}%</span>
                 </div>
-                <div style={{ height: 5, borderRadius: 0, background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
-                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 0, background: color }} />
+                <div style={{ height: 5, borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-text) 8%, transparent)', overflow: 'hidden' }}>
+                  <div style={{ width: `${s.pct}%`, height: '100%', borderRadius: 'var(--radius-md)', background: color }} />
                 </div>
               </div>
             </div>
@@ -123,7 +123,7 @@ function ClassRoleBody({ profile }: { profile: PlayerProfile }) {
           <div style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text-45)', margin: '13px 0 7px' }}>
             Role split
           </div>
-          <div style={{ display: 'flex', height: 8, borderRadius: 0, overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
+          <div style={{ display: 'flex', height: 8, borderRadius: 'var(--radius-md)', overflow: 'hidden', gap: 2, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
             {profile.roleBreakdown.map((r) => (
               <div key={r.role} title={`${ROLE_META[r.role]?.label ?? r.role} · ${r.pct}%`} style={{ width: `${r.pct}%`, background: ROLE_META[r.role]?.color ?? 'var(--text-40)' }} />
             ))}
@@ -131,7 +131,7 @@ function ClassRoleBody({ profile }: { profile: PlayerProfile }) {
           <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
             {profile.roleBreakdown.map((r) => (
               <div key={r.role} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 0, background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
+                <span style={{ width: 8, height: 8, borderRadius: 'var(--radius-md)', background: ROLE_META[r.role]?.color ?? 'var(--text-40)', flex: 'none' }} />
                 <span style={{ font: '600 10.5px var(--font-sans)', color: 'var(--text-70)' }}>{ROLE_META[r.role]?.label ?? r.role}</span>
                 <span style={{ font: '600 10px var(--font-mono)', color: 'var(--text-45)' }}>{r.pct}%</span>
               </div>
@@ -147,7 +147,7 @@ function SkeletonRows() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="u-skeleton" style={{ height: 12, width: `${90 - i * 12}%`, borderRadius: 0 }} />
+        <div key={i} className="u-skeleton" style={{ height: 12, width: `${90 - i * 12}%`, borderRadius: 'var(--radius-md)' }} />
       ))}
     </div>
   );

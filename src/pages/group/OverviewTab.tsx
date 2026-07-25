@@ -91,7 +91,7 @@ function ScheduleFields({
               onClick={() => onToggleDay(d)}
               style={{
                 padding: '6px 11px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 font: '600 12px var(--font-sans)',
                 background: active ? 'var(--gold-grad)' : 'var(--bg-chip)',
                 color: active ? 'var(--gold-fg)' : 'var(--text-65)',
@@ -299,7 +299,7 @@ function GroupImageCard({ group, groupId, onSaved }: { group: GroupDetail; group
                 position: 'relative',
                 height: 62,
                 padding: 0,
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 cursor: saving !== null ? 'default' : 'pointer',
                 border: `2px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
@@ -393,7 +393,7 @@ function RaidSignupsCard({
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   font: '600 11.5px var(--font-sans)',
                   background: active ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                   color: active ? 'var(--gold)' : 'var(--text-60)',
@@ -421,7 +421,7 @@ function RaidSignupsCard({
                 className={active ? undefined : 'u-chip'}
                 style={{
                   padding: '6px 16px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   font: '700 12px var(--font-sans)',
                   background: active ? meta.bg : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                   color: active ? meta.color : 'var(--text-60)',
@@ -450,7 +450,7 @@ function RaidSignupsCard({
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 10px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 font: '600 11px var(--font-sans)',
                 background: meta ? meta.bg : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
                 color: meta ? meta.color : 'var(--text-50)',
@@ -530,7 +530,7 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
               alignItems: 'center',
               gap: 6,
               padding: '5px 11px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '600 11.5px var(--font-sans)',
               background: 'var(--good-dim)',
               color: 'var(--good)',
@@ -592,7 +592,7 @@ function DiscordRemindersCard({ groupId }: { groupId: string }) {
                     alignItems: 'center',
                     gap: 6,
                     padding: '6px 12px',
-                    borderRadius: 0,
+                    borderRadius: 'var(--radius-md)',
                     cursor: 'pointer',
                     font: '600 11.5px var(--font-sans)',
                     background: on ? 'var(--good-dim)' : 'var(--bg-chip)',
@@ -664,7 +664,7 @@ function WeeklyClearsCard({ clears }: { clears: GroupClears }) {
                       alignItems: 'center',
                       gap: 5,
                       padding: '4px 9px',
-                      borderRadius: 0,
+                      borderRadius: 'var(--radius-md)',
                       font: '600 11px var(--font-sans)',
                       background: enc.killedThisWeek ? 'var(--good-dim)' : 'color-mix(in srgb, var(--color-text) 6%, transparent)',
                       color: enc.killedThisWeek ? 'var(--good)' : 'var(--text-50)',
@@ -675,14 +675,14 @@ function WeeklyClearsCard({ clears }: { clears: GroupClears }) {
                     <span aria-hidden style={{ font: '800 10px var(--font-sans)' }}>{enc.killedThisWeek ? '✓' : '·'}</span>
                     {enc.fightName}
                     {enc.cmThisWeek && (
-                      <span style={{ font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '1px 4px', borderRadius: 0, background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--gold)' }}>
+                      <span style={{ font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '1px 4px', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--gold)' }}>
                         CM
                       </span>
                     )}
                   </span>
                 );
                 return enc.lastKill ? (
-                  <Link key={enc.fightName} to={`/logs/${enc.lastKill.logId}`} className="u-chip" title={`Last kill ${new Date(enc.lastKill.date).toLocaleDateString()}`} style={{ borderRadius: 0 }}>
+                  <Link key={enc.fightName} to={`/logs/${enc.lastKill.logId}`} className="u-chip" title={`Last kill ${new Date(enc.lastKill.date).toLocaleDateString()}`} style={{ borderRadius: 'var(--radius-md)' }}>
                     {chip}
                   </Link>
                 ) : (

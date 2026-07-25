@@ -122,7 +122,7 @@ export default function AccountPage() {
             color: 'var(--text-70)',
             padding: '8px 14px',
             border: '1px solid var(--border)',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
           }}
         >
           Sign out
@@ -152,7 +152,7 @@ export default function AccountPage() {
                 color: 'var(--bad)',
                 padding: '9px 14px',
                 border: '1px solid var(--bad-dim)',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 opacity: unlinking ? 0.6 : 1,
               }}
             >
@@ -180,7 +180,7 @@ export default function AccountPage() {
                 padding: '10px 12px',
                 background: 'var(--bg-input)',
                 border: '1px solid var(--border)',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-md)',
                 font: '400 12px var(--font-mono)',
                 color: 'var(--text)',
               }}
@@ -228,7 +228,7 @@ export default function AccountPage() {
               padding: '10px 12px',
               background: 'var(--bg-input)',
               border: '1px solid var(--border)',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-md)',
               font: '400 12px var(--font-mono)',
               color: 'var(--text)',
             }}
@@ -242,11 +242,11 @@ export default function AccountPage() {
 
         {dpsStatus && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 0 }}>
+            <div style={{ height: 6, background: 'var(--bg-chip)', borderRadius: 'var(--radius-md)' }}>
               <div
                 style={{
                   height: 6,
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   background: 'var(--gold)',
                   width: `${dpsStatus.total ? Math.round((dpsStatus.processed / dpsStatus.total) * 100) : 100}%`,
                 }}
@@ -287,7 +287,7 @@ export default function AccountPage() {
             window.dispatchEvent(new CustomEvent(REPLAY_TOUR_EVENT));
           }}
           className="u-btn-ghost"
-          style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', padding: '8px 14px', borderRadius: 0 }}
+          style={{ font: '600 12px var(--font-sans)', color: 'var(--text-55)', padding: '8px 14px', borderRadius: 'var(--radius-md)' }}
         >
           Replay the site tour
         </button>
@@ -302,14 +302,14 @@ const tokenInputStyle = {
   color: 'var(--text)',
   fontSize: 12.5,
   padding: '9px 12px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   fontFamily: 'var(--font-sans)',
 } as const;
 
 const tokenGhostSmall = {
   font: '600 12px var(--font-sans)',
   padding: '8px 14px',
-  borderRadius: 0,
+  borderRadius: 'var(--radius-md)',
   background: 'var(--bg-chip)',
   color: 'var(--text-80)',
   border: '1px solid var(--border)',
@@ -363,7 +363,7 @@ function DangerZoneCard() {
           style={{
             font: '700 12.5px var(--font-sans)',
             padding: '10px 18px',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             background: armed ? 'var(--bad)' : 'var(--bg-chip)',
             color: armed ? 'var(--on-art)' : 'var(--text-50)',
             border: `1px solid ${armed ? 'var(--bad)' : 'var(--border)'}`,
@@ -515,7 +515,7 @@ function AppearanceCard() {
             position: 'relative',
             width: 46,
             height: 25,
-            borderRadius: 0,
+            borderRadius: 'var(--radius-md)',
             flexShrink: 0,
             marginTop: 2,
             background: dark ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
@@ -594,7 +594,7 @@ function PrivacyToggle({ title, description, on, busy, onToggle }: { title: stri
           position: 'relative',
           width: 46,
           height: 25,
-          borderRadius: 0,
+          borderRadius: 'var(--radius-md)',
           flexShrink: 0,
           marginTop: 2,
           background: on ? 'var(--gold-grad)' : 'color-mix(in srgb, var(--color-text) 14%, transparent)',
@@ -672,7 +672,7 @@ function GuildCard() {
                   gap: 10,
                   textAlign: 'left',
                   padding: '10px 14px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-md)',
                   background: active ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'color-mix(in srgb, var(--color-text) 4%, transparent)',
                   border: `1px solid ${active ? 'color-mix(in srgb, var(--color-accent) 40%, transparent)' : 'var(--border)'}`,
                   cursor: active ? 'default' : 'pointer',
@@ -681,7 +681,7 @@ function GuildCard() {
                 <span style={{ font: '800 12px var(--font-mono)', color: 'var(--gold)', flex: 'none' }}>[{g.tag}]</span>
                 <span style={{ font: '600 13px var(--font-sans)', color: 'var(--text-88)' }}>{g.name}</span>
                 {g.isLeader && (
-                  <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 0, background: 'var(--gold-dim)', color: 'var(--gold)' }}>
+                  <span style={{ font: '700 9px var(--font-sans)', letterSpacing: '.5px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 'var(--radius-md)', background: 'var(--gold-dim)', color: 'var(--gold)' }}>
                     Leader
                   </span>
                 )}
@@ -697,7 +697,7 @@ function GuildCard() {
               disabled={busy}
               onClick={() => choose(null)}
               className="u-btn-ghost"
-              style={{ alignSelf: 'flex-start', font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', padding: '7px 12px', borderRadius: 0, border: '1px solid var(--border)' }}
+              style={{ alignSelf: 'flex-start', font: '600 11.5px var(--font-sans)', color: 'var(--text-55)', padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}
             >
               Display no guild
             </button>
