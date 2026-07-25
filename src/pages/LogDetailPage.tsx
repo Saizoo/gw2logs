@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
-import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
+import { bossBgPath, playerRoleLabel, professionColor, professionColorAlpha, professionIconPath, specBgPath } from '../data/gw2-data';
 import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';
 import { api, ApiError, type DpsChartPoint, type GroupSummary, type LogDetail, type LogDetailPlayer, type LogPhase } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
@@ -491,6 +491,120 @@ function PhaseBreakdown({ phases, durationMs }: { phases: LogPhase[]; durationMs
   );
 }
 
+// Compact damage number: 41_200 -> "41.2k", 15_326_400 -> "15M".
+function fmtCompact(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(n >= 100_000 ? 0 : 1) + 'k';
+  return String(Math.round(n));
+}
+
+type DamageMetric = 'dps' | 'total' | 'boss';
+const DAMAGE_METRICS: { id: DamageMetric; label: string }[] = [
+  { id: 'dps', label: 'DPS' },
+  { id: 'total', label: 'Total' },
+  { id: 'boss', label: 'Boss only' },
+];
+
+// Ranked squad damage — one bar per player, sortable between whole-squad DPS,
+// total damage (DPS × fight duration), and boss-only damage. Boss-only needs
+// per-target numbers we don't extract yet, so that view is coming-soon.
+function DamageTable({ players, durationMs }: { players: LogDetailPlayer[]; durationMs: number }) {
+  const [metric, setMetric] = useState<DamageMetric>('dps');
+  const durationSec = durationMs / 1000;
+
+  const rows = useMemo(() => {
+    const valueOf = (p: LogDetailPlayer) => (metric === 'total' ? Math.round(p.total * durationSec) : p.total);
+    const ranked = players.map((p) => ({ p, value: valueOf(p) })).sort((a, b) => b.value - a.value);
+    const sum = ranked.reduce((s, r) => s + r.value, 0) || 1;
+    const max = ranked[0]?.value || 1;
+    return ranked.map((r) => ({ ...r, pct: (r.value / sum) * 100, barPct: (r.value / max) * 100 }));
+  }, [players, metric, durationSec]);
+
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '15px 17px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ font: '750 15px var(--font-sans)', display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ color: 'var(--gold)', display: 'grid', placeItems: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+          </span>
+          Damage
+        </div>
+        <div style={{ display: 'flex', gap: 2, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3 }}>
+          {DAMAGE_METRICS.map((m) => {
+            const on = metric === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMetric(m.id)}
+                style={{
+                  font: '650 12px var(--font-sans)',
+                  padding: '5px 11px',
+                  borderRadius: 'var(--radius-xs, 6px)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: on ? 'var(--gold-fg)' : 'var(--text-60)',
+                  background: on ? 'var(--gold)' : 'transparent',
+                }}
+              >
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {metric === 'boss' ? (
+        <div style={{ padding: '30px 20px', textAlign: 'center' }}>
+          <div style={{ font: '700 9.5px var(--font-sans)', letterSpacing: '.06em', textTransform: 'uppercase', display: 'inline-block', padding: '3px 9px', borderRadius: 999, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)', marginBottom: 10 }}>
+            Coming soon
+          </div>
+          <div style={{ font: '400 12.5px/1.6 var(--font-sans)', color: 'var(--text-55)', maxWidth: 340, margin: '0 auto' }}>
+            Boss-only damage strips out cleave onto adds — it needs per-target numbers that aren&apos;t extracted from logs yet.
+          </div>
+        </div>
+      ) : (
+        <div>
+          {rows.map((r, i) => {
+            const p = r.p;
+            const color = professionColor(p.profession);
+            return (
+              <div
+                key={p.account ?? p.name}
+                style={{ display: 'grid', gridTemplateColumns: '22px minmax(130px, 200px) 1fr 52px', alignItems: 'center', gap: 12, padding: '11px 17px', borderBottom: i < rows.length - 1 ? '1px solid var(--border-faint)' : 'none' }}
+              >
+                <div style={{ font: '700 12px var(--font-mono)', color: 'var(--text-45)', textAlign: 'center' }}>{i + 1}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <ProfDot color={color} size={7} />
+                    <PlayerLink
+                      name={p.name}
+                      account={p.account}
+                      style={{ font: '650 13px var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    />
+                    {p.parsePct != null && <ParseBadge pct={p.parsePct} />}
+                  </div>
+                  <div style={{ font: '500 11px var(--font-sans)', color: 'var(--text-50)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.spec} · {playerRoleLabel(p.squadRole, p.role)}
+                  </div>
+                </div>
+                <div style={{ position: 'relative', height: 24, borderRadius: 'var(--radius-sm)', background: 'var(--bg-chip)', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: '0 auto 0 0', width: `${Math.max(r.barPct, 13)}%`, minWidth: 48, borderRadius: 'var(--radius-sm)', background: `linear-gradient(90deg, ${professionColorAlpha(p.profession, 92)}, ${color})`, display: 'flex', alignItems: 'center' }}>
+                    <span style={{ font: '700 11.5px var(--font-mono)', color: '#0c0f0e', padding: '0 9px', textShadow: '0 1px 0 rgba(255,255,255,.15)' }}>
+                      {fmtCompact(r.value)}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ font: '650 12px var(--font-sans)', color: 'var(--text-70)', textAlign: 'right' }}>{r.pct.toFixed(1)}%</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: string }) {
   const subgroups = useMemo(() => {
     const bySubgroup = new Map<number, LogDetailPlayer[]>();
@@ -518,6 +632,7 @@ function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: strin
           ) : (
             <ComingSoonPanel title="Boss health" body="A health-over-time curve for the boss shows here once a log is uploaded with this build — older logs were parsed before it was captured." />
           )}
+          <DamageTable players={log.players} durationMs={log.durationMs} />
           <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 20 }}>
         {subgroups.map(([sub, players]) => (
           <Card key={sub} style={{ overflow: 'hidden' }}>
