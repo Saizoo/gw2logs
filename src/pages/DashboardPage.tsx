@@ -123,7 +123,7 @@ function WelcomeBand({ title, subtitle }: { title: ReactNode; subtitle: string }
         overflow: 'hidden',
       }}
     >
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1100px 460px at 78% -45%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 62%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(1100px 460px at 80% -45%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 62%), radial-gradient(760px 480px at 1% 135%, color-mix(in srgb, var(--color-accent-700) 30%, transparent), transparent 60%)' }} />
       <div style={{ position: 'relative', maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
         <div style={{ display: 'flex', gap: 26, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { api, type OverviewEncounter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
-import { bossImage, groupImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
+import { bossImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
 import { ArtImg, PageHeader } from './atoms';
 
 // Shared Raids / Fractals landing: the curated catalog grouped by wing /
@@ -42,40 +42,36 @@ function BossCard({ boss, enc }: { boss: CatalogBoss; enc?: OverviewEncounter })
   const bg = bossImage(boss.name);
   return (
     <div
+      className="u-card-link"
       style={{
-        position: 'relative',
+        borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
-        border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
+        border: '1px solid var(--border)',
         background: 'var(--color-surface)',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {bg && <ArtImg src={bg} style={{ opacity: 0.5 }} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 30%, transparent) 0%, color-mix(in srgb, var(--color-surface) 88%, transparent) 60%, color-mix(in srgb, var(--color-surface) 97%, transparent) 100%)' }} />
-      <div style={{ position: 'relative', padding: '14px 16px 14px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ font: '800 15px var(--font-sans)', letterSpacing: '-.2px' }}>{boss.name}</div>
-          {boss.hasCm && (
-            <span
-              style={{
-                font: '800 9px var(--font-sans)',
-                letterSpacing: '.5px',
-                padding: '2px 6px',
-                color: 'var(--gold)',
-                background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
-              }}
-            >
-              CM
-            </span>
-          )}
+      {/* Poster: boss art under a bottom scrim, name pinned to the corner, CM
+          chip top-right — the same treatment as the Encounters mega-menu. */}
+      <div style={{ position: 'relative', height: 104 }}>
+        {bg && <ArtImg src={bg} />}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.86) 6%, rgba(0,0,0,.28) 48%, transparent 78%)' }} />
+        {boss.hasCm && (
+          <span style={{ position: 'absolute', top: 9, right: 9, font: '800 9px var(--font-sans)', letterSpacing: '.4px', padding: '2px 7px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 22%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)' }}>
+            CM
+          </span>
+        )}
+        <div style={{ position: 'absolute', left: 13, right: 13, bottom: 10, font: '800 15px var(--font-sans)', letterSpacing: '-.2px', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {boss.name}
         </div>
-        <div style={{ font: '600 11px var(--font-sans)', color: 'var(--text-55)' }}>
+      </div>
+      <div style={{ padding: '12px 15px 13px', display: 'flex', flexDirection: 'column', gap: 11, flex: 1 }}>
+        <div style={{ font: '600 11.5px var(--font-sans)', color: 'var(--text-55)' }}>
           {enc ? (
             <>
-              {enc.kills}/{enc.logCount} kills
-              {enc.bestParse ? ` · best ${enc.bestParse.dps.toLocaleString()} dps` : ''}
+              <span style={{ color: 'var(--text-80)', fontWeight: 700 }}>{enc.kills}/{enc.logCount}</span> kills
+              {enc.bestParse ? <> · best <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{enc.bestParse.dps.toLocaleString()}</span> dps</> : ''}
             </>
           ) : (
             'No logs yet'
@@ -106,36 +102,23 @@ export function CatalogOverview({
     <div>
       <PageHeader title={title} subtitle={subtitle} />
 
-      {catalog.map((group) => {
-        const img = groupImage(group);
-        return (
-          <section key={group.name} style={{ marginBottom: 30 }}>
-            {/* Wing / instance banner: art + name + wing-scoped links */}
-            <div
-              style={{
-                position: 'relative',
-                overflow: 'hidden',
-                border: '1px solid color-mix(in srgb, var(--color-text) 11%, transparent)',
-                background: 'var(--color-surface)',
-                marginBottom: 14,
-              }}
-            >
-              {img && <ArtImg src={img} style={{ opacity: 0.45, objectPosition: 'center 35%' }} />}
-              <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 92%, transparent) 0%, color-mix(in srgb, var(--color-surface) 70%, transparent) 60%, color-mix(in srgb, var(--color-surface) 92%, transparent) 100%)' }} />
-              <div style={{ position: 'relative', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <h2 style={{ font: '800 18px var(--font-sans)', letterSpacing: '-.2px' }}>{group.name}</h2>
-                <ScopeLinks scope="wing" value={group.name} includeRankings={false} />
-              </div>
-            </div>
+      {catalog.map((group) => (
+        <section key={group.name} style={{ marginBottom: 28 }}>
+          {/* Wing / instance header: label + rule + wing-scoped links, matching
+              the Encounters mega-menu. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 13, flexWrap: 'wrap' }}>
+            <h2 style={{ font: '700 12px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>{group.name}</h2>
+            <div style={{ flex: 1, minWidth: 20, height: 1, background: 'var(--border-faint)' }} />
+            <ScopeLinks scope="wing" value={group.name} includeRankings={false} />
+          </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
-              {group.bosses.map((b) => (
-                <BossCard key={b.name} boss={b} enc={byName.get(b.name)} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14 }}>
+            {group.bosses.map((b) => (
+              <BossCard key={b.name} boss={b} enc={byName.get(b.name)} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
