@@ -51,10 +51,10 @@ function ActionPill({ to, label, onNavigate }: { to: string; label: string; onNa
   );
 }
 
-// A wide encounter tile: boss art under a scrim, its instance/wing label +
-// boss name pinned to the bottom, and a Leaderboards / Logs / Statistics action
-// row that fades in on hover (see .enc-tile in index.css).
-function BossTile({ boss, wing, onNavigate }: { boss: CatalogBoss; wing: string; onNavigate: () => void }) {
+// A wide encounter tile: boss art under a scrim, the boss name pinned to the
+// bottom, and a Leaderboards / Logs / Statistics action row that fades in on
+// hover (see .enc-tile in index.css). Grouped under a wing header by the menu.
+function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => void }) {
   const img = bossImage(boss.name);
   const q = `boss=${encodeURIComponent(boss.name)}`;
   return (
@@ -62,7 +62,7 @@ function BossTile({ boss, wing, onNavigate }: { boss: CatalogBoss; wing: string;
       className="enc-tile"
       style={{
         position: 'relative',
-        height: 118,
+        height: 84,
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         border: '1px solid var(--border)',
@@ -71,30 +71,25 @@ function BossTile({ boss, wing, onNavigate }: { boss: CatalogBoss; wing: string;
       }}
     >
       {img && <ArtImg src={img} />}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.88) 8%, rgba(0,0,0,.32) 52%, rgba(0,0,0,.15) 100%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,.2) 100%)' }} />
 
-      {/* Hover action row (top). */}
-      <div className="enc-actions" style={{ position: 'absolute', top: 11, left: 12, right: 12, display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+      {/* Hover action row (top-right). */}
+      <div className="enc-actions" style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 7, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <ActionPill to={`/rankings?${q}`} label="Leaderboards" onNavigate={onNavigate} />
         <ActionPill to={`/reports?${q}`} label="Logs" onNavigate={onNavigate} />
         <ActionPill to={`/statistics?${q}`} label="Statistics" onNavigate={onNavigate} />
       </div>
 
-      {/* Identity (bottom). */}
-      <div style={{ position: 'absolute', left: 14, right: 14, bottom: 12 }}>
-        <div style={{ font: '700 10px var(--font-sans)', letterSpacing: '.09em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--on-art) 62%, transparent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {wing}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-          <span style={{ font: '800 17px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)', textShadow: '0 1px 4px rgba(0,0,0,.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {boss.name}
+      {/* Boss name (bottom-left). */}
+      <div style={{ position: 'absolute', left: 14, right: 14, bottom: 11, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ font: '800 16px var(--font-sans)', letterSpacing: '-.3px', color: 'var(--on-art)', textShadow: '0 1px 4px rgba(0,0,0,.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {boss.name}
+        </span>
+        {boss.hasCm && (
+          <span style={{ flex: 'none', font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 26%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)' }}>
+            CM
           </span>
-          {boss.hasCm && (
-            <span style={{ flex: 'none', font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 26%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)' }}>
-              CM
-            </span>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -232,15 +227,23 @@ export function NavCatalogMenu({ label, categories }: { label: string; categorie
               </Link>
             </div>
 
-            {/* Every encounter in the category as one full-width two-column grid
-                of wide tiles — each tile carries its own instance/wing label, so
-                no separate section headers are needed. */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              {activeCat.catalog.flatMap((group) =>
-                group.bosses.map((b) => (
-                  <BossTile key={`${group.name}:${b.name}`} boss={b} wing={group.name} onNavigate={() => setOpen(false)} />
-                )),
-              )}
+            {/* Two columns of wing sections — Wing 1 | Wing 2, then the next
+                pair on the row below — each with its bosses stacked beneath a
+                wing header. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px 28px', alignItems: 'start' }}>
+              {activeCat.catalog.map((group) => (
+                <section key={group.name}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                    <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-65)', whiteSpace: 'nowrap' }}>{group.name}</div>
+                    <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                    {group.bosses.map((b) => (
+                      <BossTile key={b.name} boss={b} onNavigate={() => setOpen(false)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           </div>
         </div>
