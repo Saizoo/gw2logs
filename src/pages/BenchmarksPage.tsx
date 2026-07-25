@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { api, type SpecDistribution } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { professionColor, professionIconPath } from '../data/gw2-data';

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { api } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useComparePicker } from '../hooks/useComparePicker';

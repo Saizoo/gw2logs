@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { api, type OverviewEncounter } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { bossImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';

@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router';
 import { NavHeader } from './NavHeader';
 import { ToastHost } from './ToastHost';
 import { OnboardingTour } from './OnboardingTour';

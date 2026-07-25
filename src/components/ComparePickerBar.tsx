@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import type { CompareCandidate } from '../hooks/useComparePicker';
 
 export function ComparePickerBar({ selected, onClear }: { selected: CompareCandidate[]; onClear: () => void }) {

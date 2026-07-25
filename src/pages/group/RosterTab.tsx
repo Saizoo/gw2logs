@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { api, ApiError, type GroupDetail, type RosterCharacter } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { toast } from '../../lib/toast';

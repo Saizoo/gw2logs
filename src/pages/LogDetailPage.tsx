@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { bossBgPath, playerRoleLabel, professionColor, professionColorAlpha, professionIconPath, specBgPath } from '../data/gw2-data';
 import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';

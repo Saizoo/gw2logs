@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { api, ApiError } from '../lib/api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from '../lib/toast';

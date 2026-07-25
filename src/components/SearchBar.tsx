@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 export function SearchBar({ width = '100%', defaultValue = '' }: { width?: number | string; defaultValue?: string }) {
   const [value, setValue] = useState(defaultValue);

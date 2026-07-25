@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { bossImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
 import { ArtImg } from './atoms';
 

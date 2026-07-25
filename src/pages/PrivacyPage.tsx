@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { PageHeader } from '../components/atoms';
 
 // Plain-language privacy promise, grounded in how the site actually stores and

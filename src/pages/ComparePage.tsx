@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { api, type CompareParse, type CompareResult } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { bossBgPath, professionColor, professionIconPath } from '../data/gw2-data';

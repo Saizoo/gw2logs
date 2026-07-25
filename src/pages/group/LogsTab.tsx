@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { api, type LogListItem } from '../../lib/api';
 import { usePaginatedList } from '../../hooks/usePaginatedList';
 import { Card, LoadMoreButton, ParseBadge, ResultPill } from '../../components/atoms';

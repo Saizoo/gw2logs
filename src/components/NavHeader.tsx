@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { NotificationBell } from './NotificationBell';

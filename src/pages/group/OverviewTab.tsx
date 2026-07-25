@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { api, ApiError, type GroupClears, type GroupDetail, type RaidSignup, type SignupStatus } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useCurrentUser } from '../../hooks/useCurrentUser';

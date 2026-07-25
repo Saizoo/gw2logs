@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { PARSE_LEGEND, parseTier } from '../data/gw2-data';
 
 // Underline tab strip for sibling pages within a nav section (Encounters /

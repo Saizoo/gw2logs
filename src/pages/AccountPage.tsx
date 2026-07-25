@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router';
 import { REPLAY_TOUR_EVENT } from '../components/OnboardingTour';
 import { api, ApiError, type ApiTokenSummary, type CurrentUser } from '../lib/api';
 
