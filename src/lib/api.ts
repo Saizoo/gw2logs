@@ -706,6 +706,7 @@ export interface DpsReportImportStatus {
 export interface HomeSummary {
   topByProfession: { profession: string; name: string; account: string | null; hidden?: boolean; spec: string; dps: number; boss: string; logId: string }[];
   recentLogs: { id: string; boss: string; isCm: boolean; wing: string | null; squadDps: number; success: boolean; playerCount: number; uploadedAt: string }[];
+  recentParses: { logId: string; boss: string; isCm: boolean; wing: string | null; uploadedAt: string; name: string; account: string | null; hidden?: boolean; profession: string; spec: string; dps: number; parsePct: number | null }[];
 }
 
 class ApiError extends Error {
