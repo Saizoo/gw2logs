@@ -1,87 +1,54 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { groupImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
+import { bossImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
 import { ArtImg } from './atoms';
 
-// The Raids / Fractals nav item: an accordion catalog panel. The label itself
-// links to the overview page (/raids or /fractals); hovering or focusing opens
-// the panel, where each wing / instance is a row with its own scoped links and
-// a dropdown revealing its bosses. Wings get no Rankings (rankings are
-// boss-only); bosses get Rankings + Statistics + All Reports.
-
-function q(kind: 'boss' | 'wing', value: string): string {
-  return `${kind}=${encodeURIComponent(value)}`;
-}
-
-function ScopeLinks({ scope, value, includeRankings, onNavigate }: { scope: 'boss' | 'wing'; value: string; includeRankings: boolean; onNavigate: () => void }) {
-  const s = q(scope, value);
-  const links = [
-    ...(includeRankings ? [{ label: 'Rankings', to: `/rankings?${s}` }] : []),
-    { label: 'Statistics', to: `/statistics?${s}` },
-    { label: 'All Reports', to: `/reports?${s}` },
-  ];
-  return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-      {links.map((l) => (
-        <Link
-          key={l.label}
-          to={l.to}
-          onClick={onNavigate}
-          style={{ font: '700 10px var(--font-sans)', letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--gold)', whiteSpace: 'nowrap' }}
-        >
-          {l.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
+// The Raids / Fractals nav item: a full-width mega-menu of encounter poster
+// tiles, grouped by wing / fractal instance. The label itself links to the
+// overview page (/raids or /fractals); hovering or focusing opens the panel,
+// and each boss tile links to that boss's rankings ladder.
 
 function Chevron({ open }: { open: boolean }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s ease', flex: 'none' }}>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s ease', flex: 'none', opacity: 0.7 }}>
       <path d="M6 9l6 6 6-6" />
     </svg>
   );
 }
 
-function GroupRow({ group, onNavigate }: { group: CatalogGroup; onNavigate: () => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const img = groupImage(group);
+// A single encounter poster: boss art under a bottom scrim, name pinned to the
+// bottom edge, and a CM chip top-right when the boss has a challenge mode.
+function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => void }) {
+  const img = bossImage(boss.name);
   return (
-    <div style={{ borderBottom: '1px solid var(--border-faint)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
-        <button
-          onClick={() => setExpanded((e) => !e)}
-          aria-expanded={expanded}
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${group.name}`}
-          className="u-row"
-          style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, padding: 0, background: 'none', color: 'inherit', textAlign: 'left' }}
-        >
-          <div style={{ position: 'relative', width: 30, height: 30, flex: 'none', overflow: 'hidden', border: '1px solid var(--border-faint)', background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' }}>
-            {img && <ArtImg src={img} />}
-          </div>
-          <span style={{ font: '800 12.5px var(--font-sans)', letterSpacing: '-.1px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
-          <span style={{ color: 'var(--text-55)' }}><Chevron open={expanded} /></span>
-        </button>
-      </div>
-      <div style={{ padding: '0 12px 10px 52px' }}>
-        <ScopeLinks scope="wing" value={group.name} includeRankings={false} onNavigate={onNavigate} />
-      </div>
-
-      {expanded && (
-        <div style={{ padding: '2px 12px 10px', background: 'color-mix(in srgb, var(--color-text) 3%, transparent)' }}>
-          {group.bosses.map((b: CatalogBoss) => (
-            <div key={b.name} style={{ padding: '7px 6px 7px 40px', borderTop: '1px solid var(--border-faint)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <span style={{ font: '600 12px var(--font-sans)' }}>{b.name}</span>
-                {b.hasCm && <span style={{ font: '800 8px var(--font-sans)', letterSpacing: '.4px', padding: '1px 5px', color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)' }}>CM</span>}
-              </div>
-              <ScopeLinks scope="boss" value={b.name} includeRankings onNavigate={onNavigate} />
-            </div>
-          ))}
-        </div>
+    <Link
+      to={`/rankings?boss=${encodeURIComponent(boss.name)}`}
+      onClick={onNavigate}
+      className="u-card-link"
+      style={{
+        position: 'relative',
+        height: 92,
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: 10,
+        border: '1px solid var(--border)',
+        background: 'var(--color-neutral-800)',
+      }}
+    >
+      {img && <ArtImg src={img} />}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.86) 6%, rgba(0,0,0,.3) 46%, transparent 78%)' }} />
+      {boss.hasCm && (
+        <span style={{ position: 'absolute', top: 8, right: 8, font: '800 8.5px var(--font-sans)', letterSpacing: '.4px', padding: '2px 6px', borderRadius: 999, color: 'var(--gold)', background: 'color-mix(in srgb, var(--color-accent) 22%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)' }}>
+          CM
+        </span>
       )}
-    </div>
+      <div style={{ position: 'relative', font: '700 12.5px var(--font-sans)', color: 'var(--on-art)', textShadow: '0 1px 3px rgba(0,0,0,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {boss.name}
+      </div>
+    </Link>
   );
 }
 
@@ -92,10 +59,8 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
   const location = useLocation();
   const active = location.pathname.startsWith(to);
 
-  // Hover open/close with a short close delay: moving the cursor from the
-  // trigger down into the panel briefly leaves the element's box, and without
-  // this grace period that flicker would close the menu before you reach an
-  // item.
+  // Hover open/close with a short close delay so the diagonal move from the
+  // trigger down into the full-width panel doesn't flicker it shut.
   function openNow() {
     if (closeTimer.current) {
       clearTimeout(closeTimer.current);
@@ -132,8 +97,6 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
   return (
     <div
       ref={ref}
-      // Full nav-bar height so the dropdown (top: 100%) drops flush against
-      // the nav's bottom rule with no dead zone to cross.
       style={{ position: 'relative', alignSelf: 'stretch', display: 'flex', alignItems: 'center' }}
       onMouseEnter={openNow}
       onMouseLeave={closeSoon}
@@ -148,44 +111,63 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
           alignItems: 'center',
           gap: 5,
           padding: '8px 12px',
+          borderRadius: 'var(--radius-md)',
           font: '600 14px var(--font-sans)',
-          letterSpacing: 'normal',
-          textTransform: 'none',
           whiteSpace: 'nowrap',
           color: active ? 'var(--gold)' : 'var(--text-70)',
         }}
       >
         {label}
-        <span style={{ color: 'var(--text-55)' }}><Chevron open={open} /></span>
+        <Chevron open={open} />
       </Link>
 
       {open && (
+        // Full-bleed mega-menu. Fixed to the viewport just under the 60px nav
+        // bar so it spans the whole width like the design's Encounters menu;
+        // an inner max-width container keeps the grid aligned to the page.
         <div
-          // No margin gap: the panel's box starts flush at the trigger's
-          // bottom and a transparent top border drops the visible surface
-          // clear of the nav rule, so the cursor never crosses a dead zone.
-          // The 200ms close delay is the backstop.
           style={{
-            position: 'absolute',
-            top: '100%',
+            position: 'fixed',
             left: 0,
-            width: 360,
-            maxHeight: '72vh',
-            overflowY: 'auto',
-            background: 'var(--color-surface)',
-            backgroundClip: 'padding-box',
-            border: '1px solid var(--border)',
-            // Transparent top border bridges to the nav rule (must come after
-            // the `border` shorthand so it isn't overridden back to 1px).
-            borderTop: '12px solid transparent',
-            boxShadow: 'var(--shadow-md)',
+            right: 0,
+            top: 60,
+            background: 'color-mix(in srgb, var(--bg-nav) 98%, transparent)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border-soft)',
+            boxShadow: 'var(--shadow-lg)',
             zIndex: 70,
-            animation: 'fadeIn 0.14s ease both',
+            maxHeight: '78vh',
+            overflowY: 'auto',
+            animation: 'fadeIn 0.16s ease both',
           }}
         >
-          {catalog.map((group) => (
-            <GroupRow key={group.name} group={group} onNavigate={() => setOpen(false)} />
-          ))}
+          <div style={{ maxWidth: 1220, margin: '0 auto', padding: '20px 24px 26px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+              <div>
+                <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
+                <div style={{ font: '800 18px var(--font-sans)', marginTop: 2, letterSpacing: '-.2px' }}>Browse every encounter</div>
+              </div>
+              <Link to={to} onClick={() => setOpen(false)} style={{ font: '600 13px var(--font-sans)', color: 'var(--gold)', whiteSpace: 'nowrap' }}>
+                View all {label.toLowerCase()} →
+              </Link>
+            </div>
+
+            {catalog.map((group) => (
+              <div key={group.name} style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 11 }}>
+                  <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>{group.name}</div>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(188px, 1fr))', gap: 12 }}>
+                  {group.bosses.map((b) => (
+                    <BossTile key={b.name} boss={b} onNavigate={() => setOpen(false)} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
