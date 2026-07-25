@@ -95,6 +95,27 @@ export interface NormalizedDeathEvent {
   killedBy: string | null;
 }
 
+// One phase of the fight (EI's Phases[], minus the index-0 "Full Fight"
+// wrapper). squadDps is the squad's summed DPS *during that phase* — from each
+// player's phase-indexed DpsAll entry, not a whole-fight average.
+export interface NormalizedPhase {
+  name: string;
+  startMs: number;
+  endMs: number;
+  breakbar: boolean;
+  squadDps: number;
+}
+
+// Boss health-over-time + phase breakdown for the encounter, small enough to
+// store inline. `health` is a downsampled [timeMs, percent] series for the
+// main boss target; null when EI emitted no target health graph.
+export interface EncounterTelemetry {
+  bossName: string | null;
+  totalHealth: number | null;
+  health: [number, number][] | null;
+  phases: NormalizedPhase[];
+}
+
 export interface NormalizedLog {
   fightName: string;
   triggerId: number | null;
@@ -110,6 +131,8 @@ export interface NormalizedLog {
   // FullName (readable label) + Description (the hover explainer). Lets the
   // Mechanics tab show what a mechanic actually is instead of EI's terse code.
   mechanicsMeta: Record<string, { fullName: string | null; description: string | null }>;
+  // Boss health-over-time + phase breakdown — see EncounterTelemetry.
+  telemetry: EncounterTelemetry;
 }
 
 function extractPlayerDps(player: any) {
@@ -310,6 +333,98 @@ function extractDeaths(raw: RawEiJson): NormalizedDeathEvent[] {
   return deaths;
 }
 
+// Keep the stored health graph small: EI can emit a point per second (600+ on
+// a long fight), but a smooth-enough curve for a detail chart needs far fewer.
+const MAX_HEALTH_POINTS = 180;
+
+// Pull boss health-over-time + the phase breakdown out of the raw EI JSON.
+// Everything here is best-effort and null-tolerant: a log where EI emitted no
+// target graph or no phases still normalizes fine (the detail page falls back
+// to "coming soon"). Health percents come from EI as [timeMs, percent] pairs
+// on JsonActor.HealthPercents; phases from JsonLog.Phases (index 0 is the
+// synthetic "Full Fight" wrapper, dropped here); per-phase squad DPS is summed
+// from each player's phase-indexed DpsAll entry.
+function extractEncounterTelemetry(raw: RawEiJson, players: any[]): EncounterTelemetry {
+  const rawPhases: any[] = field(raw, 'Phases') ?? [];
+  const targets: any[] = field(raw, 'Targets') ?? [];
+
+  // Main boss target: among the targets the full-fight phase marks as active
+  // (Phases[0].Targets is a list of indices into Targets), the one with the
+  // most health. Falls back to the highest-health target overall, then the
+  // first target — covers logs with an odd or missing phase-0 target list.
+  const fullFight = rawPhases[0];
+  const activeIdx: number[] = (field(fullFight, 'Targets') ?? []).filter((i: any) => typeof i === 'number');
+  const candidateIdx = activeIdx.length ? activeIdx : targets.map((_, i) => i);
+  let bossIdx = -1;
+  let bestHealth = -1;
+  for (const i of candidateIdx) {
+    const th = Number(field(targets[i], 'TotalHealth') ?? 0);
+    if (th > bestHealth) {
+      bestHealth = th;
+      bossIdx = i;
+    }
+  }
+  const boss = bossIdx >= 0 ? targets[bossIdx] : undefined;
+
+  let health: [number, number][] | null = null;
+  const rawHealth: any[] = field(boss, 'HealthPercents') ?? [];
+  if (rawHealth.length) {
+    const stride = Math.max(1, Math.ceil(rawHealth.length / MAX_HEALTH_POINTS));
+    const points: [number, number][] = [];
+    for (let i = 0; i < rawHealth.length; i += stride) {
+      const p = rawHealth[i];
+      // EI serializes each point as a two-element array [timeMs, percent].
+      const t = Array.isArray(p) ? Number(p[0]) : Number(field(p, 'Time'));
+      const pct = Array.isArray(p) ? Number(p[1]) : Number(field(p, 'Percent'));
+      if (Number.isFinite(t) && Number.isFinite(pct)) points.push([Math.round(t), Math.round(pct * 100) / 100]);
+    }
+    // Always keep the final point so the curve ends at the true last-known
+    // health even when the stride skips over it.
+    const lastRaw = rawHealth[rawHealth.length - 1];
+    const lt = Array.isArray(lastRaw) ? Number(lastRaw[0]) : Number(field(lastRaw, 'Time'));
+    if (points.length && Number.isFinite(lt) && points[points.length - 1][0] !== Math.round(lt)) {
+      const lp = Array.isArray(lastRaw) ? Number(lastRaw[1]) : Number(field(lastRaw, 'Percent'));
+      if (Number.isFinite(lp)) points.push([Math.round(lt), Math.round(lp * 100) / 100]);
+    }
+    if (points.length) health = points;
+  }
+
+  // Squad DPS per phase = sum over players of DpsAll[phaseIndex].Dps. DpsAll is
+  // phase-indexed identically to Phases, so index i lines up for both.
+  const phaseSquadDps = (phaseIndex: number): number => {
+    let sum = 0;
+    for (const p of players) {
+      const dpsAll = field(p, 'DpsAll') ?? [];
+      sum += Math.round(field(dpsAll[phaseIndex], 'Dps') ?? 0);
+    }
+    return sum;
+  };
+
+  const phases: NormalizedPhase[] = [];
+  // Drop index 0 (the synthetic full-fight phase) — the rest are the real
+  // sub-phases shown on the breakdown.
+  for (let i = 1; i < rawPhases.length; i++) {
+    const ph = rawPhases[i];
+    const startMs = Math.round(field(ph, 'Start') ?? 0);
+    const endMs = Math.round(field(ph, 'End') ?? 0);
+    if (endMs <= startMs) continue;
+    phases.push({
+      name: field(ph, 'Name') ?? `Phase ${i}`,
+      startMs,
+      endMs,
+      breakbar: Boolean(field(ph, 'BreakbarPhase') ?? false),
+      squadDps: phaseSquadDps(i),
+    });
+  }
+
+  return {
+    bossName: field(boss, 'Name') ?? null,
+    totalHealth: boss && Number.isFinite(Number(field(boss, 'TotalHealth'))) ? Number(field(boss, 'TotalHealth')) : null,
+    health,
+    phases,
+  };
+}
+
 export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
   const players: any[] = field(raw, 'Players') ?? [];
   const { perPlayerCounts, events, meta: mechanicsMeta } = extractMechanics(raw);
@@ -367,5 +482,6 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
     mechanicEvents: events,
     deathEvents: extractDeaths(raw),
     mechanicsMeta,
+    telemetry: extractEncounterTelemetry(raw, players),
   };
 }

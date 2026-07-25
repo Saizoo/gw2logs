@@ -14,6 +14,39 @@ function canManageLog(log: { uploadedBy: string | null }, user: { id: string; is
   return !!user && (log.uploadedBy === user.id || user.isAdmin);
 }
 
+// Log.phaseData is a free-form JSON blob (the EncounterTelemetry shape written
+// at ingest, or null on older logs). Read the boss health graph and phase list
+// back out defensively so a malformed/absent blob just yields null/[] rather
+// than throwing on the detail route.
+function bossHealthOf(phaseData: unknown): { totalHealth: number | null; points: [number, number][] } | null {
+  if (!phaseData || typeof phaseData !== 'object') return null;
+  const pd = phaseData as Record<string, unknown>;
+  const health = pd.health;
+  if (!Array.isArray(health) || health.length === 0) return null;
+  const points = health
+    .filter((p): p is [number, number] => Array.isArray(p) && p.length >= 2 && typeof p[0] === 'number' && typeof p[1] === 'number')
+    .map((p) => [p[0], p[1]] as [number, number]);
+  if (points.length === 0) return null;
+  const total = typeof pd.totalHealth === 'number' ? pd.totalHealth : null;
+  return { totalHealth: total, points };
+}
+
+function phasesOf(phaseData: unknown): { name: string; startMs: number; endMs: number; breakbar: boolean; squadDps: number }[] {
+  if (!phaseData || typeof phaseData !== 'object') return [];
+  const pd = phaseData as Record<string, unknown>;
+  if (!Array.isArray(pd.phases)) return [];
+  return pd.phases
+    .filter((p): p is Record<string, unknown> => !!p && typeof p === 'object')
+    .map((p) => ({
+      name: typeof p.name === 'string' ? p.name : 'Phase',
+      startMs: typeof p.startMs === 'number' ? p.startMs : 0,
+      endMs: typeof p.endMs === 'number' ? p.endMs : 0,
+      breakbar: Boolean(p.breakbar),
+      squadDps: typeof p.squadDps === 'number' ? p.squadDps : 0,
+    }))
+    .filter((p) => p.endMs > p.startMs);
+}
+
 logsRouter.get('/', asyncHandler(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
   const killsOnly = req.query.killsOnly === 'true';
@@ -162,6 +195,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       encounterTime: true,
       private: true,
       mechanicsMeta: true,
+      phaseData: true,
       uploadedBy: true,
       uploader: { select: { discordUsername: true } },
       groupId: true,
@@ -271,8 +305,13 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
     group: log.groupId && log.group ? { id: log.groupId, name: log.group.name } : null,
     // The raw Elite Insights JSON this was ever derived from is no longer
     // persisted (see Log.rawJson's old spot in schema.prisma) — nothing to
-    // extract a per-second breakdown from anymore.
+    // extract a per-second squad-DPS breakdown from anymore.
     dpsChart: null,
+    // Boss health-over-time + phase breakdown, extracted at ingest into
+    // Log.phaseData. Null on logs ingested before that existed (their raw JSON
+    // is gone) — the detail page shows "coming soon" for those.
+    bossHealth: bossHealthOf(log.phaseData),
+    phases: phasesOf(log.phaseData),
     players: log.players.map((p) => {
       const masked = maskIdentity(p.characterName, p.player.account, p.player.user?.hideName ?? false, p.player.userId, req.user?.id);
       return {

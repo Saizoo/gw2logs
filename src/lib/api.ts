@@ -201,6 +201,16 @@ export interface DpsChartPoint {
   dps: number;
 }
 
+export interface LogPhase {
+  name: string;
+  startMs: number;
+  endMs: number;
+  // A defiance-bar / breakbar phase (a CC window), styled distinctly from a
+  // normal damage phase on the breakdown.
+  breakbar: boolean;
+  squadDps: number;
+}
+
 export interface LogDetail {
   id: string;
   boss: string;
@@ -211,6 +221,11 @@ export interface LogDetail {
   squadDps: number;
   date: string;
   dpsChart: DpsChartPoint[] | null;
+  // Boss health-over-time (a [timeMs, percent] series for the main target) and
+  // the phase breakdown, extracted at ingest. Null / empty on logs uploaded
+  // before this was captured — the detail page shows "coming soon" for those.
+  bossHealth: { totalHealth: number | null; points: [number, number][] } | null;
+  phases: LogPhase[];
   uploadedBy: { username: string } | null;
   canClaim: boolean;
   // Hidden from the public browse surfaces; only the uploader, admins, and the

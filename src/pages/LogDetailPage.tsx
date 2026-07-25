@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { heat, eventDotColor, severityColor, severityRank } from '../data/derived';
 import { bossBgPath, playerRoleLabel, professionColor, professionIconPath, specBgPath } from '../data/gw2-data';
 import { ArtImg, Card, ParseBadge, ParseLegend, ProfDot } from '../components/atoms';
-import { api, ApiError, type DpsChartPoint, type GroupSummary, type LogDetail, type LogDetailPlayer } from '../lib/api';
+import { api, ApiError, type DpsChartPoint, type GroupSummary, type LogDetail, type LogDetailPlayer, type LogPhase } from '../lib/api';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useComparePicker } from '../hooks/useComparePicker';
@@ -391,6 +391,106 @@ function DpsOverTimeChart({ points, durationLabel }: { points: DpsChartPoint[]; 
   );
 }
 
+// Boss health-over-time, drawn from EI's downsampled [timeMs, percent] series.
+// The curve reads top(100%)→bottom(0%); phase boundaries are dropped in as
+// faint vertical guides so the health drop lines up with the phase list.
+function BossHealthChart({
+  health,
+  phases,
+  durationMs,
+  durationLabel,
+}: {
+  health: NonNullable<LogDetail['bossHealth']>;
+  phases: LogPhase[];
+  durationMs: number;
+  durationLabel: string;
+}) {
+  const w = 720;
+  const h = 160;
+  const pad = 14;
+  const points = health.points;
+  const span = Math.max(durationMs, points[points.length - 1]?.[0] ?? 1, 1);
+  const xFor = (t: number) => pad + (Math.min(t, span) / span) * (w - pad * 2);
+  const yFor = (pct: number) => pad + (1 - Math.max(0, Math.min(100, pct)) / 100) * (h - pad * 2);
+
+  const { linePath, areaPath, endPct } = useMemo(() => {
+    const pts = points.map((p) => ({ x: xFor(p[0]), y: yFor(p[1]) }));
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
+    return { linePath: line, areaPath: area, endPct: points[points.length - 1][1] };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, span]);
+
+  return (
+    <Card style={{ padding: '20px 20px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ font: '700 13.5px var(--font-sans)' }}>Boss Health</div>
+        <div style={{ font: '400 11px var(--font-sans)', color: 'var(--text-55)' }}>ends at <b style={{ color: 'var(--gold)' }}>{Math.max(0, Math.round(endPct))}%</b></div>
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', aspectRatio: `${w} / ${h}`, overflow: 'visible' }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="hpFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g stroke="var(--border-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke">
+          {[0, 25, 50, 75, 100].map((pct) => (
+            <line key={pct} x1="0" y1={yFor(pct)} x2={w} y2={yFor(pct)} />
+          ))}
+        </g>
+        {/* Phase boundaries — a faint guide at each phase start. */}
+        {phases.map((ph, i) => (
+          <line key={i} x1={xFor(ph.startMs)} y1={pad} x2={xFor(ph.startMs)} y2={h - pad} stroke="var(--border)" strokeWidth={1} strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
+        ))}
+        <path d={areaPath} fill="url(#hpFill)" />
+        <path d={linePath} fill="none" stroke="var(--gold)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', font: '400 10px var(--font-sans)', color: 'var(--text-50)', padding: '2px 2px 4px' }}>
+        <span>0:00</span>
+        <span>{durationLabel}</span>
+      </div>
+    </Card>
+  );
+}
+
+// Per-phase timing + squad DPS. Bars are scaled to the top phase DPS; breakbar
+// (CC) phases are labelled and tinted apart from damage phases.
+function PhaseBreakdown({ phases, durationMs }: { phases: LogPhase[]; durationMs: number }) {
+  const maxDps = Math.max(...phases.map((p) => p.squadDps), 1);
+  return (
+    <Card style={{ padding: '16px 18px' }}>
+      <div style={{ font: '750 14px var(--font-sans)', marginBottom: 12 }}>Phase breakdown</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {phases.map((ph, i) => {
+          const dur = ph.endMs - ph.startMs;
+          const pctOfFight = durationMs ? Math.round((dur / durationMs) * 100) : 0;
+          return (
+            <div key={i}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ font: '650 12.5px var(--font-sans)', color: 'var(--text-85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ph.breakbar && <span aria-hidden style={{ color: 'var(--gold)', marginRight: 5 }}>⟳</span>}
+                  {ph.name}
+                </span>
+                <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-55)', flex: 'none' }}>{formatDuration(dur)}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'var(--bg-chip)', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.round((ph.squadDps / maxDps) * 100)}%`, height: '100%', borderRadius: 999, background: ph.breakbar ? 'color-mix(in srgb, var(--color-accent) 45%, transparent)' : 'var(--gold-grad)' }} />
+                </div>
+                <span style={{ font: '600 11px var(--font-mono)', color: 'var(--text-70)', flex: 'none', minWidth: 62, textAlign: 'right' }}>
+                  {ph.squadDps.toLocaleString()}
+                </span>
+              </div>
+              <div style={{ font: '400 10px var(--font-sans)', color: 'var(--text-45)', marginTop: 3 }}>{pctOfFight}% of fight · squad dps</div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: string }) {
   const subgroups = useMemo(() => {
     const bySubgroup = new Map<number, LogDetailPlayer[]>();
@@ -413,6 +513,11 @@ function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: strin
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 320px)', gap: 20, alignItems: 'start' }} className="log-damage-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
           {log.dpsChart && <DpsOverTimeChart points={log.dpsChart} durationLabel={durationLabel} />}
+          {log.bossHealth ? (
+            <BossHealthChart health={log.bossHealth} phases={log.phases} durationMs={log.durationMs} durationLabel={durationLabel} />
+          ) : (
+            <ComingSoonPanel title="Boss health" body="A health-over-time curve for the boss shows here once a log is uploaded with this build — older logs were parsed before it was captured." />
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: subgroups.length > 1 ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr', gap: 20 }}>
         {subgroups.map(([sub, players]) => (
           <Card key={sub} style={{ overflow: 'hidden' }}>
@@ -482,14 +587,11 @@ function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: strin
               <SidebarStat label="Deaths" value={log.players.reduce((s, p) => s + p.deaths, 0)} />
             </div>
           </Card>
-          <ComingSoonPanel
-            title="Boss health"
-            body="A health-over-time curve for the boss lands here once the parser surfaces it."
-          />
-          <ComingSoonPanel
-            title="Phase breakdown"
-            body="Per-phase timings and DPS splits are coming once phase data is extracted from logs."
-          />
+          {log.phases.length > 0 ? (
+            <PhaseBreakdown phases={log.phases} durationMs={log.durationMs} />
+          ) : (
+            <ComingSoonPanel title="Phase breakdown" body="Per-phase timings and DPS splits appear here for logs uploaded with this build." />
+          )}
         </aside>
       </div>
       <ComparePickerBar selected={picker.selected} onClear={picker.clear} />

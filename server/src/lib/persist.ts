@@ -32,6 +32,7 @@ export async function persistLog(params: {
           private: params.private ?? false,
           sourceFileName,
           mechanicsMeta: normalized.mechanicsMeta as any,
+          phaseData: normalized.telemetry as any,
         },
       });
 

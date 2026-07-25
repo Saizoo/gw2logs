@@ -145,6 +145,13 @@ model Log {
   // surfaces on hover); shortName alone is a terse label. Null on logs ingested
   // before this was captured.
   mechanicsMeta  Json?
+  // Boss health-over-time + phase breakdown, extracted from the Elite Insights
+  // JSON at ingest and kept as a small blob (the raw dump itself is discarded):
+  //   { bossName, totalHealth, health: [[timeMs, pct], ...],
+  //     phases: [{ name, startMs, endMs, breakbar, squadDps }] }.
+  // Null on logs ingested before this was captured — their raw JSON is gone,
+  // so those can't be backfilled and the detail page shows "coming soon".
+  phaseData      Json?
   // Uploader-controlled privacy. A private log is kept off the public browse
   // surfaces (All Reports list, search, recent feeds) and its detail page is
   // access-controlled — only the uploader, admins, and (if assigned) the
