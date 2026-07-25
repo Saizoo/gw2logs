@@ -192,6 +192,14 @@ export default function PlayerProfilePage() {
     }
   }
 
+  // Derived hero bits: the class-coloured portrait ring, a spec label, the
+  // player's headline guild, and a "raider" title tag graded off their score.
+  const ringColor = iconProfession ? professionColor(iconProfession) : 'var(--gold)';
+  const specLabel = iconSpec ?? mainProfession ?? null;
+  const firstGuild = player.affiliations?.groups?.[0] ?? null;
+  const score = player.overallScore;
+  const tierTitle = score == null ? 'Raider' : score >= 95 ? 'Legendary Raider' : score >= 80 ? 'Veteran Raider' : score >= 50 ? 'Seasoned Raider' : 'Raider';
+
   const profileStats = [
     { label: 'Total Logs', value: player.totalLogs },
     { label: 'Overall Score', value: player.overallScore ?? '—' },
@@ -201,102 +209,76 @@ export default function PlayerProfilePage() {
 
   return (
     <div>
-      <Card
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          padding: 32,
-          marginBottom: 22,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 22,
-          flexWrap: 'wrap',
-          background:
-            'radial-gradient(600px 260px at 85% 0%, oklch(0.32 0.06 155 / 25%), transparent), linear-gradient(135deg, var(--color-surface), var(--color-surface))',
-        }}
-      >
-        {/* Chosen-spec banner art, faded into the card and masked toward the
-            right so the name/stats stay legible. */}
+      {/* Profile hero — circular class-coloured portrait, a graded title tag,
+          the account name + meta, and a row of stat tiles (the new design).
+          The portrait doubles as the owner's icon-picker button. */}
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', marginBottom: 14 }}>
         {headerBg && (
           <>
-            <ArtImg src={headerBg} style={{ opacity: 0.22, maskImage: 'linear-gradient(90deg, transparent, #000 55%)', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 55%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 70%, transparent), transparent 40%)', pointerEvents: 'none' }} />
+            <ArtImg src={headerBg} style={{ opacity: 0.2, maskImage: 'linear-gradient(90deg, transparent, #000 60%)', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 60%)' }} />
+            <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, color-mix(in srgb, var(--bg-card) 82%, transparent), transparent 45%)' }} />
           </>
         )}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 22, flex: '1 1 340px', minWidth: 0 }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px 240px at 88% -20%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 60%)' }} />
+        <div style={{ position: 'relative', padding: 'clamp(22px, 3vw, 30px)', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => isOwner && setPicking(true)}
             title={isOwner ? 'Change your profile icon' : undefined}
             style={{
-              width: 84,
-              height: 84,
-              borderRadius: 'var(--radius-md)',
-              background: iconProfession
-                ? `linear-gradient(135deg, ${professionColorAlpha(iconProfession, 50)}, var(--color-neutral-200))`
-                : 'var(--color-surface)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 104,
+              height: 104,
+              borderRadius: '50%',
+              padding: 3,
               flex: 'none',
-              border: `1px solid ${iconProfession ? professionColorAlpha(iconProfession, 45) : 'var(--border)'}`,
-              padding: 0,
+              background: `conic-gradient(from 140deg, ${ringColor}, color-mix(in srgb, ${ringColor} 35%, var(--color-surface)), ${ringColor})`,
+              border: 'none',
               cursor: isOwner ? 'pointer' : 'default',
               position: 'relative',
+              boxShadow: 'var(--shadow-md)',
             }}
           >
-            {iconName && <img src={professionIconPath(iconProfession!, iconSpec)} alt={iconName} style={{ width: 56, height: 56, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />}
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'radial-gradient(circle at 36% 30%, var(--color-neutral-800), var(--color-surface))', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {iconName ? (
+                <img src={professionIconPath(iconProfession!, iconSpec)} alt={iconName} style={{ width: 58, height: 58, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+              ) : (
+                <span style={{ font: '800 34px var(--font-sans)', color: 'var(--gold)' }}>{player.account.charAt(0)}</span>
+              )}
+            </div>
             {isOwner && (
-              <span
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  right: -6,
-                  bottom: -6,
-                  width: 26,
-                  height: 26,
-                  borderRadius: '50%',
-                  background: 'var(--gold)',
-                  color: 'var(--color-neutral-200)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  font: '700 13px var(--font-sans)',
-                  border: '2px solid var(--bg-card)',
-                }}
-              >
+              <span aria-hidden style={{ position: 'absolute', right: 2, bottom: 2, width: 26, height: 26, borderRadius: '50%', background: 'var(--gold)', color: 'var(--gold-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 13px var(--font-sans)', border: '2px solid var(--bg-card)' }}>
                 ✎
               </span>
             )}
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '800 26px var(--font-sans)', letterSpacing: '-.4px' }}>{player.account}</div>
-            {iconSpec ? (
-              <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{iconSpec} · {iconProfession}</div>
-            ) : mainProfession ? (
-              <div style={{ font: '500 12.5px var(--font-sans)', color: 'var(--text-62)', marginTop: 4 }}>{mainProfession}</div>
-            ) : null}
-            <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
-              {profileStats.map((s) => (
-                <div key={s.label}>
-                  <div style={{ font: '800 18px var(--font-sans)' }}>{s.value}</div>
-                  <div style={{ font: '400 10.5px var(--font-sans)', color: 'var(--text-55)', textTransform: 'uppercase', letterSpacing: '.4px' }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
+
+          <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 9, font: '700 11.5px var(--font-sans)', color: 'var(--gold)', padding: '3px 10px', border: '1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)', borderRadius: 999, background: 'var(--gold-dim)' }}>
+              <span aria-hidden>★</span> {tierTitle}
+            </span>
+            <div style={{ font: '800 30px var(--font-sans)', letterSpacing: '-.6px', lineHeight: 1.05 }}>{player.account}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 11, font: '500 13px var(--font-sans)', color: 'var(--text-60)' }}>
+              {specLabel && <span style={{ color: ringColor, fontWeight: 700 }}>{specLabel}</span>}
+              <span><b style={{ color: 'var(--text-80)' }}>{player.totalLogs.toLocaleString()}</b> logs</span>
+              <span><b style={{ color: 'var(--good)' }}>{player.record.successRate}%</b> success</span>
+              {firstGuild && <span>Guild <b style={{ color: 'var(--text-80)' }}>{firstGuild.name}</b></span>}
             </div>
             {player.affiliations && player.affiliations.groups.length > 0 && (
               <GroupChips groups={player.affiliations.groups} />
             )}
           </div>
         </div>
+      </div>
 
-        {/* Kill record lives in the header, on the right of the name/stats. */}
-        <div style={{ position: 'relative', flex: '0 1 auto' }}>
-          <HeaderRecord record={player.record} />
-        </div>
-      </Card>
+      {/* Stat tiles under the hero. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 13, marginBottom: 22 }}>
+        {profileStats.map((s, i) => (
+          <Card key={s.label} style={{ padding: '15px 17px' }}>
+            <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{s.label}</div>
+            <div style={{ font: '800 24px var(--font-sans)', letterSpacing: '-.4px', marginTop: 5, color: i === 1 ? 'var(--gold)' : 'var(--text)' }}>{s.value}</div>
+          </Card>
+        ))}
+      </div>
 
       {picking && (
         <IconPickerModal current={effectiveIcon ?? null} onPick={chooseIcon} onClose={() => setPicking(false)} />
@@ -318,8 +300,8 @@ export default function PlayerProfilePage() {
                 border: 'none',
                 cursor: 'pointer',
                 font: '700 13.5px var(--font-sans)',
-                borderBottom: `2px solid ${active ? 'var(--text)' : 'transparent'}`,
-                color: active ? 'var(--text)' : 'var(--text-55)',
+                borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
+                color: active ? 'var(--gold)' : 'var(--text-55)',
                 transition: 'color .15s ease, border-color .15s ease',
               }}
             >
@@ -331,8 +313,9 @@ export default function PlayerProfilePage() {
 
       {tab === 'overview' && (
         <>
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'start' }}>
             <IdentityPanel specBreakdown={player.specBreakdown} roleBreakdown={player.roleBreakdown} />
+            <HeaderRecord record={player.record} />
           </div>
 
           {chart && (
