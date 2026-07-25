@@ -73,9 +73,8 @@ function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => v
       {img && <ArtImg src={img} />}
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.9) 8%, rgba(0,0,0,.35) 52%, rgba(0,0,0,.12) 100%)' }} />
 
-      {/* Hover action stack — centered, vertical so it fits a narrow poster. */}
-      <div className="enc-actions" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(6,8,8,.45)' }}>
-        <ActionPill to={`/rankings?${q}`} label="Leaderboards" onNavigate={onNavigate} />
+      {/* Hover actions — Logs + Statistics on one centered row. */}
+      <div className="enc-actions" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'rgba(6,8,8,.45)' }}>
         <ActionPill to={`/reports?${q}`} label="Logs" onNavigate={onNavigate} />
         <ActionPill to={`/statistics?${q}`} label="Statistics" onNavigate={onNavigate} />
       </div>
