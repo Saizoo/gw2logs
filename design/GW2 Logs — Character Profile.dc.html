@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GW2 Logs — Character Profile Template</title>
+<style>
+  /* ============================================================
+     GW2 LOGS — character profile design comp
+     Faithful to tomestone.gg: flat near-black #141414 ground,
+     a teal accent ramp (#39c8bf → #072b2c), light text, and a
+     top nav of HeadlessUI-style dropdown menus (Worlds,
+     Collectibles, Database, Social). Content adapted to GW2.
+     Token-driven so the whole page flips light / dark.
+     ============================================================ */
+
+  :root {
+    /* ground + surfaces — tomestone runs a flat black; surfaces are
+       barely-lifted neutral greys, not tinted panels */
+    --ground:    #141414;
+    --ground-2:  #0d0d0d;
+    --surface:   #1b1b1b;
+    --surface-2: #212121;
+    --surface-3: #2a2a2a;
+    --raise:     #313131;
+
+    --line:        rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.18);
+    --line-faint:  rgba(255, 255, 255, 0.05);
+
+    /* the accent: tomestone's exact teal ramp */
+    --teal-100: #cff8f2;
+    --teal-200: #a0efe5;
+    --teal-300: #6ee1d6;   /* bright hover */
+    --teal-400: #39c8bf;   /* primary */
+    --teal-500: #20aca6;
+    --teal-600: #178a87;
+    --teal-700: #176e6d;
+    --teal-800: #175858;
+    --teal-900: #174a49;
+    --teal-950: #072b2c;   /* deepest tint fill */
+    --teal:      #39c8bf;
+    --teal-dim:  rgba(57, 200, 191, 0.14);
+    --teal-dimmer: rgba(57, 200, 191, 0.07);
+
+    --text:   #e5e5e5;
+    --text-2: #c0c0c0;
+    --muted:  #8a8a8a;
+    --muted-2:#5f5f5f;
+
+    /* FFLogs-style parse tiers (universal for combat logs) */
+    --p-legend: #e5cc80;  --p-legend-bg: rgba(229,204,128,0.16);
+    --p-gold:   #e2a44a;  --p-gold-bg:   rgba(226,164,74,0.15);
+    --p-pink:   #e061c8;  --p-pink-bg:   rgba(224,97,200,0.15);
+    --p-blue:   #4e7ff0;  --p-blue-bg:   rgba(78,127,240,0.15);
+    --p-green:  #2fbf6f;  --p-green-bg:  rgba(47,191,111,0.15);
+    --p-grey:   #8b8f99;  --p-grey-bg:   rgba(139,143,153,0.12);
+
+    --good: #46c281;
+    --bad:  #e06a5a;
+
+    --shadow-md: 0 10px 30px rgba(0,0,0,0.55);
+    --shadow-lg: 0 24px 60px rgba(0,0,0,0.66);
+    --shadow-pop: 0 18px 46px rgba(0,0,0,0.6), 0 0 0 1px var(--line-strong);
+
+    --sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+    --nav-h: 62px;
+    --wrap: 1220px;
+    --r-sm: 8px;
+    --r-md: 10px;
+    --r-lg: 14px;
+
+    color-scheme: dark;
+  }
+
+  /* Light variant — clean off-white, teal deepened for contrast */
+  :root[data-theme="light"] {
+    --ground:    #f1f1f0;
+    --ground-2:  #e6e6e5;
+    --surface:   #ffffff;
+    --surface-2: #f6f6f5;
+    --surface-3: #ececeb;
+    --raise:     #ffffff;
+
+    --line:        rgba(20, 20, 20, 0.11);
+    --line-strong: rgba(20, 20, 20, 0.20);
+    --line-faint:  rgba(20, 20, 20, 0.06);
+
+    --teal-300: #20aca6;
+    --teal-400: #178a87;
+    --teal:      #178a87;
+    --teal-dim:  rgba(23, 138, 135, 0.13);
+    --teal-dimmer: rgba(23, 138, 135, 0.07);
+
+    --text:   #17201f;
+    --text-2: #3c4544;
+    --muted:  #62696a;
+    --muted-2:#9aa0a0;
+
+    --shadow-md: 0 10px 26px rgba(20,40,40,0.10);
+    --shadow-lg: 0 22px 50px rgba(20,40,40,0.14);
+    --shadow-pop: 0 16px 40px rgba(20,40,40,0.16), 0 0 0 1px var(--line);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --ground:#f1f1f0; --ground-2:#e6e6e5; --surface:#fff; --surface-2:#f6f6f5;
+      --surface-3:#ececeb; --raise:#fff; --line:rgba(20,20,20,0.11);
+      --line-strong:rgba(20,20,20,0.20); --line-faint:rgba(20,20,20,0.06);
+      --teal-300:#20aca6; --teal-400:#178a87; --teal:#178a87;
+      --teal-dim:rgba(23,138,135,0.13); --teal-dimmer:rgba(23,138,135,0.07);
+      --text:#17201f; --text-2:#3c4544; --muted:#62696a; --muted-2:#9aa0a0;
+      color-scheme: light;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 460px at 82% -6%, var(--teal-dimmer), transparent 60%),
+      var(--ground);
+    color: var(--text);
+    font-family: var(--sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  input { font-family: inherit; }
+  h1,h2,h3,p { margin: 0; }
+  ::selection { background: rgba(57,200,191,0.28); color: #fff; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 22px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+
+  /* ===================== TOP NAV ===================== */
+  .nav {
+    position: sticky; top: 0; z-index: 100; height: var(--nav-h);
+    background: color-mix(in srgb, var(--ground) 86%, transparent);
+    backdrop-filter: blur(14px) saturate(1.1);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner { max-width: var(--wrap); margin: 0 auto; padding: 0 22px; height: 100%; display: flex; align-items: center; gap: 6px; }
+
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: 8px; flex: none; }
+  .brand-mark {
+    width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px;
+    background: linear-gradient(160deg, var(--teal-600), var(--teal-950));
+    color: var(--teal-100); box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .brand-name { font-weight: 800; letter-spacing: 0.01em; font-size: 17px; }
+  .brand-name b { color: var(--teal); font-weight: 800; }
+
+  .menu { display: flex; align-items: center; gap: 1px; }
+  .menu-item { position: relative; }
+  .menu-btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-2); white-space: nowrap;
+    transition: background .14s, color .14s;
+  }
+  .menu-btn:hover, .menu-item.open > .menu-btn { color: var(--text); background: var(--teal-dimmer); }
+  .menu-item.open > .menu-btn { color: var(--teal-300); }
+  .menu-btn .chev { transition: transform .2s; opacity: .65; }
+  .menu-item.open .menu-btn .chev { transform: rotate(180deg); opacity: 1; }
+
+  .drop {
+    position: absolute; top: calc(100% + 9px); left: 0; min-width: 300px;
+    background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop); padding: 7px;
+    opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.985); transform-origin: top left;
+    transition: opacity .15s ease, transform .15s ease, visibility .15s; z-index: 120;
+  }
+  .menu-item.open .drop { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+  .drop::before { content: ""; position: absolute; top: -11px; left: 0; right: 0; height: 11px; }
+  .drop.wide { min-width: 500px; }
+  .drop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .drop-head { padding: 6px 10px 4px; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-2); font-weight: 700; }
+  .drop-link { display: flex; gap: 11px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; transition: background .12s; }
+  .drop-link:hover { background: var(--teal-dim); }
+  .drop-link .ic {
+    flex: none; width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; margin-top: 1px;
+    background: var(--surface-3); color: var(--teal); border: 1px solid var(--line); font-size: 11px; font-weight: 800;
+  }
+  .drop-link:hover .ic { color: var(--teal-300); border-color: var(--teal-600); }
+  .drop-link .t { font-size: 13.5px; font-weight: 650; color: var(--text); }
+  .drop-link .d { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  .drop-foot {
+    margin-top: 5px; padding: 9px 10px; border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted);
+  }
+  .drop-foot a { color: var(--teal); font-weight: 650; }
+  .drop-foot a:hover { color: var(--teal-300); }
+
+  .nav-spacer { flex: 1; }
+
+  .nav-search {
+    display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 9px; padding: 7px 10px; width: 232px; color: var(--muted);
+    transition: border-color .15s, width .2s, background .15s;
+  }
+  .nav-search:focus-within { border-color: var(--teal-600); width: 268px; background: var(--surface-2); }
+  .nav-search input { border: none; background: none; outline: none; color: var(--text); font-size: 13px; width: 100%; }
+  .nav-search input::placeholder { color: var(--muted-2); }
+  .kbd { font-size: 10px; padding: 2px 6px; border-radius: 5px; color: var(--muted-2); border: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+
+  .icon-btn {
+    width: 37px; height: 37px; border-radius: 9px; display: grid; place-items: center; color: var(--text-2);
+    border: 1px solid transparent; transition: background .14s, color .14s, border-color .14s;
+  }
+  .icon-btn:hover { background: var(--teal-dimmer); color: var(--teal-300); border-color: var(--line); }
+
+  .user { position: relative; }
+  .user-btn {
+    display: flex; align-items: center; gap: 9px; padding: 4px 9px 4px 4px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); transition: border-color .14s, background .14s;
+  }
+  .user-btn:hover, .user.open .user-btn { border-color: var(--teal-600); background: var(--surface-2); }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, var(--teal-500), var(--teal-950) 72%);
+    border: 1.5px solid var(--teal); display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--teal-100);
+  }
+  .user-name { font-size: 13px; font-weight: 650; line-height: 1.15; }
+  .user-name small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 500; }
+  .drop.user-drop { right: 0; left: auto; min-width: 232px; transform-origin: top right; transform: translateY(-6px) scale(.985); }
+  .user.open .drop.user-drop { transform: translateY(0) scale(1); }
+  .u-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 8px; font-size: 13.5px; color: var(--text-2); transition: background .12s, color .12s; }
+  .u-item:hover { background: var(--teal-dim); color: var(--text); }
+  .u-item .ic { color: var(--muted); display: grid; place-items: center; }
+  .u-item:hover .ic { color: var(--teal); }
+  .u-sep { height: 1px; background: var(--line); margin: 5px 6px; }
+  .u-item.danger { color: var(--bad); } .u-item.danger .ic { color: var(--bad); }
+
+  .hamburger { display: none; }
+
+  /* ===================== HERO ===================== */
+  .hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .hero-art { position: absolute; inset: 0;
+    background:
+      radial-gradient(680px 320px at 80% 12%, rgba(57,200,191,0.16), transparent 62%),
+      radial-gradient(560px 380px at 8% 130%, rgba(23,110,109,0.22), transparent 60%),
+      linear-gradient(180deg, #171717 0%, #121212 100%);
+  }
+  .hero-art::after {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.028) 0 1px, transparent 1px 48px),
+      repeating-linear-gradient(-115deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 64px);
+    mask-image: linear-gradient(180deg, black, transparent 80%); opacity: .55;
+  }
+  :root[data-theme="light"] .hero-art { background:
+      radial-gradient(680px 320px at 80% 12%, rgba(23,138,135,0.16), transparent 62%),
+      radial-gradient(560px 380px at 8% 130%, rgba(160,239,229,0.4), transparent 60%),
+      linear-gradient(180deg, #eef1f0 0%, #e6ebea 100%); }
+
+  .hero-body { position: relative; max-width: var(--wrap); margin: 0 auto; padding: 34px 22px 0; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 20px; }
+  .breadcrumb a:hover { color: var(--teal-300); }
+  .breadcrumb .sep { color: var(--muted-2); }
+
+  .hero-main { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; }
+  .portrait {
+    position: relative; width: 118px; height: 118px; flex: none; border-radius: 50%; padding: 3px;
+    background: conic-gradient(from 140deg, var(--teal-300), var(--teal-700), var(--teal-300));
+    box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-md);
+  }
+  .portrait-inner {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #2c4746, #141a1a 70%);
+    display: grid; place-items: center; overflow: hidden; font-size: 40px; color: var(--teal-100); font-weight: 800;
+  }
+  .portrait .lvl {
+    position: absolute; bottom: 0; right: 0; background: var(--ground); border: 1.5px solid var(--teal);
+    color: var(--teal-100); font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 999px; box-shadow: var(--shadow-md);
+  }
+
+  .id { flex: 1; min-width: 260px; }
+  .id .title-tag {
+    display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; font-size: 12px; font-weight: 700;
+    letter-spacing: .03em; color: var(--teal-300); padding: 3px 10px; border: 1px solid var(--teal-700); border-radius: 999px; background: var(--teal-dimmer);
+  }
+  .id h1 { font-weight: 800; font-size: 42px; line-height: 1.03; letter-spacing: -0.02em; text-wrap: balance; }
+  .id .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 11px; color: var(--muted); font-size: 13.5px; }
+  .id .meta b { color: var(--text-2); font-weight: 650; }
+  .id .meta .dot { color: var(--teal-600); }
+  .id .meta span { display: inline-flex; align-items: center; gap: 7px; }
+
+  .hero-actions { display: flex; gap: 9px; margin-left: auto; align-self: flex-start; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 9px; font-size: 13.5px; font-weight: 650;
+    border: 1px solid var(--line-strong); color: var(--text-2); transition: border-color .14s, background .14s, color .14s, transform .1s;
+  }
+  .btn:hover { border-color: var(--teal-600); color: var(--text); background: var(--teal-dimmer); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: linear-gradient(180deg, var(--teal-300), var(--teal-500)); color: #05201f; border-color: var(--teal-600); font-weight: 750; }
+  .btn.primary:hover { background: linear-gradient(180deg, #8ef0e6, var(--teal-400)); }
+
+  .stat-row { position: relative; max-width: var(--wrap); margin: 26px auto -32px; padding: 0 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+  .stat { background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); border-radius: var(--r-md); padding: 15px 17px; box-shadow: var(--shadow-md); }
+  .stat .k { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .stat .v { font-size: 26px; font-weight: 800; margin-top: 5px; letter-spacing: -0.02em; }
+  .stat .v small { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .stat .sub { font-size: 12px; margin-top: 3px; color: var(--muted); }
+  .stat .sub .up { color: var(--good); font-weight: 700; }
+  .stat.accent .v { color: var(--teal-300); }
+
+  /* ===================== TABS ===================== */
+  .tabs-wrap { border-bottom: 1px solid var(--line); margin-top: 60px; }
+  .tabs { max-width: var(--wrap); margin: 0 auto; padding: 0 22px; display: flex; gap: 3px; overflow-x: auto; }
+  .tab { padding: 15px 14px 13px; font-size: 14px; font-weight: 650; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; transition: color .14s, border-color .14s; }
+  .tab:hover { color: var(--text-2); }
+  .tab.active { color: var(--teal-300); border-color: var(--teal); }
+  .tab .badge { font-size: 11px; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--teal-dim); color: var(--teal); font-weight: 700; }
+
+  /* ===================== CONTENT ===================== */
+  main { padding: 32px 0 66px; }
+  .cols { display: grid; grid-template-columns: 1fr 336px; gap: 22px; align-items: start; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .card + .card { margin-top: 20px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 17px; border-bottom: 1px solid var(--line); }
+  .card-head h2 { font-size: 15px; font-weight: 750; display: flex; align-items: center; gap: 9px; }
+  .card-head h2 .mk { color: var(--teal); display: grid; place-items: center; }
+  .card-head .link { font-size: 12.5px; color: var(--teal); font-weight: 650; }
+  .card-head .link:hover { color: var(--teal-300); }
+
+  .seg { display: flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+  .seg button { padding: 5px 11px; font-size: 12px; font-weight: 650; color: var(--muted); border-radius: 6px; }
+  .seg button.on { background: var(--teal-dim); color: var(--teal-300); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--muted-2); font-weight: 700; padding: 11px 17px; border-bottom: 1px solid var(--line); }
+  thead th.num, tbody td.num { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--line-faint); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--teal-dimmer); }
+  tbody td { padding: 11px 17px; font-size: 13.5px; }
+  .boss { display: flex; align-items: center; gap: 12px; }
+  .boss .glyph { width: 34px; height: 34px; border-radius: 8px; flex: none; display: grid; place-items: center; background: var(--surface-3); border: 1px solid var(--line); color: var(--teal); font-size: 11px; font-weight: 800; }
+  .boss .bn { font-weight: 650; }
+  .boss .bw { font-size: 11.5px; color: var(--muted); }
+
+  .prof { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .prof .pd { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+
+  .pct { display: inline-block; min-width: 40px; text-align: center; font-weight: 800; font-size: 13px; padding: 3px 8px; border-radius: 7px; }
+  .pct.legend { color: var(--p-legend); background: var(--p-legend-bg); }
+  .pct.gold   { color: var(--p-gold);   background: var(--p-gold-bg); }
+  .pct.pink   { color: var(--p-pink);   background: var(--p-pink-bg); }
+  .pct.blue   { color: var(--p-blue);   background: var(--p-blue-bg); }
+  .pct.green  { color: var(--p-green);  background: var(--p-green-bg); }
+  .pct.grey   { color: var(--p-grey);   background: var(--p-grey-bg); }
+  .dps { font-weight: 700; }
+  .ago { color: var(--muted); font-size: 12.5px; }
+
+  .rings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; }
+  .ring-card { text-align: center; }
+  .ring { --p: 72; --c: var(--teal); width: 94px; height: 94px; margin: 0 auto 10px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--surface-3) 0); display: grid; place-items: center; position: relative; }
+  .ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); }
+  .ring b { position: relative; font-size: 20px; font-weight: 800; }
+  .ring b small { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .ring-card .rl { font-size: 12.5px; font-weight: 650; }
+  .ring-card .rs { font-size: 11.5px; color: var(--muted); }
+
+  .bars { padding: 16px 17px; display: flex; flex-direction: column; gap: 13px; }
+  .bar-row .bh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12.5px; }
+  .bar-row .bh .rp { color: var(--muted); font-weight: 600; }
+  .bar { height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+  .bar > span { display: block; height: 100%; border-radius: 999px; }
+
+  .ach { padding: 6px 8px 12px; }
+  .ach-row { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 9px; }
+  .ach-row:hover { background: var(--teal-dimmer); }
+  .ach-badge { width: 40px; height: 40px; flex: none; border-radius: 9px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, var(--teal-dim), var(--surface-3)); border: 1px solid var(--teal-700); color: var(--teal-200); }
+  .ach-row .at { font-size: 13px; font-weight: 650; }
+  .ach-row .ad { font-size: 11.5px; color: var(--muted); }
+  .ach-row .apoints { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--teal); }
+
+  footer { border-top: 1px solid var(--line); background: var(--ground-2); padding: 24px 0; color: var(--muted-2); font-size: 12.5px; }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer a:hover { color: var(--teal-300); }
+  .note { max-width: var(--wrap); margin: 16px auto 0; padding: 11px 22px; font-size: 12px; color: var(--muted-2); }
+
+  @media (max-width: 1040px) { .cols { grid-template-columns: 1fr; } .stat-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .menu, .nav-search { display: none; } .hamburger { display: grid; } }
+  @media (max-width: 560px) { .id h1 { font-size: 32px; } .stat-row { grid-template-columns: 1fr 1fr; } .hero-actions { margin-left: 0; width: 100%; } .user-name { display: none; } }
+
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+</style>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#" aria-label="GW2 Logs home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5 6 12l2 2 8.5-8.5zM6 12l-2 6 6-2M15 9l4.5 4.5a2 2 0 0 1 0 2.8L18 18"/></svg>
+      </span>
+      <span class="brand-name">GW2<b>Logs</b></span>
+    </a>
+
+    <nav class="menu" aria-label="Primary">
+      <!-- WORLDS (regions) -->
+      <div class="menu-item" data-menu>
+        <button class="menu-btn" aria-haspopup="true" aria-expanded="false">Worlds
+          <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+        </button>
+        <div class="drop" role="menu">
+          <div class="drop-head">Regions</div>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic">◎</span><span><span class="t">All regions</span><span class="d">Global leaderboards &amp; rankings</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic">NA</span><span><span class="t">North America</span><span class="d">Blackgate, Maguuma, Yak's Bend…</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic">EU</span><span><span class="t">Europe</span><span class="d">Gandara, Desolation, Piken Square…</span></span></a>
+        </div>
+      </div>
+
+      <!-- COLLECTIBLES -->
+      <div class="menu-item" data-menu>
+        <button class="menu-btn" aria-haspopup="true" aria-expanded="false">Collectibles
+          <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+        </button>
+        <div class="drop wide" role="menu">
+          <div class="drop-grid">
+            <div>
+              <div class="drop-head">Collections</div>
+              <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9l-5 4.7L18.2 21 12 17.3 5.8 21 7 13.7 2 9l7.1-.7z"/></svg></span><span><span class="t">Achievements</span><span class="d">14,820 AP earned</span></span></a>
+              <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-9 4 5 3-4 4 8z"/></svg></span><span><span class="t">Mounts &amp; skins</span><span class="d">Skiff, Griffon, Skyscale…</span></span></a>
+            </div>
+            <div>
+              <div class="drop-head">Progression</div>
+              <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M5 4h11l-2 4 2 4H5"/></svg></span><span><span class="t">Titles</span><span class="d">9 / 19 raid titles</span></span></a>
+              <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.1L12 16.8 6.5 19.3l1-6.1L3 8.9 9 8z"/></svg></span><span><span class="t">Legendaries</span><span class="d">Crafted gear &amp; weapons</span></span></a>
+            </div>
+          </div>
+          <div class="drop-foot"><span>Track every collection</span><a href="#">View all collectibles →</a></div>
+        </div>
+      </div>
+
+      <!-- DATABASE -->
+      <div class="menu-item" data-menu>
+        <button class="menu-btn" aria-haspopup="true" aria-expanded="false">Database
+          <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+        </button>
+        <div class="drop" role="menu">
+          <div class="drop-head">Database</div>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21h12M9 21V9m6 12V9M4 4h16l-2 5H6z"/></svg></span><span><span class="t">Encounters</span><span class="d">Raids, strikes &amp; fractals</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span><span><span class="t">Professions</span><span class="d">All 9 professions &amp; specs</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-2 8 9-12h-7z"/></svg></span><span><span class="t">Skills</span><span class="d">Damage, boons &amp; effects</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7v10l8 4 8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></span><span><span class="t">Items &amp; gear</span><span class="d">Stat sets, runes &amp; sigils</span></span></a>
+        </div>
+      </div>
+
+      <!-- SOCIAL -->
+      <div class="menu-item" data-menu>
+        <button class="menu-btn" aria-haspopup="true" aria-expanded="false">Social
+          <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+        </button>
+        <div class="drop" role="menu">
+          <div class="drop-head">Community</div>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/></svg></span><span><span class="t">Guilds</span><span class="d">Rosters, tags &amp; clears</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 20a6 6 0 0 1 12 0M14 20a5 5 0 0 1 7-4.6"/></svg></span><span><span class="t">Teams &amp; statics</span><span class="d">Raid groups &amp; attendance</span></span></a>
+          <a class="drop-link" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H7l-3 3z"/></svg></span><span><span class="t">Discord</span><span class="d">Join the GW2 Logs community</span></span></a>
+        </div>
+      </div>
+
+      <!-- LEADERBOARDS (direct link) -->
+      <div class="menu-item"><a class="menu-btn" href="#">Leaderboards</a></div>
+    </nav>
+
+    <div class="nav-spacer"></div>
+
+    <label class="nav-search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+      <input placeholder="Search in GW2 Logs…" aria-label="Search">
+      <span class="kbd">Ctrl K</span>
+    </label>
+
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme" title="Toggle theme">
+      <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+
+    <div class="user" data-menu>
+      <button class="user-btn" aria-haspopup="true" aria-expanded="false">
+        <span class="avatar">SZ</span>
+        <span class="user-name">Sai Zu<small>sai.zu.1234</small></span>
+        <svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+      </button>
+      <div class="drop user-drop" role="menu">
+        <a class="u-item" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>My profile</a>
+        <a class="u-item" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M9 4v16"/></svg></span>Manage characters</a>
+        <a class="u-item" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></span>Update characters</a>
+        <a class="u-item" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 12 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 .3 1.9 2 2 0 1 1 0 4z"/></svg></span>Settings</a>
+        <div class="u-sep"></div>
+        <a class="u-item danger" role="menuitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg></span>Log out</a>
+      </div>
+    </div>
+
+    <button class="icon-btn hamburger" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============================ HERO ============================ -->
+<section class="hero">
+  <div class="hero-art" aria-hidden="true"></div>
+  <div class="hero-body">
+    <div class="breadcrumb">
+      <a href="#">Characters</a><span class="sep">/</span>
+      <a href="#">EU · Gandara</a><span class="sep">/</span>
+      <span style="color:var(--text-2)">Sai Zu</span>
+    </div>
+
+    <div class="hero-main">
+      <div class="portrait">
+        <div class="portrait-inner">S</div>
+        <span class="lvl">80</span>
+      </div>
+
+      <div class="id">
+        <span class="title-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3L22 9l-5 4.7L18.2 21 12 17.3 5.8 21 7 13.7 2 9l7.1-.7z"/></svg>
+          Legendary Raider
+        </span>
+        <h1>Sai&nbsp;Zu</h1>
+        <div class="meta">
+          <span><span class="dot">◆</span> <b>sai.zu.1234</b></span>
+          <span>EU · <b>Gandara</b></span>
+          <span>Guild <b>[HWA] Heavy With Aether</b></span>
+          <span>Joined <b>Mar 2023</b></span>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+          Follow
+        </button>
+        <button class="btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4m4-4v13"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat accent"><div class="k">Best parse</div><div class="v">99<small>.4th</small></div><div class="sub">Dhuum CM · Power Berserker</div></div>
+    <div class="stat"><div class="k">Boss kills</div><div class="v">1,284</div><div class="sub"><span class="up">▲ 37</span> this week</div></div>
+    <div class="stat"><div class="k">Median parse</div><div class="v">88<small>th</small></div><div class="sub">across 214 logged fights</div></div>
+    <div class="stat"><div class="k">EU rank</div><div class="v">#142</div><div class="sub">Berserker · all bosses</div></div>
+  </div>
+</section>
+
+<!-- ============================ TABS ============================ -->
+<div class="tabs-wrap">
+  <nav class="tabs" aria-label="Profile sections">
+    <a class="tab active" href="#">Overview</a>
+    <a class="tab" href="#">Encounters <span class="badge">42</span></a>
+    <a class="tab" href="#">Professions <span class="badge">6</span></a>
+    <a class="tab" href="#">Achievements</a>
+    <a class="tab" href="#">Gear</a>
+    <a class="tab" href="#">Progression</a>
+  </nav>
+</div>
+
+<!-- ============================ MAIN ============================ -->
+<main>
+  <div class="wrap cols">
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg></span>Recent parses</h2>
+          <div class="seg" role="tablist" aria-label="Difficulty filter">
+            <button class="on">All</button><button>Normal</button><button>CM</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Encounter</th><th>Profession</th><th class="num">DPS</th><th class="num">Parse</th><th class="num">When</th></tr></thead>
+            <tbody>
+              <tr><td><div class="boss"><span class="glyph">DH</span><span><div class="bn">Dhuum</div><div class="bw">Hall of Chains · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#e0342f"></span>Berserker</span></td><td class="num dps">41.2k</td><td class="num"><span class="pct legend">99</span></td><td class="num ago">2h ago</td></tr>
+              <tr><td><div class="boss"><span class="glyph">QP</span><span><div class="bn">Qadim the Peerless</div><div class="bw">Mythwright · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#d16e35"></span>Weaver</span></td><td class="num dps">39.8k</td><td class="num"><span class="pct gold">96</span></td><td class="num ago">2h ago</td></tr>
+              <tr><td><div class="boss"><span class="glyph">CE</span><span><div class="bn">Cerus</div><div class="bw">Cosmic Observatory · CM</div></span></div></td><td><span class="prof"><span class="pd" style="background:#b05fd6"></span>Virtuoso</span></td><td class="num dps">37.1k</td><td class="num"><span class="pct pink">84</span></td><td class="num ago">Yesterday</td></tr>
+              <tr><td><div class="boss"><span class="glyph">SA</span><span><div class="bn">Sabir</div><div class="bw">Key of Ahdashim</div></span></div></td><td><span class="prof"><span class="pd" style="background:#3f8fd6"></span>Mechanist</span></td><td class="num dps">33.4k</td><td class="num"><span class="pct blue">71</span></td><td class="num ago">Yesterday</td></tr>
+              <tr><td><div class="boss"><span class="glyph">VG</span><span><div class="bn">Vale Guardian</div><div class="bw">Spirit Vale</div></span></div></td><td><span class="prof"><span class="pd" style="background:#3fb480"></span>Druid</span></td><td class="num dps">12.9k</td><td class="num"><span class="pct green">63</span></td><td class="num ago">3 days ago</td></tr>
+              <tr><td><div class="boss"><span class="glyph">GO</span><span><div class="bn">Gorseval</div><div class="bw">Spirit Vale</div></span></div></td><td><span class="prof"><span class="pd" style="background:#3fb480"></span>Firebrand</span></td><td class="num dps">9.8k</td><td class="num"><span class="pct grey">41</span></td><td class="num ago">3 days ago</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-head" style="border-bottom:none;border-top:1px solid var(--line)">
+          <span style="font-size:12.5px;color:var(--muted)">Showing 6 of 214 logged fights</span>
+          <a class="link" href="#">View all parses →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5m5 14V9m5 10V4m5 15v-7"/></svg></span>Profession breakdown</h2>
+          <a class="link" href="#">All professions →</a>
+        </div>
+        <div class="bars">
+          <div class="bar-row"><div class="bh"><span class="prof"><span class="pd" style="background:#e0342f"></span>Berserker</span><span class="rp">418 fights · <b style="color:var(--p-legend)">94</b> avg</span></div><div class="bar"><span style="width:96%;background:linear-gradient(90deg,#e0342f,#f2794f)"></span></div></div>
+          <div class="bar-row"><div class="bh"><span class="prof"><span class="pd" style="background:#d16e35"></span>Weaver</span><span class="rp">262 fights · <b style="color:var(--p-gold)">91</b> avg</span></div><div class="bar"><span style="width:78%;background:linear-gradient(90deg,#d16e35,#eaa15c)"></span></div></div>
+          <div class="bar-row"><div class="bh"><span class="prof"><span class="pd" style="background:#b05fd6"></span>Virtuoso</span><span class="rp">173 fights · <b style="color:var(--p-pink)">83</b> avg</span></div><div class="bar"><span style="width:58%;background:linear-gradient(90deg,#b05fd6,#d68ee6)"></span></div></div>
+          <div class="bar-row"><div class="bh"><span class="prof"><span class="pd" style="background:#3fb480"></span>Druid</span><span class="rp">140 fights · <b style="color:var(--p-green)">76</b> avg</span></div><div class="bar"><span style="width:44%;background:linear-gradient(90deg,#2f9d6c,#5fc99a)"></span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Clear progress</h2></div>
+        <div class="rings">
+          <div class="ring-card"><div class="ring" style="--p:100;--c:var(--p-legend)"><b>100<small>%</small></b></div><div class="rl">Raids</div><div class="rs">8 / 8 wings</div></div>
+          <div class="ring-card"><div class="ring" style="--p:82;--c:var(--teal)"><b>82<small>%</small></b></div><div class="rl">Strikes</div><div class="rs">14 / 17 CM</div></div>
+          <div class="ring-card"><div class="ring" style="--p:64;--c:var(--p-blue)"><b>64<small>%</small></b></div><div class="rl">Fractal CMs</div><div class="rs">Sunqua T4</div></div>
+          <div class="ring-card"><div class="ring" style="--p:47;--c:var(--p-green)"><b>47<small>%</small></b></div><div class="rl">Titles</div><div class="rs">9 / 19 earned</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9l-5 4.7L18.2 21 12 17.3 5.8 21 7 13.7 2 9l7.1-.7z"/></svg></span>Achievements</h2>
+          <span style="font-size:12px;color:var(--teal);font-weight:800">14,820</span>
+        </div>
+        <div class="ach">
+          <div class="ach-row"><span class="ach-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 5H3v2a3 3 0 0 0 3 3m12-5h3v2a3 3 0 0 1-3 3"/></svg></span><span><div class="at">Voice in the Void</div><div class="ad">Defeated Dhuum · CM</div></span><span class="apoints">+50</span></div>
+          <div class="ach-row"><span class="ach-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M20 4L4 20"/><circle cx="12" cy="12" r="3"/></svg></span><span><div class="at">Peerless</div><div class="ad">Qadim the Peerless · CM</div></span><span class="apoints">+30</span></div>
+          <div class="ach-row"><span class="ach-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6l4 2M12 22a10 10 0 1 1 0-20"/></svg></span><span><div class="at">Cosmic Champion</div><div class="ad">Cerus · CM legendary</div></span><span class="apoints">+40</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><span class="mk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/></svg></span>Guild</h2></div>
+        <div style="padding:16px 17px;display:flex;gap:13px;align-items:center">
+          <span class="ach-badge" style="width:46px;height:46px;font-weight:800;font-size:14px">HWA</span>
+          <span><div style="font-weight:700;font-size:14px">Heavy With Aether</div><div style="font-size:12px;color:var(--muted)">[HWA] · 48 members · EU</div></span>
+          <a class="link" href="#" style="margin-left:auto">Roster →</a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <p class="note">
+    Design comp for GW2 Logs, modelled on tomestone.gg — flat #141414 ground, teal accent ramp, and a top nav of dropdown menus
+    (Worlds, Collectibles, Database, Social) plus the account menu. All menus open on hover or click, close on Esc / outside-click, and are keyboard-accessible. Content is illustrative.
+  </p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>GW2 Logs · combat-log parses from arcdps &amp; Elite Insights. Not affiliated with ArenaNet.</span>
+    <span style="display:flex;gap:18px"><a href="#">About</a><a href="#">API</a><a href="#">Discord</a><a href="#">Privacy</a></span>
+  </div>
+</footer>
+
+<script>
+  /* Dropdown menus: hover to open, click to pin, Esc / outside to close,
+     aria-expanded kept in sync. One controller for nav + user menus. */
+  (function () {
+    const items = Array.from(document.querySelectorAll('[data-menu]'));
+    let hoverTimer;
+    function close(item) {
+      item.classList.remove('open');
+      const b = item.querySelector('.menu-btn, .user-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+    }
+    function open(item) {
+      items.forEach(i => { if (i !== item) close(i); });
+      item.classList.add('open');
+      const b = item.querySelector('.menu-btn, .user-btn'); if (b) b.setAttribute('aria-expanded', 'true');
+    }
+    items.forEach(item => {
+      const btn = item.querySelector('.menu-btn, .user-btn'); if (!btn) return;
+      btn.addEventListener('click', e => { e.preventDefault(); item.classList.contains('open') ? close(item) : open(item); });
+      item.addEventListener('mouseenter', () => { if (matchMedia('(hover:hover)').matches) { clearTimeout(hoverTimer); open(item); } });
+      item.addEventListener('mouseleave', () => { if (matchMedia('(hover:hover)').matches) { hoverTimer = setTimeout(() => close(item), 140); } });
+    });
+    document.addEventListener('click', e => { if (!e.target.closest('[data-menu]')) items.forEach(close); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') items.forEach(close);
+      if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.querySelector('.nav-search input')?.focus(); }
+    });
+  })();
+
+  /* Theme toggle: stamps data-theme, swaps sun / moon glyph. */
+  (function () {
+    const btn = document.getElementById('themeBtn'), icon = document.getElementById('themeIcon');
+    const sun = '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/>';
+    const moon = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+    function isDark() { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+    function sync() { icon.innerHTML = isDark() ? moon : sun; }
+    btn.addEventListener('click', () => { document.documentElement.setAttribute('data-theme', isDark() ? 'light' : 'dark'); sync(); });
+    sync();
+  })();
+</script>
+
+</html>
