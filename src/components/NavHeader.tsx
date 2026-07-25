@@ -4,8 +4,8 @@ import { Logo, Avatar, CountBadge } from './atoms';
 import { SearchBar } from './SearchBar';
 import { NotificationBell } from './NotificationBell';
 import { UploadIndicator } from './UploadIndicator';
-import { NavCatalogMenu } from './NavCatalogMenu';
-import { RAID_CATALOG, FRACTAL_CATALOG } from '../data/catalog';
+import { NavCatalogMenu, type EncounterCategory } from './NavCatalogMenu';
+import { RAID_CATALOG, STRIKE_CATALOG, FRACTAL_CATALOG } from '../data/catalog';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 // Raids and Fractals are catalog mega-menus (see NavCatalogMenu); the rest are
@@ -17,6 +17,14 @@ const AFTER_TABS: { label: string; to: string }[] = [
   { label: 'Groups', to: '/groups' },
   { label: 'Characters', to: '/characters' },
   { label: 'Compare', to: '/compare' },
+];
+
+// The single "Encounters" menu toggles between these three categories. Order
+// here is the order of the toggle bar.
+const ENCOUNTER_CATEGORIES: EncounterCategory[] = [
+  { key: 'raids', label: 'Raids', to: '/raids', catalog: RAID_CATALOG },
+  { key: 'strikes', label: 'Raid Encounters', to: '/strikes', catalog: STRIKE_CATALOG },
+  { key: 'fractals', label: 'FOTM', to: '/fractals', catalog: FRACTAL_CATALOG },
 ];
 
 function isTabActive(to: string, pathname: string): boolean {
@@ -35,7 +43,7 @@ export function NavHeader() {
 
   const afterTabs = [...AFTER_TABS, ...(user?.isAdmin ? [{ label: 'Admin', to: '/admin' }] : [])];
   // Flat list used only for the mobile panel (menus collapse to plain links there).
-  const mobileTabs = [DASH_TAB, { label: 'Raids', to: '/raids' }, { label: 'Fractals', to: '/fractals' }, ...afterTabs];
+  const mobileTabs = [DASH_TAB, { label: 'Raids', to: '/raids' }, { label: 'Raid Encounters', to: '/strikes' }, { label: 'FOTM', to: '/fractals' }, ...afterTabs];
 
   const tabStyle = (active: boolean) =>
     ({
@@ -102,8 +110,7 @@ export function NavHeader() {
             <Link to={DASH_TAB.to} data-tour="dashboard" className={`nav-tab${isTabActive('/', location.pathname) ? ' is-active' : ''}`} style={tabStyle(isTabActive('/', location.pathname))}>
               {DASH_TAB.label}
             </Link>
-            <NavCatalogMenu label="Raids" to="/raids" catalog={RAID_CATALOG} />
-            <NavCatalogMenu label="Fractals" to="/fractals" catalog={FRACTAL_CATALOG} />
+            <NavCatalogMenu label="Encounters" categories={ENCOUNTER_CATEGORIES} />
             {afterTabs.map((tab) => {
               const active = isTabActive(tab.to, location.pathname);
               const badgeCount = tab.to === '/groups' ? user?.pendingGroupRequests ?? 0 : 0;

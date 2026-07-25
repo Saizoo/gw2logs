@@ -13,6 +13,7 @@ import AccountPage from './pages/AccountPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import CharactersPage from './pages/CharactersPage';
 import EncountersPage from './pages/EncountersPage';
+import StrikesPage from './pages/StrikesPage';
 import FractalsPage from './pages/FractalsPage';
 import BenchmarksPage from './pages/BenchmarksPage';
 import MyGroupsPage from './pages/MyGroupsPage';
@@ -37,6 +38,7 @@ export default function App() {
 
         {/* Area catalogs + scoped views */}
         <Route path="/raids" element={<EncountersPage />} />
+        <Route path="/strikes" element={<StrikesPage />} />
         <Route path="/fractals" element={<FractalsPage />} />
         <Route path="/rankings" element={<LeaderboardPage />} />
         <Route path="/statistics" element={<BenchmarksPage />} />

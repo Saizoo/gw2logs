@@ -3,10 +3,17 @@ import { Link, useLocation } from 'react-router-dom';
 import { bossImage, type CatalogBoss, type CatalogGroup } from '../data/catalog';
 import { ArtImg } from './atoms';
 
-// The Raids / Fractals nav item: a full-width mega-menu of encounter poster
-// tiles, grouped by wing / fractal instance. The label itself links to the
-// overview page (/raids or /fractals); hovering or focusing opens the panel,
-// and each boss tile links to that boss's rankings ladder.
+// The single "Encounters" nav item: a full-width mega-menu with a toggle bar
+// that switches the poster grid between categories (Raids / Raid Encounters /
+// FOTM). The label links to the active category's overview; each boss tile
+// links to that boss's rankings ladder.
+
+export interface EncounterCategory {
+  key: string;
+  label: string;
+  to: string;
+  catalog: CatalogGroup[];
+}
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -52,12 +59,18 @@ function BossTile({ boss, onNavigate }: { boss: CatalogBoss; onNavigate: () => v
   );
 }
 
-export function NavCatalogMenu({ label, to, catalog }: { label: string; to: string; catalog: CatalogGroup[] }) {
+export function NavCatalogMenu({ label, categories }: { label: string; categories: EncounterCategory[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
   const location = useLocation();
-  const active = location.pathname.startsWith(to);
+
+  // Which category owns the current route (so a boss/overview page highlights
+  // the nav item and the menu opens on the matching toggle).
+  const routeIdx = categories.findIndex((c) => location.pathname.startsWith(c.to));
+  const active = routeIdx !== -1;
+  const [activeIdx, setActiveIdx] = useState(routeIdx === -1 ? 0 : routeIdx);
+  const activeCat = categories[activeIdx] ?? categories[0];
 
   // Hover open/close with a short close delay so the diagonal move from the
   // trigger down into the full-width panel doesn't flicker it shut.
@@ -66,6 +79,8 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
       clearTimeout(closeTimer.current);
       closeTimer.current = null;
     }
+    // Reopen on the toggle that matches where the viewer currently is.
+    setActiveIdx(routeIdx === -1 ? 0 : routeIdx);
     setOpen(true);
   }
   function closeSoon() {
@@ -102,7 +117,7 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
       onMouseLeave={closeSoon}
     >
       <Link
-        to={to}
+        to={activeCat.to}
         className="nav-tab"
         data-tour={label.toLowerCase()}
         onFocus={openNow}
@@ -122,9 +137,9 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
       </Link>
 
       {open && (
-        // Full-bleed mega-menu. Fixed to the viewport just under the 60px nav
-        // bar so it spans the whole width like the design's Encounters menu;
-        // an inner max-width container keeps the grid aligned to the page.
+        // Full-bleed mega-menu, fixed to the viewport just under the 60px nav
+        // bar so it spans the whole width; an inner max-width container keeps
+        // the grid aligned to the page.
         <div
           style={{
             position: 'fixed',
@@ -143,18 +158,40 @@ export function NavCatalogMenu({ label, to, catalog }: { label: string; to: stri
             animation: 'fadeIn 0.16s ease both',
           }}
         >
-          <div style={{ maxWidth: 1220, margin: '0 auto', padding: '20px 24px 26px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
-              <div>
-                <div style={{ font: '700 10.5px var(--font-sans)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--text-55)' }}>{label}</div>
-                <div style={{ font: '800 18px var(--font-sans)', marginTop: 2, letterSpacing: '-.2px' }}>Browse every encounter</div>
+          <div style={{ maxWidth: 1220, margin: '0 auto', padding: '18px 24px 26px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
+              {/* Category toggle bar */}
+              <div style={{ display: 'inline-flex', gap: 3, padding: 4, background: 'var(--bg-chip)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+                {categories.map((c, i) => {
+                  const on = i === activeIdx;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onMouseEnter={() => setActiveIdx(i)}
+                      onClick={() => setActiveIdx(i)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 'var(--radius-sm)',
+                        font: '700 12.5px var(--font-sans)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        background: on ? 'var(--gold-dim)' : 'transparent',
+                        color: on ? 'var(--gold)' : 'var(--text-60)',
+                        transition: 'background .13s ease, color .13s ease',
+                      }}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
               </div>
-              <Link to={to} onClick={() => setOpen(false)} style={{ font: '600 13px var(--font-sans)', color: 'var(--gold)', whiteSpace: 'nowrap' }}>
-                View all {label.toLowerCase()} →
+              <Link to={activeCat.to} onClick={() => setOpen(false)} style={{ font: '600 13px var(--font-sans)', color: 'var(--gold)', whiteSpace: 'nowrap' }}>
+                View all {activeCat.label.toLowerCase()} →
               </Link>
             </div>
 
-            {catalog.map((group) => (
+            {activeCat.catalog.map((group) => (
               <div key={group.name} style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 11 }}>
                   <div style={{ font: '700 11px var(--font-sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-60)', whiteSpace: 'nowrap' }}>{group.name}</div>

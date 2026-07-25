@@ -63,6 +63,11 @@ export const RAID_CATALOG: CatalogGroup[] = [
   { name: 'Wing 7 — The Key of Ahdashim', bosses: ['Cardinal Adina', 'Cardinal Sabir', 'Qadim the Peerless'].map(boss) },
   { name: 'Wing 8 — Mount Balrior', bosses: ['Greer the Blightbringer', 'Decima the Stormsinger', 'Ura the Steamshrieker'].map(boss) },
   { name: "Guardian's Glade", bosses: ['Kela Seneschal of Waves'].map(boss) },
+];
+
+// Strike missions — surfaced as "Raid Encounters" in the UI, grouped by their
+// release. Same per-boss CM scoping as raids (several have challenge modes).
+export const STRIKE_CATALOG: CatalogGroup[] = [
   {
     name: 'Icebrood Saga',
     bosses: ['Legendary Icebrood Construct', 'The Voice and the Claw', 'Fraenir of Jormag', 'Boneskinner', 'Whisper of Jormag', 'Ancient Forgeman', 'Minister of Morale'].map(boss),
