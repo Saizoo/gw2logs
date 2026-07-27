@@ -232,6 +232,12 @@ model LogPlayer {
   // See ingest.ts PlayerCombatStats. Null on logs ingested before this was
   // captured (their raw JSON is gone) — the detail page falls back gracefully.
   stats         Json?
+  // Equipped weapon types straight from Elite Insights' JsonPlayer.weapons —
+  // the raw string array ([set1 main, set1 off, set2 main, set2 off], with
+  // "2Hand"/"Unknown" placeholders). Stored verbatim; the detail page groups
+  // and filters it into weapon sets. Null on logs ingested before this / logs
+  // where EI emitted no weapon data.
+  weapons       Json?
 
   @@index([logId])
   @@index([playerId])

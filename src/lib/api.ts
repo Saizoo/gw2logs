@@ -250,6 +250,10 @@ export interface LogDetailPlayer {
   // Extended offensive/defensive/support stats from Elite Insights, all zero on
   // logs ingested before these were captured. See server ingest PlayerCombatStats.
   stats: PlayerCombatStats;
+  // Raw EI weapon-type list ([set1 main, set1 off, set2 main, set2 off], with
+  // "2Hand"/"Unknown" placeholders). Empty on logs ingested before this / with
+  // no weapon data. The UI groups it into weapon sets — see weaponSets().
+  weapons: string[];
 }
 
 export interface PlayerCombatStats {

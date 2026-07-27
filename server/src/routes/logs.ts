@@ -231,6 +231,7 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
           squadRole: true,
           healingOutput: true,
           stats: true,
+          weapons: true,
           player: { select: { account: true, userId: true, user: { select: { hideName: true } } } },
         },
       },
@@ -361,6 +362,9 @@ logsRouter.get('/:id', asyncHandler(async (req, res) => {
       healingOutput: p.healingOutput,
       // Extended offensive/defensive/support stats — zeros on older logs.
       stats: statsOf(p.stats),
+      // Raw EI weapon-type list; empty on older logs. The client groups it
+      // into weapon sets for display.
+      weapons: Array.isArray(p.weapons) ? (p.weapons as unknown[]).filter((w): w is string => typeof w === 'string') : [],
     };
     }),
     // Timeline/mechanics reference players by character name; mask the ones

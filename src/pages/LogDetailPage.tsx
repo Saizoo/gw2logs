@@ -44,6 +44,49 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
+// EI serializes empty/two-handed weapon slots with these sentinels, not a
+// real weapon name — drop them when building the display sets.
+const WEAPON_PLACEHOLDERS = new Set(['unknown', '2hand', 'none', '']);
+
+// Group EI's flat weapon-type array ([set1 main, set1 off, set2 main, set2
+// off]) into up to two land weapon sets of real weapon names. Slots holding a
+// placeholder are dropped (a two-handed weapon yields a single-entry set);
+// a set with nothing real in it is omitted entirely. Names are humanized from
+// EI's PascalCase ("ShortBow" -> "Short Bow").
+function weaponSets(weapons: string[]): string[][] {
+  const clean = (w: string | undefined): string | null => {
+    const t = (w ?? '').trim();
+    return WEAPON_PLACEHOLDERS.has(t.toLowerCase()) ? null : t.replace(/([a-z])([A-Z])/g, '$1 $2');
+  };
+  const land = weapons.slice(0, 4);
+  const sets: string[][] = [];
+  for (let i = 0; i < land.length; i += 2) {
+    const pair = [clean(land[i]), clean(land[i + 1])].filter((x): x is string => x !== null);
+    if (pair.length) sets.push(pair);
+  }
+  return sets;
+}
+
+// Weapon sets as compact chips (one per set) — "Sword / Focus" · "Staff".
+// Renders nothing when a log carries no weapon data (older imports).
+function WeaponSets({ weapons, style }: { weapons: string[]; style?: CSSProperties }) {
+  const sets = weaponSets(weapons);
+  if (!sets.length) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', ...style }}>
+      {sets.map((set, i) => (
+        <span
+          key={i}
+          title={`Weapon set ${i + 1}`}
+          style={{ font: '600 10px var(--font-sans)', color: 'var(--text-62)', padding: '2px 7px', borderRadius: 999, background: 'var(--bg-chip)', border: '1px solid var(--border-faint)', whiteSpace: 'nowrap' }}
+        >
+          {set.join(' / ')}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function LogDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -684,6 +727,7 @@ function SquadTab({ log, durationLabel }: { log: LogDetail; durationLabel: strin
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
+                    <WeaponSets weapons={p.weapons} style={{ position: 'relative', marginTop: 4 }} />
                   </div>
                   <div style={{ position: 'relative', textAlign: 'right', flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div>

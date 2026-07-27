@@ -100,6 +100,8 @@ export interface NormalizedPlayer {
   groupBoons: Record<string, number>;
   healingOutput: number | null;
   stats: PlayerCombatStats;
+  // Raw EI weapon-type list (JsonPlayer.weapons) — see extractWeapons.
+  weapons: string[];
 }
 
 export interface NormalizedMechanicEvent {
@@ -278,6 +280,18 @@ function extractPlayerStats(player: any, bossTargetIndex: number): PlayerCombatS
     condiCleanse: num(support, 'CondiCleanse'),
     boonStrips: num(support, 'BoonStrips'),
   };
+}
+
+// Equipped weapon types, straight from EI's JsonPlayer.weapons. EI serializes
+// this as a flat string array — for land combat, [set1 main, set1 off, set2
+// main, set2 off] — with "2Hand" filling the off slot of a two-handed weapon
+// and "Unknown" for a slot the player never used. Stored verbatim (only
+// dropping non-string junk); the detail page does the set grouping/filtering
+// so that interpretation can change without re-importing.
+function extractWeapons(player: any): string[] {
+  const w = field(player, 'Weapons');
+  if (!Array.isArray(w)) return [];
+  return w.filter((x): x is string => typeof x === 'string');
 }
 
 // A player generating a meaningful share of their subgroup's alacrity or
@@ -524,6 +538,7 @@ export function normalizeEiJson(raw: RawEiJson): NormalizedLog {
       groupBoons: extractGroupBoons(p),
       healingOutput: extractHealingOutput(p),
       stats: extractPlayerStats(p, bossIdx),
+      weapons: extractWeapons(p),
     };
   });
 

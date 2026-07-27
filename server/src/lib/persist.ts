@@ -78,6 +78,7 @@ export async function persistLog(params: {
             groupBoons: p.groupBoons as any,
             healingOutput: p.healingOutput,
             stats: p.stats as any,
+            weapons: p.weapons as any,
           })),
         });
       }
