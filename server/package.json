@@ -20,7 +20,9 @@
     "characters:test": "tsx src/scripts/testCharacters.ts",
     "seed:demo": "tsx src/scripts/seedDemoData.ts",
     "backfill:professions": "tsx src/scripts/backfillProfessions.ts",
-    "backfill:professions:prod": "node dist/scripts/backfillProfessions.js"
+    "backfill:professions:prod": "node dist/scripts/backfillProfessions.js",
+    "backfill:logdetails": "tsx src/scripts/backfillLogDetails.ts",
+    "backfill:logdetails:prod": "node dist/scripts/backfillLogDetails.js"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

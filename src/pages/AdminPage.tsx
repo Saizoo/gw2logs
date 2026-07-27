@@ -772,6 +772,7 @@ const CONSOLE_COMMANDS: { group: string; items: { cmd: string; desc: string }[] 
     group: 'Data backfills',
     items: [
       { cmd: 'docker compose exec api npm run backfill:professions:prod', desc: 'Backfill missing profession data on existing logs (compiled prod script).' },
+      { cmd: 'docker compose exec api npm run backfill:logdetails:prod', desc: 'Re-fetch already-imported dps.report logs and backfill equipped weapons, extended combat stats, and permalinks onto old rows (auto-import skips them). Prints weapons yes/no per log.' },
       { cmd: 'docker compose exec api node dist/scripts/seedBuilds.js', desc: 'Re-seed the raid-planner build catalog from the bundled seed data.' },
     ],
   },
